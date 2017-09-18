@@ -44,9 +44,9 @@
     <link href="https://farfoodyou.github.io/2017/09/18/git-remote/"/>
     <id>https://farfoodyou.github.io/2017/09/18/git-remote/</id>
     <published>2017-09-18T10:13:02.000Z</published>
-    <updated>2017-09-18T10:43:40.768Z</updated>
+    <updated>2017-09-18T11:02:39.549Z</updated>
     
-    <content type="html"><![CDATA[<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git remote add origin https://github.com/farfoodyou/farfoodyou.github.io</div></pre></td></tr></table></figure><p>npm install hexo-deployer-git –save</p>]]></content>
+    <content type="html"><![CDATA[<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git remote add origin https://github.com/farfoodyou/farfoodyou.github.io</div></pre></td></tr></table></figure>]]></content>
     
     <summary type="html">
     

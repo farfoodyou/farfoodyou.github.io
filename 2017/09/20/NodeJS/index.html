@@ -79,7 +79,7 @@
 <meta property="og:site_name" content="Farfoodyou&#39;s Blog">
 <meta property="og:description" content="console.log(“Hello World”); node helloworld.js npm install express -g   # 全局安装express 安装好之后，express 包就放在了工程目录下的 node_modules 目录中，因此在代码中只需要通过 require(‘express’) 的方式就好，无需指定第三方包路径。var express = require(‘">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-09-21T15:16:57.306Z">
+<meta property="og:updated_time" content="2017-09-22T22:58:23.887Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="NodeJS">
 <meta name="twitter:description" content="console.log(“Hello World”); node helloworld.js npm install express -g   # 全局安装express 安装好之后，express 包就放在了工程目录下的 node_modules 目录中，因此在代码中只需要通过 require(‘express’) 的方式就好，无需指定第三方包路径。var express = require(‘">
@@ -404,6 +404,12 @@
 <p>npm install express -g   # 全局安装express</p>
 <p>安装好之后，express 包就放在了工程目录下的 node_modules 目录中，因此在代码中只需要通过 require(‘express’) 的方式就好，无需指定第三方包路径。<br>var express = require(‘express’);</p>
 <p>如果出现以下错误：<br>npm err! Error: connect ECONNREFUSED 127.0.0.1:8087<br>解决办法为：<br>$ npm config set proxy null</p>
+<p>Node 提供了 child_process 模块来创建子进程，方法有：</p>
+<ol>
+<li>exec - child_process.exec 使用子进程执行命令，缓存子进程的输出，并将子进程的输出以回调函数参数的形式返回。</li>
+<li>spawn - child_process.spawn 使用指定的命令行参数创建新进程。</li>
+<li>fork - child_process.fork 是 spawn()的特殊形式，用于在子进程中运行的模块，如 fork(‘./son.js’) 相当于 spawn(‘node’, [‘./son.js’]) 。与spawn方法不同的是，fork会在父进程与子进程之间，建立一个通信管道，用于进程之间的通信。</li>
+</ol>
 
       
     </div>
@@ -424,7 +430,7 @@
     Farfoodyou
   </li>
   <li><strong>发布时间 :  &nbsp</strong>2017年09月20日 - 23:09</li>
-  <li><strong>最后更新 :  &nbsp</strong>2017年09月21日 - 23:09</li>
+  <li><strong>最后更新 :  &nbsp</strong>2017年09月23日 - 06:09</li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
     <a href="https://farfoodyou.github.io/2017/09/20/NodeJS/" title="NodeJS">https://farfoodyou.github.io/2017/09/20/NodeJS/</a>

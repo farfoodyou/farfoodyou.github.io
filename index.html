@@ -222,26 +222,6 @@
         </li>
       
         
-        <li class="menu-item menu-item-schedule">
-          <a href="/schedule/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-calendar"></i> <br />
-            
-            日程表
-          </a>
-        </li>
-      
-        
-        <li class="menu-item menu-item-sitemap">
-          <a href="/sitemap.xml" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br />
-            
-            站点地图
-          </a>
-        </li>
-      
-        
         <li class="menu-item menu-item-about">
           <a href="/about/" rel="section">
             
@@ -270,26 +250,22 @@
   
     <div class="site-search">
       
-  
-  <div class="algolia-popup popup search-popup">
-    <div class="algolia-search">
-      <div class="algolia-search-input-icon">
-        <i class="fa fa-search"></i>
-      </div>
-      <div class="algolia-search-input" id="algolia-search-input"></div>
-    </div>
-
-    <div class="algolia-results">
-      <div id="algolia-stats"></div>
-      <div id="algolia-hits"></div>
-      <div id="algolia-pagination" class="algolia-pagination"></div>
-    </div>
-
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
     <span class="popup-btn-close">
       <i class="fa fa-times-circle"></i>
     </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
   </div>
-
+  <div id="local-search-result"></div>
+</div>
 
 
 
@@ -1548,7 +1524,7 @@
       
         
           
-            <h1 id="hexo的安装配置和常用命令"><a href="#hexo的安装配置和常用命令" class="headerlink" title="hexo的安装配置和常用命令"></a>hexo的安装配置和常用命令</h1><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"># 安装hexo</div><div class="line">npm install hexo-cli g</div><div class="line"># 初始化博客文件夹</div><div class="line">hexo init blog</div><div class="line"># 切换到该路径</div><div class="line">cd blog</div><div class="line"># 安装hexo的扩展插件</div><div class="line">npm install</div><div class="line"># 安装其它插件</div><div class="line">npm install hexo-server --save</div><div class="line">npm install hexo-admin --save</div><div class="line">npm install hexo-generator-archive --save</div><div class="line">npm install hexo-generator-feed --save</div><div class="line">npm install hexo-generator-search --save</div><div class="line">npm install hexo-generator-tag --save</div><div class="line">npm install hexo-deployer-git --save</div><div class="line">npm install hexo-generator-sitemap --save</div></pre></td></tr></table></figure>
+            <h1 id="hexo的安装配置和常用命令"><a href="#hexo的安装配置和常用命令" class="headerlink" title="hexo的安装配置和常用命令"></a>hexo的安装配置和常用命令</h1><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"># 安装hexo</div><div class="line">npm install hexo-cli g</div><div class="line"># 初始化博客文件夹</div><div class="line">hexo init blog</div><div class="line"># 切换到该路径</div><div class="line">cd blog</div><div class="line"># 安装hexo的扩展插件</div><div class="line">npm install</div><div class="line"># 安装其它插件</div><div class="line">npm install hexo-server --save</div><div class="line">npm install hexo-admin --save</div><div class="line">npm install hexo-generator-archive --save</div><div class="line">npm install hexo-generator-feed --save</div><div class="line">npm install hexo-generator-tag --save</div><div class="line">npm install hexo-deployer-git --save</div><div class="line">npm install hexo-generator-sitemap --save</div></pre></td></tr></table></figure>
 <h4 id="管理"><a href="#管理" class="headerlink" title="管理"></a>管理</h4><p>hexo-amdin可以让博客可视化编辑<br>需要hexo配置文件最后添加<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">admin:</div><div class="line">  username: myfavoritename</div><div class="line">  password_hash: be121740bf988b2225a313fa1f107ca1</div><div class="line">  secret: a secret something</div></pre></td></tr></table></figure></p>
 <p>这个password_hash是一种 bcrypt hash of your password，是一种安全的加密方式，那我怎么获得呢？如下步骤：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">$ node</div><div class="line">&gt; const bcrypt = require(&apos;bcrypt-nodejs&apos;)</div><div class="line">&gt; bcrypt.hashSync(&apos;your password secret here!&apos;)</div><div class="line">//=&gt; &apos;$2a$10$8f0CO288aEgpb0BQk0mAEOIDwPS.s6nl703xL6PLTVzM.758x8xsi&apos;</div></pre></td></tr></table></figure></p>
 <h4 id="Hexo常用命令："><a href="#Hexo常用命令：" class="headerlink" title="Hexo常用命令："></a>Hexo常用命令：</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">hexo new &quot;postName&quot;       #新建文章</div><div class="line">hexo new page &quot;pageName&quot;  #新建页面</div><div class="line">hexo generate             #生成静态页面至public目录</div><div class="line">hexo server               #开启预览访问端口（默认端口4000，&apos;ctrl + c&apos;关闭server）</div><div class="line">hexo deploy               #将.deploy目录部署到GitHub</div></pre></td></tr></table></figure>
@@ -2519,19 +2495,6 @@
   </script>
 
 
-
-
-  
-  
-  
-  <link rel="stylesheet" href="/lib/algolia-instant-search/instantsearch.min.css">
-
-  
-  
-  <script src="/lib/algolia-instant-search/instantsearch.min.js"></script>
-  
-
-  <script src="/js/src/algolia-search.js?v=5.1.2"></script>
 
 
 

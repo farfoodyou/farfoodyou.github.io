@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2017-09-20T14:32:52.824Z</updated>
+  <updated>2017-09-22T19:32:07.936Z</updated>
   <id>https://farfoodyou.github.io/</id>
   
   <author>
@@ -17,11 +17,96 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>platformio</title>
+    <link href="https://farfoodyou.github.io/2017/09/23/platformio/"/>
+    <id>https://farfoodyou.github.io/2017/09/23/platformio/</id>
+    <published>2017-09-22T19:03:21.000Z</published>
+    <updated>2017-09-22T19:32:07.936Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="我的单片机"><a href="#我的单片机" class="headerlink" title="我的单片机"></a>我的单片机</h1><p>手上有一块BBB还是大二那时候买的，现在却没有怎么好好玩过<br>platformio有atom下开发arduino程序的IDE插件。<br>看上去很不错的样子，就是左边的边框一直都在太占地方了<br>毕竟也不是没次都写这个程序。<br>我想到的办法是，平常不用的时候就disable了<br>然后要用了再打开。</p><p>说实话，我买了Beagle Bone Black却还没有怎么玩过几次。<br>打算工作了周末玩一玩这写一些小东西。</p><p>毕竟在文档这么多的情况下（虽然是英文的），我随便写一些玩具还是可以的。<br>但是现在还是好好加强虽然和语言的认识吧。<br>希望2018年底我已经能随心所欲写出使用单片机程序了吧。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;我的单片机&quot;&gt;&lt;a href=&quot;#我的单片机&quot; class=&quot;headerlink&quot; title=&quot;我的单片机&quot;&gt;&lt;/a&gt;我的单片机&lt;/h1&gt;&lt;p&gt;手上有一块BBB还是大二那时候买的，现在却没有怎么好好玩过&lt;br&gt;platformio有atom下开发arduino
+      
+    
+    </summary>
+    
+      <category term="Microcontrollers" scheme="https://farfoodyou.github.io/categories/Microcontrollers/"/>
+    
+      <category term="platformio" scheme="https://farfoodyou.github.io/categories/Microcontrollers/platformio/"/>
+    
+    
+      <category term="platformio" scheme="https://farfoodyou.github.io/tags/platformio/"/>
+    
+      <category term="arduino" scheme="https://farfoodyou.github.io/tags/arduino/"/>
+    
+      <category term="Microcontrollers" scheme="https://farfoodyou.github.io/tags/Microcontrollers/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>markdown</title>
+    <link href="https://farfoodyou.github.io/2017/09/21/markdown/"/>
+    <id>https://farfoodyou.github.io/2017/09/21/markdown/</id>
+    <published>2017-09-21T14:54:28.000Z</published>
+    <updated>2017-09-21T15:17:46.466Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="常用markdown代码"><a href="#常用markdown代码" class="headerlink" title="常用markdown代码"></a>常用markdown代码</h1><p>[TOC]<br>二八定律：</p><blockquote><p>百分之二十的知识解决百分之八十的问题。</p></blockquote><p><code>&gt;</code>这个可以用来表示引用</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&gt; 这是一级引用</div><div class="line">&gt;&gt;这是二级引用</div><div class="line">&gt;&gt;&gt; 这是三级引用</div><div class="line">&gt;这是一级引用</div></pre></td></tr></table></figure><blockquote><p>这是一级引用</p><blockquote><p>这是二级引用</p><blockquote><p>这是三级引用</p></blockquote></blockquote><p>这是一级引用</p></blockquote><p>\<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//这是代码块</span></div><div class="line">\</div></pre></td></tr></table></figure></p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">![Markdown](http://images.cnitblog.com/blog/404392/201501/122257231047591.jpg &quot;Markdown&quot;)</div></pre></td></tr></table></figure><blockquote><p><img src="http://images.cnitblog.com/blog/404392/201501/122257231047591.jpg" alt="Markdown" title="Markdown"></p></blockquote><p>使用1. 2. 3.表示有序列表，使用*或-或+表示无序列表。</p><p>使用 <em>* 或者 __ 表示粗体。<br>使用 </em> 或者 _ 表示斜体。</p><p>使用—或者<em>*\</em>或者<em> </em> *表示水平分割线。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">这就是我们常用的地址：[Baidu](www.baidu.com &quot;百度一下，你就知道&quot; )</div></pre></td></tr></table></figure><p>这就是我们常用的地址：<a href="www.baidu.com" title="百度一下，你就知道">Baidu</a><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">这就是我们常用的地址：[Baidu][1]</div><div class="line">[1]:　www.baidu.com &quot;百度一下，你就知道&quot;</div></pre></td></tr></table></figure></p><p>这就是我们常用的地址：[Baidu][1]<br>[1]:　www.baidu.com “百度一下，你就知道” </p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;常用markdown代码&quot;&gt;&lt;a href=&quot;#常用markdown代码&quot; class=&quot;headerlink&quot; title=&quot;常用markdown代码&quot;&gt;&lt;/a&gt;常用markdown代码&lt;/h1&gt;&lt;p&gt;[TOC]&lt;br&gt;二八定律：&lt;/p&gt;
+&lt;blockquote
+      
+    
+    </summary>
+    
+    
+      <category term="markdown" scheme="https://farfoodyou.github.io/tags/markdown/"/>
+    
+      <category term="md" scheme="https://farfoodyou.github.io/tags/md/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>NodeJS</title>
+    <link href="https://farfoodyou.github.io/2017/09/20/NodeJS/"/>
+    <id>https://farfoodyou.github.io/2017/09/20/NodeJS/</id>
+    <published>2017-09-20T15:03:20.000Z</published>
+    <updated>2017-09-21T15:16:57.306Z</updated>
+    
+    <content type="html"><![CDATA[<p>console.log(“Hello World”);</p><p>node helloworld.js</p><p>npm install express -g   # 全局安装express</p><p>安装好之后，express 包就放在了工程目录下的 node_modules 目录中，因此在代码中只需要通过 require(‘express’) 的方式就好，无需指定第三方包路径。<br>var express = require(‘express’);</p><p>如果出现以下错误：<br>npm err! Error: connect ECONNREFUSED 127.0.0.1:8087<br>解决办法为：<br>$ npm config set proxy null</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;console.log(“Hello World”);&lt;/p&gt;
+&lt;p&gt;node helloworld.js&lt;/p&gt;
+&lt;p&gt;npm install express -g   # 全局安装express&lt;/p&gt;
+&lt;p&gt;安装好之后，express 包就放在了工程目录下的 node
+      
+    
+    </summary>
+    
+      <category term="NodeJS" scheme="https://farfoodyou.github.io/categories/NodeJS/"/>
+    
+    
+      <category term="node.js" scheme="https://farfoodyou.github.io/tags/node-js/"/>
+    
+  </entry>
+  
+  <entry>
     <title>npm</title>
     <link href="https://farfoodyou.github.io/2017/09/20/npm/"/>
     <id>https://farfoodyou.github.io/2017/09/20/npm/</id>
     <published>2017-09-20T14:13:24.000Z</published>
-    <updated>2017-09-20T14:32:52.824Z</updated>
+    <updated>2017-09-22T17:11:42.986Z</updated>
     
     <content type="html"><![CDATA[<p>npm install -g cnpm –registry=<a href="https://registry.npm.taobao.org" target="_blank" rel="external">https://registry.npm.taobao.org</a></p><p>安装模块</p><p>从 registry.npm.taobao.org 安装所有模块. 当安装的时候发现安装的模块还没有同步过来, 淘宝 NPM 会自动在后台进行同步, 并且会让你从官方 NPM registry.npmjs.org 进行安装. 下次你再安装这个模块的时候, 就会直接从 淘宝 NPM 安装了.</p><p>$ cnpm install [name]<br>同步模块</p><p>直接通过 sync 命令马上同步一个模块, 只有 cnpm 命令行才有此功能:</p><p>$ cnpm sync connect<br>当然, 你可以直接通过 web 方式来同步: /sync/connect</p><p>$ open <a href="https://npm.taobao.org/sync/connect" target="_blank" rel="external">https://npm.taobao.org/sync/connect</a><br>其它命令</p><p>支持 npm 除了 publish 之外的所有命令, 如:</p><p>$ cnpm info connect</p><p>cnpm install node-sass –save-dev</p>]]></content>
     
@@ -36,8 +121,12 @@
     
       <category term="NodeJS" scheme="https://farfoodyou.github.io/categories/NodeJS/"/>
     
+      <category term="npm" scheme="https://farfoodyou.github.io/categories/NodeJS/npm/"/>
+    
     
       <category term="npm" scheme="https://farfoodyou.github.io/tags/npm/"/>
+    
+      <category term="NodeJS" scheme="https://farfoodyou.github.io/tags/NodeJS/"/>
     
   </entry>
   
@@ -46,9 +135,9 @@
     <link href="https://farfoodyou.github.io/2017/09/20/mongoDB/"/>
     <id>https://farfoodyou.github.io/2017/09/20/mongoDB/</id>
     <published>2017-09-20T11:28:39.000Z</published>
-    <updated>2017-09-20T12:25:19.419Z</updated>
+    <updated>2017-09-21T15:17:51.822Z</updated>
     
-    <content type="html"><![CDATA[<p>curl -O <a href="https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.6.tgz" target="_blank" rel="external">https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.6.tgz</a>     下载<br>tar -zxvf mongodb-linux-x86_64-3.0.6.tgz                                    解压</p><p>mv  mongodb-linux-x86_64-3.0.6/ /usr/local/mongodb                         将解压包拷贝到指定目录</p><p>export PATH=<mongodb-install-directory>/bin:$PATH</mongodb-install-directory></p><p>例如 export PATH=/usr/local/mongodb/bin:$PATH</p><p>mkdir -p /data/db  创建数据库目录</p><p>./mongod 打开程序</p><p>./mongo 打开管理程序</p><p>MongoDB 提供了简单的 HTTP 用户界面。 如果你想启用该功能，需要在启动的时候指定参数 –rest<br>./mongod –dbpath=/data/db –rest</p><p>mongodb://[username:password@]host1[:port1][,host2[:port2],…[,hostN[:portN]]][/[database][?options]]</p><p>MongoDB 查询数据的语法格式如下：<br>db.collection.find(query, projection)</p><p>常用命令<br>“show dbs” 命令可以显示所有数据的列表。<br>执行 “db” 命令可以显示当前数据库对象或集合。<br>运行”use”命令，可以连接到一个指定的数据库。</p><p>MongoDB 创建数据库的语法格式如下：<br>use DATABASE_NAME<br>MongoDB 删除数据库的语法格式如下：<br>db.dropDatabase()</p><p>集合删除语法格式如下：<br>db.collection.drop()</p><p>MongoDB 使用 insert() 或 save() 方法向集合中插入文档，语法如下：<br>db.COLLECTION_NAME.insert(document)</p><p>db.collection.insertOne():向指定集合中插入一条文档数据<br>db.collection.insertMany():向指定集合中插入多条文档数据</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">#  插入单条数据</div><div class="line"></div><div class="line">&gt; var document = db.collection.insertOne(&#123;&quot;a&quot;: 3&#125;)</div><div class="line">&gt; document</div><div class="line">&#123;</div><div class="line">        &quot;acknowledged&quot; : true,</div><div class="line">        &quot;insertedId&quot; : ObjectId(&quot;571a218011a82a1d94c02333&quot;)</div><div class="line">&#125;</div><div class="line"></div><div class="line">#  插入多条数据</div><div class="line">&gt; var res = db.collection.insertMany([&#123;&quot;b&quot;: 3&#125;, &#123;&apos;c&apos;: 4&#125;])</div><div class="line">&gt; res</div><div class="line">&#123;</div><div class="line">        &quot;acknowledged&quot; : true,</div><div class="line">        &quot;insertedIds&quot; : [</div><div class="line">                ObjectId(&quot;571a22a911a82a1d94c02337&quot;),</div><div class="line">                ObjectId(&quot;571a22a911a82a1d94c02338&quot;)</div><div class="line">        ]</div><div class="line">&#125;</div></pre></td></tr></table></figure><p>update() 方法用于更新已存在的文档。语法格式如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">db.collection.update(</div><div class="line">   &lt;query&gt;,</div><div class="line">   &lt;update&gt;,</div><div class="line">   &#123;</div><div class="line">     upsert: &lt;boolean&gt;,</div><div class="line">     multi: &lt;boolean&gt;,</div><div class="line">     writeConcern: &lt;document&gt;</div><div class="line">   &#125;</div><div class="line">)</div></pre></td></tr></table></figure></p><p>db.col.find().pretty()<br>save() 方法通过传入的文档来替换已有文档。语法格式如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">db.collection.save(</div><div class="line">   &lt;document&gt;,</div><div class="line">   &#123;</div><div class="line">     writeConcern: &lt;document&gt;</div><div class="line">   &#125;</div><div class="line">)</div></pre></td></tr></table></figure></p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">db.collection.remove(</div><div class="line">   &lt;query&gt;,</div><div class="line">   &#123;</div><div class="line">     justOne: &lt;boolean&gt;,</div><div class="line">     writeConcern: &lt;document&gt;</div><div class="line">   &#125;</div><div class="line">)</div></pre></td></tr></table></figure><p>MongoDB中条件操作符有：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">(&gt;) 大于 - $gt</div><div class="line">(&lt;) 小于 - $lt</div><div class="line">(&gt;=) 大于等于 - $gte</div><div class="line">(&lt;= ) 小于等于 - $lte</div><div class="line"></div><div class="line">$gt -------- greater than  &gt;</div><div class="line">$gte --------- gt equal  &gt;=</div><div class="line">$lt ----------less than  &lt;</div><div class="line">$lte --------- lt equal  &lt;=</div><div class="line">$ne ----------- not equal  !=</div><div class="line">$eq  --------  equal  =</div></pre></td></tr></table></figure></p><p>免费在线课程 MongoDB University<br>免费数据库托管 MongoDB Atlas</p>]]></content>
+    <content type="html"><![CDATA[<p>curl -O <a href="https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.6.tgz" target="_blank" rel="external">https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.6.tgz</a>     下载<br>tar -zxvf mongodb-linux-x86_64-3.0.6.tgz                                    解压</p><p>mv  mongodb-linux-x86_64-3.0.6/ /usr/local/mongodb                         将解压包拷贝到指定目录</p><p>export PATH=<mongodb-install-directory>/bin:$PATH</mongodb-install-directory></p><p>例如 export PATH=/usr/local/mongodb/bin:$PATH</p><p>mkdir -p /data/db  创建数据库目录,默认是这个位置<br>mongod –dbpath /data/db 也可以改成其他的</p><blockquote><p>./mongod 打开程序<br>./mongo 打开管理程序</p></blockquote><p>MongoDB 提供了简单的 HTTP 用户界面。 如果你想启用该功能，需要在启动的时候指定参数 –rest </p><blockquote><p>./mongod –dbpath=/data/db –rest<br>mongodb://[username:password@]host1[:port1][,host2[:port2],…[,hostN[:portN]]][/[database][?options]]</p></blockquote><p>createCollection()命令的基本语法如下 -</p><blockquote><p>db.createCollection(name, options)</p></blockquote><p>insert()命令的基本语法如下：</p><blockquote><p>db.COLLECTION_NAME.insert(document)</p></blockquote><p>MongoDB 查询数据的语法格式如下：</p><blockquote><p>db.COLLECTION_NAME.find(query, projection)</p></blockquote><p>常用命令<br>“show dbs” 命令可以显示所有数据的列表。<br>执行 “db” 命令可以显示当前数据库对象或集合。<br>运行”use”命令，可以连接到一个指定的数据库。</p><p>MongoDB 创建数据库的语法格式如下：<br>use DATABASE_NAME<br>MongoDB 删除数据库的语法格式如下：<br>db.dropDatabase()</p><p>集合删除语法格式如下：<br>db.collection.drop()</p><p>MongoDB 使用 insert() 或 save() 方法向集合中插入文档，语法如下：<br>db.COLLECTION_NAME.insert(document)</p><p>db.collection.insertOne():向指定集合中插入一条文档数据<br>db.collection.insertMany():向指定集合中插入多条文档数据</p><p>插入单条数据</p><blockquote><p>var document = db.collection.insertOne({“a”: 3})<br>document<br>{<br>        “acknowledged” : true,<br>        “insertedId” : ObjectId(“571a218011a82a1d94c02333”)<br>}</p></blockquote><p>插入多条数据<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">var res = db.collection.insertMany([&#123;&quot;b&quot;: 3&#125;, &#123;&apos;c&apos;: 4&#125;])</div><div class="line">res</div><div class="line">&#123;</div><div class="line">        &quot;acknowledged&quot; : true,</div><div class="line">        &quot;insertedIds&quot; : [</div><div class="line">                ObjectId(&quot;571a22a911a82a1d94c02337&quot;),</div><div class="line">                ObjectId(&quot;571a22a911a82a1d94c02338&quot;)</div><div class="line">        ]</div><div class="line">&#125;</div></pre></td></tr></table></figure></p><p>update() 方法用于更新已存在的文档。语法格式如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">db.collection.update(</div><div class="line">   &lt;query&gt;,</div><div class="line">   &lt;update&gt;,</div><div class="line">   &#123;</div><div class="line">     upsert: &lt;boolean&gt;,</div><div class="line">     multi: &lt;boolean&gt;,</div><div class="line">     writeConcern: &lt;document&gt;</div><div class="line">   &#125;</div><div class="line">)</div></pre></td></tr></table></figure></p><p>db.col.find().pretty()<br>save() 方法通过传入的文档来替换已有文档。语法格式如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">db.collection.save(</div><div class="line">   &lt;document&gt;,</div><div class="line">   &#123;</div><div class="line">     writeConcern: &lt;document&gt;</div><div class="line">   &#125;</div><div class="line">)</div></pre></td></tr></table></figure></p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">db.collection.remove(</div><div class="line">   &lt;query&gt;,</div><div class="line">   &#123;</div><div class="line">     justOne: &lt;boolean&gt;,</div><div class="line">     writeConcern: &lt;document&gt;</div><div class="line">   &#125;</div><div class="line">)</div></pre></td></tr></table></figure><p>MongoDB中条件操作符有：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">(&gt;) 大于 - $gt</div><div class="line">(&lt;) 小于 - $lt</div><div class="line">(&gt;=) 大于等于 - $gte</div><div class="line">(&lt;= ) 小于等于 - $lte</div><div class="line"></div><div class="line">$gt -------- greater than  &gt;</div><div class="line">$gte --------- gt equal  &gt;=</div><div class="line">$lt ----------less than  &lt;</div><div class="line">$lte --------- lt equal  &lt;=</div><div class="line">$ne ----------- not equal  !=</div><div class="line">$eq  --------  equal  =</div></pre></td></tr></table></figure></p><p>免费在线课程 MongoDB University<br>免费数据库托管 MongoDB Atlas</p>]]></content>
     
     <summary type="html">
     
@@ -69,16 +158,16 @@
     <link href="https://farfoodyou.github.io/2017/09/18/%E7%9F%A5%E8%AF%86%E4%BD%93%E7%B3%BB/"/>
     <id>https://farfoodyou.github.io/2017/09/18/知识体系/</id>
     <published>2017-09-18T15:40:34.000Z</published>
-    <updated>2017-09-20T13:21:20.432Z</updated>
+    <updated>2017-09-22T15:15:49.535Z</updated>
     
-    <content type="html"><![CDATA[<p>框架<br>客户端 Vue.js,jquery.js<br>服务器端 Spring，node.js,Mybatis</p><p>软件<br>客户端 Navicat,Xmanager<br>服务器端 docker,MySQL,mongoDB,Ngnix,apache,redis</p><p>开发软件<br>vim,git,IDEA,atom,codeblock,eclipse,visual studio</p><p>开发语言<br>C，C++，Java，Golang，PHP<br>Prolog,CHR,SQL</p><p>开发栈<br>SVG,Flex</p><p>Golang 切合了服务器底层开发者的痛点</p>]]></content>
+    <content type="html"><![CDATA[<p>框架<br>客户端 Vue.js,jquery.js<br>服务器端 Spring，node.js,Mybatis</p><p>软件<br>客户端 Navicat,Xmanager<br>服务器端 docker,spring cloud,MySQL,mongoDB,Ngnix,apache,redis</p><p>开发软件<br>vim,git,IDEA,atom,codeblock,eclipse,visual studio</p><p>开发语言<br>C，C++，Java，Golang，PHP<br>Prolog,CHR,SQL</p><p>开发栈<br>SVG,Flex,Cordova</p><p>设计模式<br>MVC,MVVM,观察者模式</p><p>Golang切合了服务器底层开发者的痛点</p>]]></content>
     
     <summary type="html">
     
       
       
         &lt;p&gt;框架&lt;br&gt;客户端 Vue.js,jquery.js&lt;br&gt;服务器端 Spring，node.js,Mybatis&lt;/p&gt;
-&lt;p&gt;软件&lt;br&gt;客户端 Navicat,Xmanager&lt;br&gt;服务器端 docker,MySQL,mongoDB,Ngnix,apache,red
+&lt;p&gt;软件&lt;br&gt;客户端 Navicat,Xmanager&lt;br&gt;服务器端 docker,spring cloud,MySQL,mongoDB,Ngn
       
     
     </summary>
@@ -118,16 +207,16 @@
     <title>hexo</title>
     <link href="https://farfoodyou.github.io/2017/09/18/hexo/"/>
     <id>https://farfoodyou.github.io/2017/09/18/hexo/</id>
-    <published>2017-09-18T10:36:40.000Z</published>
-    <updated>2017-09-20T11:31:11.281Z</updated>
+    <published>2017-09-18T10:36:00.000Z</published>
+    <updated>2017-09-22T20:23:11.836Z</updated>
     
-    <content type="html"><![CDATA[<p>Hexo常用命令：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">hexo new &quot;postName&quot;       #新建文章</div><div class="line">hexo new page &quot;pageName&quot;  #新建页面</div><div class="line">hexo generate             #生成静态页面至public目录</div><div class="line">hexo server               #开启预览访问端口（默认端口4000，&apos;ctrl + c&apos;关闭server）</div><div class="line">hexo deploy               #将.deploy目录部署到GitHub</div></pre></td></tr></table></figure></p><p>当然，如果每次输入那么长命令，那么一定想到用简写：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">hexo n == hexo new</div><div class="line">hexo g == hexo generate</div><div class="line">hexo s == hexo server</div><div class="line">hexo d == hexo deploy</div></pre></td></tr></table></figure></p><p>其它的，还可以复合命令：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">hexo deploy -g</div><div class="line">hexo server -g</div></pre></td></tr></table></figure><p>有时候生成的网页出错了，而生成的rss其实没有清除，那么用下面的命令，在重新生成吧<br>hexo clean</p><p>ps:<br>如果要跳过渲染比如说README.MD这种<br>可以在开头加<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">---</div><div class="line">layout: false</div><div class="line">---</div></pre></td></tr></table></figure></p><p>hexo server -p 3600<br>npm install hexo-deployer-git –save</p>]]></content>
+    <content type="html"><![CDATA[<h1 id="hexo的安装配置和常用命令"><a href="#hexo的安装配置和常用命令" class="headerlink" title="hexo的安装配置和常用命令"></a>hexo的安装配置和常用命令</h1><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"># 安装hexo</div><div class="line">npm install hexo-cli g</div><div class="line"># 初始化博客文件夹</div><div class="line">hexo init blog</div><div class="line"># 切换到该路径</div><div class="line">cd blog</div><div class="line"># 安装hexo的扩展插件</div><div class="line">npm install</div><div class="line"># 安装其它插件</div><div class="line">npm install hexo-server --save</div><div class="line">npm install hexo-admin --save</div><div class="line">npm install hexo-generator-archive --save</div><div class="line">npm install hexo-generator-feed --save</div><div class="line">npm install hexo-generator-search --save</div><div class="line">npm install hexo-generator-tag --save</div><div class="line">npm install hexo-deployer-git --save</div><div class="line">npm install hexo-generator-sitemap --save</div></pre></td></tr></table></figure><h4 id="管理"><a href="#管理" class="headerlink" title="管理"></a>管理</h4><p>hexo-amdin可以让博客可视化编辑<br>需要hexo配置文件最后添加<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">admin:</div><div class="line">  username: myfavoritename</div><div class="line">  password_hash: be121740bf988b2225a313fa1f107ca1</div><div class="line">  secret: a secret something</div></pre></td></tr></table></figure></p><p>这个password_hash是一种 bcrypt hash of your password，是一种安全的加密方式，那我怎么获得呢？如下步骤：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">$ node</div><div class="line">&gt; const bcrypt = require(&apos;bcrypt-nodejs&apos;)</div><div class="line">&gt; bcrypt.hashSync(&apos;your password secret here!&apos;)</div><div class="line">//=&gt; &apos;$2a$10$8f0CO288aEgpb0BQk0mAEOIDwPS.s6nl703xL6PLTVzM.758x8xsi&apos;</div></pre></td></tr></table></figure></p><h4 id="Hexo常用命令："><a href="#Hexo常用命令：" class="headerlink" title="Hexo常用命令："></a>Hexo常用命令：</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">hexo new &quot;postName&quot;       #新建文章</div><div class="line">hexo new page &quot;pageName&quot;  #新建页面</div><div class="line">hexo generate             #生成静态页面至public目录</div><div class="line">hexo server               #开启预览访问端口（默认端口4000，&apos;ctrl + c&apos;关闭server）</div><div class="line">hexo deploy               #将.deploy目录部署到GitHub</div></pre></td></tr></table></figure><p>当然，如果每次输入那么长命令，那么一定想到用简写：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">hexo n == hexo new</div><div class="line">hexo g == hexo generate</div><div class="line">hexo s == hexo server</div><div class="line">hexo d == hexo deploy</div></pre></td></tr></table></figure></p><p>其它的，还可以复合命令：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">hexo deploy -g</div><div class="line">hexo server -g</div></pre></td></tr></table></figure><p>有时候生成的网页出错了，而生成的rss其实没有清除，那么用下面的命令，在重新生成吧<br>hexo clean</p><h4 id="tips"><a href="#tips" class="headerlink" title="tips"></a>tips</h4><p>ps:<br>如果要跳过渲染比如说README.MD这种<br>可以在开头加<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">---</div><div class="line">layout: false</div><div class="line">---</div></pre></td></tr></table></figure></p><p>如果是html的话直接放在_post文件夹下就可以了</p><p>hexo server -p 3600<br>npm install hexo-deployer-git –save</p><p>Font Awesome 是不错的图标库</p>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;p&gt;Hexo常用命令：&lt;br&gt;&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;1&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;2&lt;/div&gt;&lt;div cl
+        &lt;h1 id=&quot;hexo的安装配置和常用命令&quot;&gt;&lt;a href=&quot;#hexo的安装配置和常用命令&quot; class=&quot;headerlink&quot; title=&quot;hexo的安装配置和常用命令&quot;&gt;&lt;/a&gt;hexo的安装配置和常用命令&lt;/h1&gt;&lt;h4 id=&quot;安装&quot;&gt;&lt;a href=&quot;#安装&quot;
       
     
     </summary>

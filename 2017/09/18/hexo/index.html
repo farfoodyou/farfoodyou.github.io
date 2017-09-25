@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hexo - farfood</title>
+<meta name="description" content="hexo的安装配置和常用命令安装# 安装hexo npm install hexo -g #-g表示全局安装, npm默认为当前项目安装 hexo version # 初始化博客文件夹 hexo init blog # 切换到该路径 cd blog # 安装hexo的扩展插件 npm install # 安装其它插件…">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/2017/09/18/hexo/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "hexo", "description": "hexo的安装配置和常用命令安装# 安装hexo npm install hexo -g #-g表示全局安装, npm默认为当前项目安装 hexo version # 初始化博客文件夹 hexo init blog # 切换到该路径 cd blog # 安装hexo的扩展插件 npm install # 安装其它插件…", "datePublished": "2017-09-18T18:09:00+08:00", "dateModified": "2017-09-18T18:09:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/2017/09/18/hexo/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "hexo"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="hexo - farfood">
+<meta property="og:description" content="hexo的安装配置和常用命令安装# 安装hexo npm install hexo -g #-g表示全局安装, npm默认为当前项目安装 hexo version # 初始化博客文件夹 hexo init blog # 切换到该路径 cd blog # 安装hexo的扩展插件 npm install # 安装其它插件…">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/2017/09/18/hexo/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="hexo - farfood">
+<meta name="twitter:description" content="hexo的安装配置和常用命令安装# 安装hexo npm install hexo -g #-g表示全局安装, npm默认为当前项目安装 hexo version # 初始化博客文件夹 hexo init blog # 切换到该路径 cd blog # 安装hexo的扩展插件 npm install # 安装其它插件…">
+<meta property="article:published_time" content="2017-09-18T18:09:00+08:00">
+<meta name="keywords" content="hexo">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">hexo</h1>
+    <p class="meta"><time datetime="2017-09-18T18:09:00">2017-09-18</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1407 字 </p>
+  </header>
+  
+  <div class="post-content">
+<h1 id="hexo的安装配置和常用命令"><a href="#hexo的安装配置和常用命令" class="headerlink" title="hexo的安装配置和常用命令"></a>hexo的安装配置和常用命令</h1><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><pre><code># 安装hexo
+npm install hexo -g  #-g表示全局安装, npm默认为当前项目安装
+hexo version
+# 初始化博客文件夹
+hexo init blog
+# 切换到该路径
+cd blog
+# 安装hexo的扩展插件
+npm install
+# 安装其它插件
+npm install hexo-admin --save
+npm install hexo-deployer-git --save
+npm install hexo-generator-sitemap --save</code></pre>
+<h4 id="管理"><a href="#管理" class="headerlink" title="管理"></a>管理</h4><p>hexo-amdin可以让博客可视化编辑<br>需要hexo配置文件最后添加<br><pre><code>admin:
+  username: myfavoritename
+  password_hash: be121740bf988b2225a313fa1f107ca1
+  secret: a secret something</code></pre></p>
+<p><del>网上很多都是不加deployCommand的，结果就是deploy的时候出现错误</del><br>改了index.html中居然加载jquery官方的一个js文件，难怪每次打开都很慢，我自己下载了<br>参考了别人的代码，改动了spwan语句，才可以在win下deploy.</p>
+<p>这个password_hash是一种 bcrypt hash of your password，是一种安全的加密方式，那我怎么获得呢？如下步骤：<br><pre><code>$ node
+&gt; const bcrypt = require(&amp;apos;bcrypt-nodejs&amp;apos;)
+&gt; bcrypt.hashSync(&amp;apos;your password secret here!&amp;apos;)
+//=&gt; &amp;apos;$2a$10$8f0CO288aEgpb0BQk0mAEOIDwPS.s6nl703xL6PLTVzM.758x8xsi&amp;apos;</code></pre></p>
+<h4 id="Hexo常用命令："><a href="#Hexo常用命令：" class="headerlink" title="Hexo常用命令："></a>Hexo常用命令：</h4><pre><code>hexo new &quot;postName&quot;       #新建文章
+hexo new page &quot;pageName&quot;  #新建页面
+hexo generate             #生成静态页面至public目录
+hexo server               #开启预览访问端口（默认端口4000，&amp;apos;ctrl + c&amp;apos;关闭server）
+hexo deploy               #将.deploy目录部署到GitHub</code></pre>
+<p>当然，如果每次输入那么长命令，那么一定想到用简写：<br><pre><code>hexo n == hexo new
+hexo g == hexo generate
+hexo s == hexo server
+hexo d == hexo deploy</code></pre></p>
+<p>其它的，还可以复合命令：</p>
+<pre><code>hexo deploy -g
+hexo server -g</code></pre>
+<p>有时候生成的网页出错了，而生成的rss其实没有清除，那么用下面的命令，在重新生成吧<br>hexo clean</p>
+<h4 id="tips"><a href="#tips" class="headerlink" title="tips"></a>tips</h4><p>ps:<br>如果要跳过渲染比如说README.MD这种<br>可以在开头加<br><pre><code>---
+layout: false
+---</code></pre></p>
+<p>如果是html的话直接放在_post文件夹下就可以了</p>
+<p>hexo server -p 3600<br>npm install hexo-deployer-git –save</p>
+<p>Font Awesome 是不错的图标库</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    Farfoodyou
+  </li>
+  <li><strong>发布时间 :   </strong>2017年09月18日 - 18:09</li>
+  <li><strong>最后更新 :   </strong>2017年09月23日 - 06:09</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://farfoodyou.github.io/2017/09/18/hexo/" title="hexo">https://farfoodyou.github.io/2017/09/18/hexo/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/"  >CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+      
+    
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hexo/" rel="tag"><i class="fa fa-tag"></i>hexo</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/09/18/git-remote/" rel="next" title="git remote">
+                <i class="fa fa-chevron-left"></i> git remote
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/09/18/Vue-js/" rel="prev" title="Vue.js">
+                Vue.js <i class="fa fa-chevron-right"></i>
+              </a>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/hexo/">hexo</a></p>
+  <nav class="post-nav"><a class="prev" href="/2017/09/18/git-remote/">← git remote</a><a class="next" href="/2017/09/18/hello-world/">Hello World →</a></nav>
+  
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

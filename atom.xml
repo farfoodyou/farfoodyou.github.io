@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>farfood</title>
+  <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
+  <link href="https://farfoodyou.github.io/"/>
+  <updated>2017-09-25T21:09:00+08:00</updated>
+  <id>https://farfoodyou.github.io/</id>
+  <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>从现在开始走向梦想吧</title>
+    <link href="https://farfoodyou.github.io/2017/09/25/现在开始走向梦想吧/"/>
+    <id>https://farfoodyou.github.io/2017/09/25/现在开始走向梦想吧/</id>
+    <updated>2017-09-25T21:09:00+08:00</updated>
+    <summary>从现在开始走向梦想吧我不知道十年以后下面的东西我能看多少，但是我想如果我开始看，一天看一点，总有一天会成为一个高手的。 目录 语言无关 IDE MySQL NoSQL PostgreSQL Web WEB服务器 其它 函数式概念 分布式系统 在线教育 大数据 操作系统 数据库 智能系统 正则表达式 版本控制 程序员杂谈 管理和监控 编程艺术 编译原理 编辑器 计算机图形学 设计模式 软件开发方法…</summary>
+  </entry>
+  <entry>
+    <title>platformio</title>
+    <link href="https://farfoodyou.github.io/2017/09/23/platformio/"/>
+    <id>https://farfoodyou.github.io/2017/09/23/platformio/</id>
+    <updated>2017-09-23T03:09:00+08:00</updated>
+    <summary>我的单片机手上有一块BBB还是大二那时候买的，现在却没有怎么好好玩过platformio有atom下开发arduino程序的IDE插件。看上去很不错的样子，就是左边的边框一直都在太占地方了毕竟也不是没次都写这个程序。我想到的办法是，平常不用的时候就disable了然后要用了再打开。 说实话，我买了Beagle Bone Black却还没有怎么玩过几次。打算工作了周末玩一玩这写一些小东西。 毕竟在文…</summary>
+  </entry>
+  <entry>
+    <title>markdown</title>
+    <link href="https://farfoodyou.github.io/2017/09/21/markdown/"/>
+    <id>https://farfoodyou.github.io/2017/09/21/markdown/</id>
+    <updated>2017-09-21T22:09:00+08:00</updated>
+    <summary>常用markdown代码[TOC]二八定律： 百分之二十的知识解决百分之八十的问题。 &gt;这个可以用来表示引用 &gt; 这是一级引用 &gt;&gt;这是二级引用 &gt;&gt;&gt; 这是三级引用 &gt;这是一级引用 这是一级引用 这是二级引用 这是三级引用 这是一级引用 \//这是代码块 \ ![Markdown](http://images.cnitblog.com/blog/404392/201501/12225723104…</summary>
+  </entry>
+  <entry>
+    <title>NodeJS</title>
+    <link href="https://farfoodyou.github.io/2017/09/20/NodeJS/"/>
+    <id>https://farfoodyou.github.io/2017/09/20/NodeJS/</id>
+    <updated>2017-09-20T23:09:00+08:00</updated>
+    <summary>console.log(“Hello World”); node helloworld.js npm install express -g # 全局安装express 安装好之后，express 包就放在了工程目录下的 node_modules 目录中，因此在代码中只需要通过 require(‘express’) 的方式就好，无需指定第三方包路径。var express = require(‘ex…</summary>
+  </entry>
+  <entry>
+    <title>npm</title>
+    <link href="https://farfoodyou.github.io/2017/09/20/npm/"/>
+    <id>https://farfoodyou.github.io/2017/09/20/npm/</id>
+    <updated>2017-09-20T22:09:00+08:00</updated>
+    <summary>npm install -g cnpm –registry=https://registry.npm.taobao.org 安装模块 从 registry.npm.taobao.org 安装所有模块. 当安装的时候发现安装的模块还没有同步过来, 淘宝 NPM 会自动在后台进行同步, 并且会让你从官方 NPM registry.npmjs.org 进行安装. 下次你再安装这个模块的时候, 就会直接从…</summary>
+  </entry>
+  <entry>
+    <title>mongoDB</title>
+    <link href="https://farfoodyou.github.io/2017/09/20/mongoDB/"/>
+    <id>https://farfoodyou.github.io/2017/09/20/mongoDB/</id>
+    <updated>2017-09-20T19:09:00+08:00</updated>
+    <summary>安装curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.6.tgz 下载tar -zxvf mongodb-linux-x86_64-3.0.6.tgz 解压 mv mongodb-linux-x86_64-3.0.6/ /usr/local/mongodb 将解压包拷贝到指定目录 export PATH=/bin:$…</summary>
+  </entry>
+  <entry>
+    <title>知识体系</title>
+    <link href="https://farfoodyou.github.io/2017/09/18/知识体系/"/>
+    <id>https://farfoodyou.github.io/2017/09/18/知识体系/</id>
+    <updated>2017-09-18T23:09:00+08:00</updated>
+    <summary>框架客户端 Vue.js,jquery.js服务器端 Spring，node.js,Mybatis 软件客户端 Navicat,Xmanager服务器端 docker,spring cloud,MySQL,mongoDB,Ngnix,apache,redis 开发软件vim,git,IDEA,atom,codeblock,eclipse,visual studio 开发语言C，C++，Java，G…</summary>
+  </entry>
+  <entry>
+    <title>Vue.js</title>
+    <link href="https://farfoodyou.github.io/2017/09/18/Vue-js/"/>
+    <id>https://farfoodyou.github.io/2017/09/18/Vue-js/</id>
+    <updated>2017-09-18T22:09:00+08:00</updated>
+    <summary>在用 Vue.js 构建大型应用时推荐使用 NPM 安装: # 最新稳定版本 $ npm install vue # 最新稳定 CSP 兼容版本 $ npm install vue@csp # 开发版本（直接从 GitHub 安装） $ npm install vuejs/vue#dev 创建第一个 Vue 应用View 层 - HTML 代码如下：&lt;div id=&quot;app&quot;&gt; &amp;#123;&amp;#1…</summary>
+  </entry>
+  <entry>
+    <title>git remote</title>
+    <link href="https://farfoodyou.github.io/2017/09/18/git-remote/"/>
+    <id>https://farfoodyou.github.io/2017/09/18/git-remote/</id>
+    <updated>2017-09-18T18:09:00+08:00</updated>
+    <summary>git remote add origin https://github.com/farfoodyou/farfoodyou.github.io 本文作者： Farfoodyou 发布时间 : 2017年09月18日 - 18:09 最后更新 : 2017年09月18日 - 19:09 本文链接： https://farfoodyou.github.io/2017/09/18/git-remote…</summary>
+  </entry>
+  <entry>
+    <title>hexo</title>
+    <link href="https://farfoodyou.github.io/2017/09/18/hexo/"/>
+    <id>https://farfoodyou.github.io/2017/09/18/hexo/</id>
+    <updated>2017-09-18T18:09:00+08:00</updated>
+    <summary>hexo的安装配置和常用命令安装# 安装hexo npm install hexo -g #-g表示全局安装, npm默认为当前项目安装 hexo version # 初始化博客文件夹 hexo init blog # 切换到该路径 cd blog # 安装hexo的扩展插件 npm install # 安装其它插件 npm install hexo-admin --save npm instal…</summary>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <link href="https://farfoodyou.github.io/2017/09/18/hello-world/"/>
+    <id>https://farfoodyou.github.io/2017/09/18/hello-world/</id>
+    <updated>2017-09-18T17:09:00+08:00</updated>
+    <summary>Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick…</summary>
+  </entry>
+</feed>

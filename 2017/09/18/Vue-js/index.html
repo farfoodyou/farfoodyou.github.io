@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vue.js - farfood</title>
+<meta name="description" content="在用 Vue.js 构建大型应用时推荐使用 NPM 安装: # 最新稳定版本 $ npm install vue # 最新稳定 CSP 兼容版本 $ npm install vue@csp # 开发版本（直接从 GitHub 安装） $ npm install vuejs/vue#dev 创建第一个 Vue 应用Vie…">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/2017/09/18/Vue-js/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Vue.js", "description": "在用 Vue.js 构建大型应用时推荐使用 NPM 安装: # 最新稳定版本 $ npm install vue # 最新稳定 CSP 兼容版本 $ npm install vue@csp # 开发版本（直接从 GitHub 安装） $ npm install vuejs/vue#dev 创建第一个 Vue 应用Vie…", "datePublished": "2017-09-18T22:09:00+08:00", "dateModified": "2017-09-18T22:09:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/2017/09/18/Vue-js/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "vue"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Vue.js - farfood">
+<meta property="og:description" content="在用 Vue.js 构建大型应用时推荐使用 NPM 安装: # 最新稳定版本 $ npm install vue # 最新稳定 CSP 兼容版本 $ npm install vue@csp # 开发版本（直接从 GitHub 安装） $ npm install vuejs/vue#dev 创建第一个 Vue 应用Vie…">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/2017/09/18/Vue-js/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Vue.js - farfood">
+<meta name="twitter:description" content="在用 Vue.js 构建大型应用时推荐使用 NPM 安装: # 最新稳定版本 $ npm install vue # 最新稳定 CSP 兼容版本 $ npm install vue@csp # 开发版本（直接从 GitHub 安装） $ npm install vuejs/vue#dev 创建第一个 Vue 应用Vie…">
+<meta property="article:published_time" content="2017-09-18T22:09:00+08:00">
+<meta name="keywords" content="vue">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Vue.js</h1>
+    <p class="meta"><time datetime="2017-09-18T22:09:00">2017-09-18</time><span class="sep">·</span>1 分钟<span class="sep">·</span>510 字 </p>
+  </header>
+  
+  <div class="post-content">
+<p>在用 Vue.js 构建大型应用时推荐使用 NPM 安装:</p>
+<pre><code># 最新稳定版本
+$ npm install vue
+# 最新稳定 CSP 兼容版本
+$ npm install vue@csp
+# 开发版本（直接从 GitHub 安装）
+$ npm install vuejs/vue#dev</code></pre>
+<p>创建第一个 Vue 应用<br>View 层 - HTML 代码如下：<br><pre><code>&lt;div id=&quot;app&quot;&gt;
+  &amp;#123;&amp;#123; message &amp;#125;&amp;#125;
+&lt;/div&gt;</code></pre></p>
+<p>Model 层 - JavaScript 代码如下(需放在指定的HTML元素之后)：</p>
+<pre><code>new Vue(&amp;#123;
+    el:&amp;apos;#app&amp;apos;,
+    data: &amp;#123;
+        message:&amp;apos;Hello World!&amp;apos;
+    &amp;#125;
+&amp;#125;);</code></pre>
+<p>npm run dev<br>npm run build</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    Farfoodyou
+  </li>
+  <li><strong>发布时间 :   </strong>2017年09月18日 - 22:09</li>
+  <li><strong>最后更新 :   </strong>2017年09月18日 - 22:09</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://farfoodyou.github.io/2017/09/18/Vue-js/" title="Vue.js">https://farfoodyou.github.io/2017/09/18/Vue-js/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/"  >CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+      
+    
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/vue/" rel="tag"><i class="fa fa-tag"></i>vue</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/09/18/hexo/" rel="next" title="hexo">
+                <i class="fa fa-chevron-left"></i> hexo
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/09/18/知识体系/" rel="prev" title="知识体系">
+                知识体系 <i class="fa fa-chevron-right"></i>
+              </a>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/vue/">vue</a></p>
+  <nav class="post-nav"><a class="prev" href="/2017/09/18/知识体系/">← 知识体系</a><a class="next" href="/2017/09/18/git-remote/">git remote →</a></nav>
+  
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

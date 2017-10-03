@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMB - farfood</title>
+<meta name="description" content="终于可以在手机上看电脑里地资料了下午的时候从同事哪里知道了可以通过win10自带的共享实现，手机上在线看视频的功能。晚上我回校内网络尝试了，结果怎么都不能够搜索到我的台式机。然后我就把笔记本也接入了热点中，结果手机可以搜索到我的笔记本，但是仍然无法搜索到我的台式机。 居然，bug了这就有点尴尬了，不知道为什么，Vmar…">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/2017/10/04/MB/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "SMB", "description": "终于可以在手机上看电脑里地资料了下午的时候从同事哪里知道了可以通过win10自带的共享实现，手机上在线看视频的功能。晚上我回校内网络尝试了，结果怎么都不能够搜索到我的台式机。然后我就把笔记本也接入了热点中，结果手机可以搜索到我的笔记本，但是仍然无法搜索到我的台式机。 居然，bug了这就有点尴尬了，不知道为什么，Vmar…", "datePublished": "2017-10-04T03:10:00+08:00", "dateModified": "2017-10-04T03:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/2017/10/04/MB/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "windows"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="SMB - farfood">
+<meta property="og:description" content="终于可以在手机上看电脑里地资料了下午的时候从同事哪里知道了可以通过win10自带的共享实现，手机上在线看视频的功能。晚上我回校内网络尝试了，结果怎么都不能够搜索到我的台式机。然后我就把笔记本也接入了热点中，结果手机可以搜索到我的笔记本，但是仍然无法搜索到我的台式机。 居然，bug了这就有点尴尬了，不知道为什么，Vmar…">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/2017/10/04/MB/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SMB - farfood">
+<meta name="twitter:description" content="终于可以在手机上看电脑里地资料了下午的时候从同事哪里知道了可以通过win10自带的共享实现，手机上在线看视频的功能。晚上我回校内网络尝试了，结果怎么都不能够搜索到我的台式机。然后我就把笔记本也接入了热点中，结果手机可以搜索到我的笔记本，但是仍然无法搜索到我的台式机。 居然，bug了这就有点尴尬了，不知道为什么，Vmar…">
+<meta property="article:published_time" content="2017-10-04T03:10:00+08:00">
+<meta name="keywords" content="windows">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">SMB</h1>
+    <p class="meta"><time datetime="2017-10-04T03:10:00">2017-10-04</time><span class="sep">·</span>2 分钟<span class="sep">·</span>996 字 </p>
+  </header>
+  
+  <div class="post-content">
+<h3 id="终于可以在手机上看电脑里地资料了"><a href="#终于可以在手机上看电脑里地资料了" class="headerlink" title="终于可以在手机上看电脑里地资料了"></a>终于可以在手机上看电脑里地资料了</h3><p>下午的时候从同事哪里知道了可以通过win10自带的共享实现，手机上在线看视频的功能。<br>晚上我回校内网络尝试了，结果怎么都不能够搜索到我的台式机。<br>然后我就把笔记本也接入了热点中，结果手机可以搜索到我的笔记本，但是仍然无法搜索到我的台式机。</p>
+<h6 id="居然，bug了"><a href="#居然，bug了" class="headerlink" title="居然，bug了"></a>居然，bug了</h6><p>这就有点尴尬了，不知道为什么，Vmare Workstation的两张虚拟卡倒是可以找到共享的资源，但是用无线网卡虚拟出来的这张网卡倒是不能访问那些共享资源。</p>
+<p>我做了一个测试，发现当台式机作为热点源的时候他是搜不到的，但是它作为信号接收点的话，手机是可以搜到我的电脑的。</p>
+<p>经过各种查资料，各种分析，发现网上的教程，只是设置了共享就没有了。如果我的台式机是连在路由器上的话应该是没有这么麻烦的吧，但是他需要通过有线网络来连接互联网，然后再通过无线网卡把信号发出来，而且有线网络是通过两次认证才连上互联网的。</p>
+<p>那么问题出在哪里呢？说实话，网上是搜不到的，<strong>但是，我不甘心啊</strong>，所以我又浪费了一大堆时间。可以我也不知道该什么有效地改变现在的情况。<br>曾经我花过两个通宵把ubuntu连上了校内网络网络，可是那有意义吗？一般地方都是又路由器的，只有校内网络才会禁止路由器。我费那么多时间也不过只是单纯地不想放弃罢了。</p>
+<h6 id="转折"><a href="#转折" class="headerlink" title="转折"></a>转折</h6><p>笔记本可以开热点，让手机连上后搜索到，但是我地台式机却不行？肯定哪里出了什么问题，于是我就<br>删了vmare的那两张虚拟网卡，然后又禁止了vmare的四个相关的服务，反正虚拟网卡可以再加回去，服务也可以再打开的，<br>结果，居然还真的是这个的影响。</p>
+<p>我心里有句<code>@#￥%……&amp;*（*&amp;%</code> 的一定要讲，果然如果要做一件事还是要想把相关的环境都清理干净。那四个vmware相关的服务改变了操作系统的网络环境，果然这种重型虚拟机真机的环境来说，还是影响太大了。</p>
+<h6 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h6><ol>
+<li>这件事对我的启发就是，要想找到真正的错误的原因还是要把其他的一些影响因素尽量控制住吧。</li>
+<li>不到最后还好尽量别放弃，万一事情还有转机呢？</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    Farfoodyou
+  </li>
+  <li><strong>发布时间 :   </strong>2017年10月04日 - 03:10</li>
+  <li><strong>最后更新 :   </strong>2017年10月04日 - 04:10</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://farfoodyou.github.io/2017/10/04/MB/" title="SMB">https://farfoodyou.github.io/2017/10/04/MB/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/"  >CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+      
+    
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/windows/" rel="tag"><i class="fa fa-tag"></i>windows</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/09/25/现在开始走向梦想吧/" rel="next" title="从现在开始走向梦想吧">
+                <i class="fa fa-chevron-left"></i> 从现在开始走向梦想吧
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/windows/">windows</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/2017/09/25/现在开始走向梦想吧/">从现在开始走向梦想吧 →</a></nav>
+  
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

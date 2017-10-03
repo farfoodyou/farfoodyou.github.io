@@ -3,9 +3,16 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2017-09-25T21:09:00+08:00</updated>
+  <updated>2017-10-04T03:10:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>SMB</title>
+    <link href="https://farfoodyou.github.io/2017/10/04/MB/"/>
+    <id>https://farfoodyou.github.io/2017/10/04/MB/</id>
+    <updated>2017-10-04T03:10:00+08:00</updated>
+    <summary>终于可以在手机上看电脑里地资料了下午的时候从同事哪里知道了可以通过win10自带的共享实现，手机上在线看视频的功能。晚上我回校内网络尝试了，结果怎么都不能够搜索到我的台式机。然后我就把笔记本也接入了热点中，结果手机可以搜索到我的笔记本，但是仍然无法搜索到我的台式机。 居然，bug了这就有点尴尬了，不知道为什么，Vmare Workstation的两张虚拟卡倒是可以找到共享的资源，但是用无线网卡虚拟…</summary>
+  </entry>
   <entry>
     <title>从现在开始走向梦想吧</title>
     <link href="https://farfoodyou.github.io/2017/09/25/现在开始走向梦想吧/"/>

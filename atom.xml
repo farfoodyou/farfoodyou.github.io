@@ -3,9 +3,16 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2017-10-04T03:10:00+08:00</updated>
+  <updated>2019-03-23T18:45:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>从现在开始, 记录成长</title>
+    <link href="https://farfoodyou.github.io/post/2019-03-23/"/>
+    <id>https://farfoodyou.github.io/post/2019-03-23/</id>
+    <updated>2019-03-23T18:45:00+08:00</updated>
+    <summary>1 为什么要写博客 记录已取得的有效信息 夫生物者, 必新陈代谢尔. 遗忘是进步过程中不可缺失的特性. 只有通过输入信息, 构建知识结构, 不断强化有效部分. 让那些无价值的信息, 糟粕随着时间流逝而消失. 学习能力获取模型-&gt;记忆能力存储模型-&gt;进行预测运用模型-&gt;学习能力更新模型 先及格再说 没有最佳方案, 按照现在的情况完成再说. 所以, 我打算开始重新开启自己的博客了. 也许我还是一样的菜…</summary>
+  </entry>
   <entry>
     <title>SMB</title>
     <link href="https://farfoodyou.github.io/2017/10/04/MB/"/>

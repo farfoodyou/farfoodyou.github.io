@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://farfoodyou.github.io/sitemap.xml

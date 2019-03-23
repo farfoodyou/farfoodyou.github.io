@@ -1,109 +1,38 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml-stylesheet type="text/xsl" href="https://farfoodyou.github.io/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://farfoodyou.github.io/2017/10/04/MB/</loc>
-    
-    <lastmod>2017-10-03T20:07:41.565Z</lastmod>
-    
+    <loc>https://farfoodyou.github.io/post/2019-03-23/</loc>
+    <lastmod>2019-03-23T18:45:40+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://farfoodyou.github.io/2017/09/20/mongoDB/</loc>
-    
-    <lastmod>2017-09-25T14:37:41.140Z</lastmod>
-    
+    <loc>https://farfoodyou.github.io/categories/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://farfoodyou.github.io/2017/09/25/%E7%8E%B0%E5%9C%A8%E5%BC%80%E5%A7%8B%E8%B5%B0%E5%90%91%E6%A2%A6%E6%83%B3%E5%90%A7/</loc>
-    
-    <lastmod>2017-09-25T13:33:50.670Z</lastmod>
-    
+    <loc>https://farfoodyou.github.io/</loc>
+    <lastmod>2019-03-23T18:45:40+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://farfoodyou.github.io/2017/09/20/NodeJS/</loc>
-    
-    <lastmod>2017-09-22T22:58:23.887Z</lastmod>
-    
+    <loc>https://farfoodyou.github.io/post/</loc>
+    <lastmod>2019-03-23T18:45:40+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://farfoodyou.github.io/2017/09/18/hexo/</loc>
-    
-    <lastmod>2017-09-22T22:54:48.635Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/about/index.html</loc>
-    
-    <lastmod>2017-09-22T20:18:29.307Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/2017/09/23/platformio/</loc>
-    
-    <lastmod>2017-09-22T19:32:07.936Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/2017/09/20/npm/</loc>
-    
-    <lastmod>2017-09-22T17:11:42.986Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/2017/09/18/%E7%9F%A5%E8%AF%86%E4%BD%93%E7%B3%BB/</loc>
-    
-    <lastmod>2017-09-22T15:15:49.535Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/2017/09/21/markdown/</loc>
-    
-    <lastmod>2017-09-21T15:17:46.466Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/2017/09/18/Vue-js/</loc>
-    
-    <lastmod>2017-09-18T14:53:00.658Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/2017/09/18/git-remote/</loc>
-    
-    <lastmod>2017-09-18T11:02:39.549Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/categories/index.html</loc>
-    
-    <lastmod>2017-09-18T10:29:34.018Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/tags/index.html</loc>
-    
-    <lastmod>2017-09-18T10:29:22.937Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://farfoodyou.github.io/2017/09/18/hello-world/</loc>
-    
-    <lastmod>2017-09-18T10:20:28.873Z</lastmod>
-    
+    <loc>https://farfoodyou.github.io/tags/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0</priority>
   </url>
   
 </urlset>

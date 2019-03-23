@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Even - A super concise theme for Hugo</title>
+    <link>https://farfoodyou.github.io/</link>
+    <description>Recent content on Even - A super concise theme for Hugo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sat, 23 Mar 2019 18:45:40 +0800</lastBuildDate>
+    
+	<atom:link href="https://farfoodyou.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>从现在开始, 记录成长</title>
+      <link>https://farfoodyou.github.io/post/2019-03-23/</link>
+      <pubDate>Sat, 23 Mar 2019 18:45:40 +0800</pubDate>
+      
+      <guid>https://farfoodyou.github.io/post/2019-03-23/</guid>
+      <description>1 90%现在就能完成的事比100%永远也完不成要好. 为什么要写博客 记录已取得的有效信息 夫生物者, 必新陈代谢尔. 遗忘是进步过程中不可缺失的特性</description>
+    </item>
+    
+  </channel>
+</rss>

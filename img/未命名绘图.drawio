@@ -1,9 +1,18 @@
-<mxfile host="app.diagrams.net" modified="2023-02-16T08:06:22.017Z" agent="5.0 (Windows)" etag="51Cv872-gJr_5Qhs_aS2" version="20.8.20" type="github">
+<mxfile host="app.diagrams.net" modified="2023-02-16T08:10:03.795Z" agent="5.0 (Windows)" etag="SvkPOdnmZ38M3oAOfriN" version="20.8.20" type="github">
   <diagram name="第 1 页" id="urAhiurBt4oJohGIjufB">
     <mxGraphModel dx="855" dy="901" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="oSFtkxEbXemzCYuj5enU-1" value="&lt;div style=&quot;font-size: 24px;&quot;&gt;20230216&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="oSFtkxEbXemzCYuj5enU-2" value="&lt;div&gt;drawio居然可以直接存在github上&lt;/div&gt;&lt;div&gt;这点功能比excalidraw强一些&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="190" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="oSFtkxEbXemzCYuj5enU-7" value="&lt;div&gt;不过我空有工具&lt;/div&gt;&lt;div&gt;不知道该画什么东西&lt;br&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=24;" vertex="1" parent="1">
+          <mxGeometry x="200" y="30" width="240" height="70" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

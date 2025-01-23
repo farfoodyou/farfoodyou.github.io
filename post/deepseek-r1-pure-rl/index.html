@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek-R1：纯 RL 把推理能力「逼」出来 - farfood</title>
+<meta name="description" content="R1 报告里最反常识的不是追平 o1，而是 R1-Zero：不做 SFT，只做 RL。拆开看训练管线、GRPO、规则奖励与蒸馏，以及它对推理经济学的影响。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-r1-pure-rl/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-R1：纯 RL 把推理能力「逼」出来", "description": "R1 报告里最反常识的不是追平 o1，而是 R1-Zero：不做 SFT，只做 RL。拆开看训练管线、GRPO、规则奖励与蒸馏，以及它对推理经济学的影响。", "datePublished": "2025-01-21T09:20:00+08:00", "dateModified": "2025-01-21T09:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-r1-pure-rl/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "LLM, 强化学习, DeepSeek, 推理模型"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="DeepSeek-R1：纯 RL 把推理能力「逼」出来 - farfood">
+<meta property="og:description" content="R1 报告里最反常识的不是追平 o1，而是 R1-Zero：不做 SFT，只做 RL。拆开看训练管线、GRPO、规则奖励与蒸馏，以及它对推理经济学的影响。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-r1-pure-rl/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DeepSeek-R1：纯 RL 把推理能力「逼」出来 - farfood">
+<meta name="twitter:description" content="R1 报告里最反常识的不是追平 o1，而是 R1-Zero：不做 SFT，只做 RL。拆开看训练管线、GRPO、规则奖励与蒸馏，以及它对推理经济学的影响。">
+<meta property="article:published_time" content="2025-01-21T09:20:00+08:00">
+<meta name="keywords" content="LLM, 强化学习, DeepSeek, 推理模型">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">DeepSeek-R1：纯 RL 把推理能力「逼」出来</h1>
+    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4743 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#两条路线zero-和-r1">两条路线：Zero 和 R1</a></li>
+<li class="h2"><a href="#grpo把-critic-省掉">GRPO：把 critic 省掉</a></li>
+<li class="h2"><a href="#数字追平在哪落后在哪">数字：追平在哪，落后在哪</a></li>
+<li class="h2"><a href="#价格才是真正的冲击">价格才是真正的冲击</a></li>
+<li class="h2"><a href="#蒸馏小模型上做-rl-不如抄作业">蒸馏：小模型上做 RL 不如抄作业</a></li>
+<li class="h2"><a href="#落地时踩到的几个坑">落地时踩到的几个坑</a></li>
+<li class="h2"><a href="#算笔账这些数字在机器上怎么搬">算笔账：这些数字在机器上怎么搬</a></li>
+<li class="h2"><a href="#几句判断">几句判断</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>1 月 20 日，DeepSeek 放出 R1：MIT 协议、<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1">权重全开</a>、<a href="https://arxiv.org/abs/2501.12948">技术报告</a>同步公开。当天的讨论几乎都集中在“开源追平 o1”，但报告里真正反常识的是另一件事——</p>
+<p><strong>R1-Zero 完全没有 SFT，只做强化学习。</strong></p>
+<p>o1 把 CoT 藏起来、把训练细节锁死；R1 给出的结论是：只要奖励可验证，长链推理是能被 RL 自己“长”出来的（<a href="https://arxiv.org/abs/2501.12948">报告摘要</a>原话是 “incentivized through pure reinforcement learning”）。</p>
+<h2 id="两条路线zero-和-r1">两条路线：Zero 和 R1</h2>
+<p>R1-Zero 的配方干净得离谱：拿 V3-Base，直接上大规模 RL，奖励只有两种——答案对不对（accuracy）、格式对不对（format，把思考过程放进 <code>thinking</code> 标签）。没有 cold start，没有偏好数据，没有过程奖励模型。这套管线写在 <a href="https://github.com/deepseek-ai/DeepSeek-R1#2-model-summary">GitHub README 的 Model Summary</a> 里。</p>
+<p>跑出来的东西很符合“涌现”这个词的定义：</p>
+<ul>
+<li>输出长度自发增长，模型自己学会“多想一会儿”；</li>
+<li>出现自我验证（self-verification）和回退重算（reflection）；</li>
+<li>报告里那个著名的 “aha moment”：模型在推理中途停下来写“等等，这里应该重新检查”。</li>
+</ul>
+<p>代价同样明显：可读性差、中英混杂、动不动陷入重复。所以正式版 R1 走了四段式管线：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>阶段</th>
+<th>做什么</th>
+<th>目的</th>
+</tr></thead>
+<tbody>
+<tr><td>1</td><td>cold-start SFT，几千条高质量长 CoT</td><td>给 RL 一个干净起点，压住语言混杂</td></tr>
+<tr><td>2</td><td>面向推理的 RL（GRPO + 规则奖励）</td><td>提升数学、代码、STEM 的可验证能力</td></tr>
+<tr><td>3</td><td>拒绝采样 + SFT（约 60 万条推理样本 + 20 万条通用样本）</td><td>把 RL 学到的能力“固化”回底座，补通用能力</td></tr>
+<tr><td>4</td><td>全场景 RL</td><td>对齐人类偏好，修有用性/无害性</td></tr>
+</tbody>
+</table></div>
+<p>第 2 阶段和第 4 阶段的奖励不同：前者是规则奖励（可验证），后者混入偏好奖励。这也解释了为什么 R1 能一边做 AIME，一边正常聊天——通用能力是第四阶段补回来的。</p>
+<h2 id="grpo把-critic-省掉">GRPO：把 critic 省掉</h2>
+<p>PPO 需要 value network（critic），在 LLM 上它和 policy 同量级，RL 阶段显存几乎翻倍。GRPO 的做法很朴素：<strong>同一个 prompt 采一组回答，用组内 reward 的均值方差做归一化，直接当 advantage。</strong></p>
+<pre data-lang="text"><code class="language-text">for each prompt q:
+    sample G outputs {o_1 ... o_G} ~ π_old(·|q)
+    r_i = reward(q, o_i)                  # 规则奖励，标量
+    A_i = (r_i - mean(r)) / std(r)        # 组内归一化，替代 critic
+    maximize  Σ_i min( ratio_i * A_i , clip(ratio_i, 1-ε, 1+ε) * A_i )
+              - β * KL(π || π_ref)</code></pre>
+<p>顺手记下几处：</p>
+<ul>
+<li><strong>没有 critic 就没有 value loss 和 GAE</strong>，实现复杂度降一档，超参少一半。</li>
+<li>组内归一化隐含一个假设：同题的不同回答可比。数学/代码这种“答案可判定”的任务成立；开放式写作不成立，所以开放域还得回到偏好模型或成对比较。</li>
+<li>没有神经奖励模型，就绕开了 reward hacking 的经典路径。格式奖励只检查思考过程是否放在指定标签里，几乎无法被过度优化。</li>
+</ul>
+<p>报告只给了最终方案，没给 RL 的 token 预算曲线。这意味着“要多少 rollout 才能收敛”这件事，目前仍然靠各家自己试。</p>
+<h2 id="数字追平在哪落后在哪">数字：追平在哪，落后在哪</h2>
+<p><a href="https://github.com/deepseek-ai/DeepSeek-R1#4-evaluation-results">README 的评测表</a>（pass@1，温度 0.6 / top-p 0.95，最大生成长度 32K）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>基准</th>
+<th>DeepSeek-R1</th>
+<th>o1-1217</th>
+<th>DeepSeek-V3</th>
+<th>o1-mini</th>
+</tr></thead>
+<tbody>
+<tr><td>AIME 2024</td><td><strong>79.8</strong></td><td>79.2</td><td>39.2</td><td>63.6</td></tr>
+<tr><td>MATH-500</td><td><strong>97.3</strong></td><td>96.4</td><td>90.2</td><td>90.0</td></tr>
+<tr><td>Codeforces (Percentile)</td><td>96.3</td><td><strong>96.6</strong></td><td>58.7</td><td>93.4</td></tr>
+<tr><td>SWE-bench Verified</td><td>49.2</td><td>48.9</td><td>42.0</td><td>41.6</td></tr>
+<tr><td>MMLU</td><td>90.8</td><td><strong>91.8</strong></td><td>88.5</td><td>85.2</td></tr>
+<tr><td>GPQA Diamond</td><td>71.5</td><td><strong>75.7</strong></td><td>59.1</td><td>60.0</td></tr>
+</tbody>
+</table></div>
+<p>读法很清楚：<strong>在“可验证”的维度上打平甚至反超，在“知识密集”的维度（GPQA、MMLU）落后。</strong> 这个 gap 不是 RL 能补的，得靠底座本身的知识量。换句话说，R1 提升的是“用已有知识推理”的效率，不是“知道得更多”。</p>
+<h2 id="价格才是真正的冲击">价格才是真正的冲击</h2>
+<p><a href="https://api-docs.deepseek.com/quick_start/pricing">官方 API 定价</a>：输入 $0.55 / 输出 $2.19 每百万 token，缓存命中 $0.14。o1 同期是 $15 / $60。</p>
+<p>长 CoT 把输出 token 数放大 3～10 倍。在 o1 的价格下，“让模型多想一会儿”是奢侈行为；在 R1 的价格下，思考成本可以忽略。<strong>这可能比榜单更能改变大家的使用方式</strong>——一旦思考变便宜，agent 式的多轮自检才划算。</p>
+<p>顺带提一句口径问题：R1 是在 V3-Base 上做后训练得到的，流传的“约 29.4 万美元”只覆盖 RL 阶段，别把它当成训练一个 o1 级模型的总成本。</p>
+<h2 id="蒸馏小模型上做-rl-不如抄作业">蒸馏：小模型上做 RL 不如抄作业</h2>
+<p>R1 放出 6 个蒸馏模型，基于 Qwen2.5 和 Llama-3：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>AIME 2024</th>
+<th>MATH-500</th>
+<th>GPQA Diamond</th>
+</tr></thead>
+<tbody>
+<tr><td>R1-Distill-Qwen-1.5B</td><td>28.9</td><td>83.9</td><td>33.8</td></tr>
+<tr><td>R1-Distill-Qwen-7B</td><td>55.5</td><td>92.8</td><td>49.1</td></tr>
+<tr><td>R1-Distill-Qwen-14B</td><td>69.7</td><td>93.9</td><td>59.1</td></tr>
+<tr><td>R1-Distill-Qwen-32B</td><td>72.6</td><td>94.3</td><td>62.1</td></tr>
+<tr><td>R1-Distill-Llama-70B</td><td>70.0</td><td>94.5</td><td>65.2</td></tr>
+</tbody>
+</table></div>
+<p>作者给的结论很直接：<strong>在这些规模上，从 R1 蒸馏比在小模型上直接做 RL 更划算</strong>（<a href="https://github.com/deepseek-ai/DeepSeek-R1#2-model-summary">README</a>）。32B 蒸馏已经压过 o1-mini（AIME 63.6）。小模型 RL 的收益曲线太陡，样本效率撑不起来。</p>
+<h2 id="落地时踩到的几个坑">落地时踩到的几个坑</h2>
+<ul>
+<li><strong>温度别乱设。</strong> <a href="https://github.com/deepseek-ai/DeepSeek-R1#usage-recommendations">官方建议</a> 0.5～0.7（推荐 0.6），高了会陷入无限重复，低了会僵化。</li>
+<li><strong>它对 prompt 很敏感。</strong> 同一节里明确说不建议加 few-shot，示例反而会拉低表现；system prompt 会显著改变输出风格。</li>
+<li><strong>别把它当通用对话模型。</strong> R1 的通用能力是第四阶段补的，R1-Zero 只适合研究。</li>
+<li><strong>部署先用蒸馏版。</strong> 671B/37B 激活需要 H800 级别机器；单机消费卡跑 14B 蒸馏才有意义：</li>
+</ul>
+<pre data-lang="bash"><code class="language-bash">vllm serve deepseek-ai/DeepSeek-R1-Distill-Qwen-32B \
+  --tensor-parallel-size 2 --max-model-len 32768 --enforce-eager</code></pre>
+<h2 id="算笔账这些数字在机器上怎么搬">算笔账：这些数字在机器上怎么搬</h2>
+<p>推理不是“算”，是“搬”。把 R1 的 decode 拆开看：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>每 token 体积</th>
+<th>路径</th>
+<th>谁在搬</th>
+</tr></thead>
+<tbody>
+<tr><td>激活权重</td><td>37B × 1B(FP8) ≈ <strong>37 GB</strong></td><td>HBM → SMEM</td><td>TMA / cp.async</td></tr>
+<tr><td>KV cache</td><td>61 层 × 576B(MLA) ≈ 35 KB</td><td>HBM → SMEM（随上下文增长）</td><td>TMA（paged）</td></tr>
+<tr><td>MoE all-to-all</td><td>8 专家 × 7168 × 2B × 58 层 ≈ <strong>6.6 MB</strong></td><td>GPU ↔ GPU / 节点间</td><td>NVSHMEM / NCCL / RDMA</td></tr>
+</tbody>
+</table></div>
+<p>算一下就明白瓶颈在哪：H100 的 HBM 带宽 3.35 TB/s，光把 37GB 权重读一遍就要 <strong>11 ms</strong>，对应单流上限约 <strong>90 token/s</strong>。而同一张卡的 FP8 算力是 1979 TFLOPS——按 roofline，decode 的算术强度只有 2 FLOP/byte 量级，<strong>比机器平衡点低两三百倍</strong>。</p>
+<p>所以 decode 阶段：</p>
+<ul>
+<li>算力几乎闲置，<strong>HBM 带宽先打满</strong>（这就是“memory-bound”）；</li>
+<li>增大 batch 能摊薄权重读取（一次读权重服务 N 条请求），吞吐线性上升，直到 KV cache 占满显存；</li>
+<li>128K 上下文的 KV 是 35KB × 128K ≈ <strong>4.4 GB</strong>，一条请求就吃掉半张 H100 的显存——<strong>长上下文的真实成本是显存，不是算力</strong>。</li>
+</ul>
+<p>prefill 则相反：每 token 约 2 × 37G = 74 GFLOP，算力先满，是 compute-bound。这就是为什么所有推理框架都把 prefill 和 decode 分开调度，甚至拆到不同机器上（PD 分离）——两者的资源画像完全相反。</p>
+<p>跨节点专家并行时，那 6.6 MB/token 的 all-to-all 要走 RDMA。按 400 Gbps（50 GB/s）算，一个 token 的专家通信就要 130 μs，比本地算一遍还慢——<strong>MoE 的扩展瓶颈是网络，不是 FLOPs</strong>。</p>
+<h2 id="几句判断">几句判断</h2>
+<ol>
+<li><strong>“纯 RL 涌现推理”仍然是黑箱。</strong> 报告没给 RL 预算曲线，也没解释长度为什么自发增长；复现依赖数据和 infra，而这两样都没公开。</li>
+<li><strong>规则奖励的边界就是这条路的边界。</strong> 数学、代码、有标准答案的 STEM 能吃满；写作、法律、产品决策吃不到。可验证数据管线的建设成本，是这波被低估最严重的东西。</li>
+<li><strong>门槛从算法挪到了工程。</strong> GRPO 的公式半小时看完，把 128K rollout 的训练-推理流水线跑稳要几个月。</li>
+<li><strong>它把 test-time compute 的叙事拆开了</strong>：底座打底 + RL 拉长 CoT + 蒸馏普及。三个环节各自可优化，也各自可被超越。</li>
+</ol>
+<p>值得盯的两个问题：32B 以下能不能做到 R1 水平；RL 有没有自己的 scaling law。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>论文：<a href="https://arxiv.org/abs/2501.12948">arXiv:2501.12948</a>（DeepSeek-AI, <em>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</em>）</li>
+<li>权重与评测：<a href="https://github.com/deepseek-ai/DeepSeek-R1">github.com/deepseek-ai/DeepSeek-R1</a></li>
+<li>底座：<a href="https://github.com/deepseek-ai/DeepSeek-V3">DeepSeek-V3 仓库</a></li>
+<li>定价：<a href="https://api-docs.deepseek.com/quick_start/pricing">api-docs.deepseek.com</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/llm/">LLM</a><a class="tag" href="/tags/强化学习/">强化学习</a><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/推理模型/">推理模型</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/kimi-k1.5-long-context-rl/">← Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><a class="next" href="/post/2019-03-23/">从现在开始, 记录成长 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

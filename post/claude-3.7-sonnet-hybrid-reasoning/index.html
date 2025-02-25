@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent - farfood</title>
+<meta name="description" content="同一天发了 Claude 3.7 Sonnet 和 Claude Code。前者是第一个「混合推理」商用模型：同一个 checkpoint，可即时回答也可长思考，思考预算由调用方按 token 指定。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/claude-3.7-sonnet-hybrid-reasoning/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent", "description": "同一天发了 Claude 3.7 Sonnet 和 Claude Code。前者是第一个「混合推理」商用模型：同一个 checkpoint，可即时回答也可长思考，思考预算由调用方按 token 指定。", "datePublished": "2025-02-25T08:40:00+08:00", "dateModified": "2025-02-25T08:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/claude-3.7-sonnet-hybrid-reasoning/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Anthropic, Claude, 推理模型, Agent, 编码"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent - farfood">
+<meta property="og:description" content="同一天发了 Claude 3.7 Sonnet 和 Claude Code。前者是第一个「混合推理」商用模型：同一个 checkpoint，可即时回答也可长思考，思考预算由调用方按 token 指定。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/claude-3.7-sonnet-hybrid-reasoning/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent - farfood">
+<meta name="twitter:description" content="同一天发了 Claude 3.7 Sonnet 和 Claude Code。前者是第一个「混合推理」商用模型：同一个 checkpoint，可即时回答也可长思考，思考预算由调用方按 token 指定。">
+<meta property="article:published_time" content="2025-02-25T08:40:00+08:00">
+<meta name="keywords" content="Anthropic, Claude, 推理模型, Agent, 编码">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</h1>
+    <p class="meta"><time datetime="2025-02-25T08:40:00">2025-02-25</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2646 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合推理一个-checkpoint两种行为">混合推理：一个 checkpoint，两种行为</a></li>
+<li class="h2"><a href="#思考预算是一个整数参数">思考预算是一个整数参数</a></li>
+<li class="h2"><a href="#数字赢在-agent-任务">数字：赢在 agent 任务</a></li>
+<li class="h2"><a href="#claude-code-才是重点">Claude Code 才是重点</a></li>
+<li class="h2"><a href="#混合模式的工程代价">混合模式的工程代价</a></li>
+<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
+  <div class="post-content">
+<p>2 月 24 日，Anthropic 同时发了 <a href="https://www.anthropic.com/news/claude-3-7-sonnet">Claude 3.7 Sonnet 和 Claude Code</a>。前者是市面上第一个<strong>混合推理</strong>（hybrid reasoning）商用模型，后者是一个跑在终端里的 agentic coding 工具（当时是 limited research preview）。</p>
+<p>这篇主要说前者，因为它回答了一个当时很实际的问题：<strong>要不要为推理单独维护一条模型线？</strong></p>
+<h2 id="混合推理一个-checkpoint两种行为">混合推理：一个 checkpoint，两种行为</h2>
+<p>o 系列和 R1 的做法是“推理模型 = 独立模型”：o1/o3-mini 和 GPT-4o 是两套权重、两套行为、两套定价。Claude 3.7 的选择是同一个模型：</p>
+<ul>
+<li>普通模式：接近即时的回答，行为和 3.5 Sonnet 类似；</li>
+<li>extended thinking 模式：先输出一段可见的思考过程，再给答案。</li>
+</ul>
+<p>官方措辞是 “the first hybrid reasoning model on the market”，思考内容<strong>对用户可见</strong>。这一点和 o1 初期隐藏 CoT 形成对照——可见性的好处是调试和审计，坏处是用户可能被中间过程的措辞误导（那只是草稿，不是结论）。</p>
+<h2 id="思考预算是一个整数参数">思考预算是一个整数参数</h2>
+<p><a href="https://docs.claude.com/en/docs/build-with-claude/extended-thinking">官方文档</a>里，API 侧的接口非常“工程师友好”：不是开关，而是一个 token 上限。</p>
+<pre data-lang="python"><code class="language-python">resp = client.messages.create(
+    model=&quot;claude-3-7-sonnet-20250219&quot;,
+    max_tokens=32000,
+    thinking={&quot;type&quot;: &quot;enabled&quot;, &quot;budget_tokens&quot;: 16000},  # 上限受输出长度限制
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;解释这段代码为什么死锁&quot;}],
+)</code></pre>
+<p>官方说明里有两个要点（<a href="https://www.anthropic.com/news/claude-3-7-sonnet">原文</a>）：</p>
+<ol>
+<li>预算 N 最大可以取到输出上限，即 128K token；</li>
+<li><strong>思考 token 按输出 token 计费</strong>，价格和 3.5 Sonnet 一致：\$3 / \$15 每百万 token。</li>
+</ol>
+<p>第二点很关键：不涨价是一种策略。它等于告诉用户“推理不是奢侈品，是同一商品的不同规格”。对照 o3-mini 的 1.10/4.40，两家都在用价格把“思考”从旗舰能力降成标准件。</p>
+<h2 id="数字赢在-agent-任务">数字：赢在 agent 任务</h2>
+<p>官方给的 SWE-bench Verified（真实 GitHub issue）结果，口径写得很清楚：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>口径</th>
+<th>分数</th>
+</tr></thead>
+<tbody>
+<tr><td>无 scaffold（单次尝试）</td><td>63.7%</td></tr>
+<tr><td>自建 scaffold（n=489 子集，多次采样 + 打分重排）</td><td>70.3%</td></tr>
+</tbody>
+</table></div>
+<p>同一篇里还提到 TAU-bench（带工具交互的 agent 基准）达到 SOTA。这两个基准的共同点是<strong>多轮、有工具、有环境反馈</strong>，而不是单轮问答——选这两个当主指标，本身就说明它在往 agent 方向押注。</p>
+<p>一个容易被忽略的细节：70.3% 是“多次采样 + 用打分模型重排”的结果，且只在 n=489 的子集上。<strong>榜单数字和 scaffold 强相关</strong>，横评时如果不看 scaffold 描述，结论基本不可用。</p>
+<h2 id="claude-code-才是重点">Claude Code 才是重点</h2>
+<p>同一天发布的 Claude Code 是个命令行工具，能在终端里读代码、改文件、跑测试、提交。当时的定位是研究预览，但方向很明确：<strong>把 agent 放进开发者已有的工作流，而不是再做一个 IDE</strong>。</p>
+<p>从工程角度看，这类工具对模型的要求和聊天完全不同：</p>
+<ul>
+<li>需要长上下文（读多个文件）；</li>
+<li>需要可靠的工具调用和错误恢复（命令失败要能自己看输出、改命令）；</li>
+<li>需要“少说话多干活”的输出风格，否则 token 成本爆炸；</li>
+<li>需要可中断、可回滚（改错了要能撤销）。</li>
+</ul>
+<p>这些能力没法靠刷 MMLU 得到。2025 年之后模型竞赛的重心从“知识”转向“agentic 任务”，Claude 3.7 + Claude Code 这个组合算是提前踩了点。</p>
+<h2 id="混合模式的工程代价">混合模式的工程代价</h2>
+<p>站在自建推理服务一侧，混合模式不是免费的：</p>
+<ol>
+<li><strong>KV cache 复用变差。</strong> 思考段落的长度不确定，前缀缓存命中率下降；同一模型两种长度分布，batch 里长尾更明显。</li>
+<li><strong>训练侧要两种分布都见。</strong> 只训长 CoT 会让普通模式变慢变啰嗦，只训短回答又学不会长推理。混合训练的数据配比是个新变量。</li>
+<li><strong>评测要分模式。</strong> 同一个模型在“开思考”和“不开思考”下是两个产品，对外只报一个分数很容易误导。</li>
+</ol>
+<p>反过来说，混合模式省掉了维护两条模型线的成本：一套权重、一套安全评估、一套部署。对供应商来说这是笔划算的买卖，我猜这会是后续主流——<strong>不是“推理模型”，而是“带思考开关的模型”</strong>。</p>
+<h2 id="最后说三句">最后说三句</h2>
+<ul>
+<li>混合推理会成为默认形态，，独立推理模型线更像过渡方案；</li>
+<li><strong>思考预算参数化</strong>（o3-mini 的 effort、3.7 的 budget_tokens）是 2025 年最重要的 API 设计变化，它把“要不要多想”从模型选择降级成调用参数；</li>
+<li>真正的分水岭不是 AIME，而是<strong>长任务的工具使用可靠性</strong>；SWE-bench 和 TAU-bench 这类基准的分量会越来越重；</li>
+<li>定价不涨是个信号：推理的边际成本在快速下降，靠“贵”维持高端定位的策略撑不了多久。</li>
+</ul>
+<h2 id="参考与数据">参考与数据</h2>
+<ul>
+<li>发布公告：<a href="https://www.anthropic.com/news/claude-3-7-sonnet">Claude 3.7 Sonnet and Claude Code</a></li>
+<li>extended thinking 参数说明：<a href="https://docs.claude.com/en/docs/build-with-claude/extended-thinking">docs.claude.com</a></li>
+<li>模型规格与上下文：<a href="https://docs.claude.com/en/docs/about-claude/models/overview">Models overview</a></li>
+<li>版本沿革：<a href="https://en.wikipedia.org/wiki/Claude_(language_model">Wikipedia: Claude (language model)</a>)</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/anthropic/">Anthropic</a><a class="tag" href="/tags/claude/">Claude</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a><time>2025-02</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

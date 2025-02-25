@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-01-23T22:10:00+08:00</updated>
+  <updated>2025-02-25T08:40:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</title>
+    <link href="https://farfoodyou.github.io/post/claude-3.7-sonnet-hybrid-reasoning/"/>
+    <id>https://farfoodyou.github.io/post/claude-3.7-sonnet-hybrid-reasoning/</id>
+    <updated>2025-02-25T08:40:00+08:00</updated>
+    <summary>同一天发了 Claude 3.7 Sonnet 和 Claude Code。前者是第一个「混合推理」商用模型：同一个 checkpoint，可即时回答也可长思考，思考预算由调用方按 token 指定。</summary>
+  </entry>
+  <entry>
+    <title>o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</title>
+    <link href="https://farfoodyou.github.io/post/o3-mini-reasoning-effort/"/>
+    <id>https://farfoodyou.github.io/post/o3-mini-reasoning-effort/</id>
+    <updated>2025-02-03T10:05:00+08:00</updated>
+    <summary>一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。</summary>
+  </entry>
   <entry>
     <title>Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</title>
     <link href="https://farfoodyou.github.io/post/kimi-k1.5-long-context-rl/"/>

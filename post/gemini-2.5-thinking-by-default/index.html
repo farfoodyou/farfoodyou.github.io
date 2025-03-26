@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemini 2.5 Pro：把「思考」设成默认行为 - farfood</title>
+<meta name="description" content="Gemini 2.5 Pro 是第一个把 thinking 做成默认而不是开关的旗舰模型：1M 上下文、原生多模态、LMArena 登顶。默认思考带来的最大变化不在榜单，而在延迟分布和成本结构。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/gemini-2.5-thinking-by-default/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Gemini 2.5 Pro：把「思考」设成默认行为", "description": "Gemini 2.5 Pro 是第一个把 thinking 做成默认而不是开关的旗舰模型：1M 上下文、原生多模态、LMArena 登顶。默认思考带来的最大变化不在榜单，而在延迟分布和成本结构。", "datePublished": "2025-03-25T23:30:00+08:00", "dateModified": "2025-03-25T23:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/gemini-2.5-thinking-by-default/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Google, Gemini, 推理模型, 长上下文"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Gemini 2.5 Pro：把「思考」设成默认行为 - farfood">
+<meta property="og:description" content="Gemini 2.5 Pro 是第一个把 thinking 做成默认而不是开关的旗舰模型：1M 上下文、原生多模态、LMArena 登顶。默认思考带来的最大变化不在榜单，而在延迟分布和成本结构。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/gemini-2.5-thinking-by-default/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Gemini 2.5 Pro：把「思考」设成默认行为 - farfood">
+<meta name="twitter:description" content="Gemini 2.5 Pro 是第一个把 thinking 做成默认而不是开关的旗舰模型：1M 上下文、原生多模态、LMArena 登顶。默认思考带来的最大变化不在榜单，而在延迟分布和成本结构。">
+<meta property="article:published_time" content="2025-03-25T23:30:00+08:00">
+<meta name="keywords" content="Google, Gemini, 推理模型, 长上下文">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Gemini 2.5 Pro：把「思考」设成默认行为</h1>
+    <p class="meta"><time datetime="2025-03-25T23:30:00">2025-03-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2283 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#默认思考意味着什么">默认思考意味着什么</a></li>
+<li class="h2"><a href="#1m-上下文是另一种工程题">1M 上下文是另一种工程题</a></li>
+<li class="h2"><a href="#lmarena-第一说明不了全部">LMArena 第一说明不了全部</a></li>
+<li class="h2"><a href="#和同期模型的横向位置">和同期模型的横向位置</a></li>
+<li class="h2"><a href="#几句判断">几句判断</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>3 月 25 日，Google 放出 <a href="https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/">Gemini 2.5 Pro 的实验版本</a>。摘要只有三句话值得记住：</p>
+<ul>
+<li>它是“thinking model”，<strong>推理是默认行为</strong>，不是模式切换；</li>
+<li>上下文 <a href="https://deepmind.google/models/gemini/">1M token</a>（官方说 2M 在路上）；</li>
+<li>上线即 LMArena 第一，“by a significant margin”。</li>
+</ul>
+<p>一个月内我们看到了三种对“思考”的不同处理：o3-mini 是 effort 参数，Claude 3.7 是 budget_tokens 预算，Gemini 2.5 直接把思考设成默认。这是产品哲学的分岔，不只是实现差异。</p>
+<h2 id="默认思考意味着什么">默认思考意味着什么</h2>
+<p>对用户：不用再选模型/档位，问什么都先想一遍。体验上确实更“聪明”，但延迟变得不可预期——同一个 prompt，简单问题 2 秒，复杂问题可能 40 秒。</p>
+<p>对工程：<strong>延迟和成本从“确定性参数”退化成“分布”</strong>。做一个搜索类产品，用户能容忍 800ms；接了默认思考的模型，就得重新设计交互（流式输出进度、后台任务化、结果轮询）。</p>
+<p>对供应商：默认思考等于把算力成本吃进定价里。Google 敢这么做，是因为 TPU 自有、边际成本可控；对靠租卡的玩家，这是一个很重的决定。</p>
+<pre data-lang="text"><code class="language-text">三种&quot;思考&quot;控制方式的对比（2025 年 3 月）
+
+o3-mini      : reasoning_effort = low | medium | high       （离散档位）
+Claude 3.7   : thinking.budget_tokens = N (≤128K)            （连续预算）
+Gemini 2.5   : 默认思考，思考长度由模型自己决定               （自适应）</code></pre>
+<p>自适应是最“懒”的接口，也最考验模型自己的元认知：它得判断“这题值不值得多想”。做得好，平均成本低于固定高档位；做得差，简单问题也要想半天。</p>
+<h2 id="1m-上下文是另一种工程题">1M 上下文是另一种工程题</h2>
+<p>Gemini 系列一直在堆上下文（1.5 时代就是 1M）。但到了 2.5 这个量级，“能塞进去”和“能用好”是两回事：</p>
+<ul>
+<li><strong>prefill 成本随长度线性增长</strong>，1M token 的一次 prefill 在 H100 上也是几十秒级；缓存（context caching）几乎是必备能力，否则重复调用无法承担。</li>
+<li><strong>注意力质量会衰减</strong>。长上下文里的“中间遗忘”（lost in the middle）问题，2.5 通过训练改善，但没有消失；把最关键的信息放在开头或结尾仍然更稳。</li>
+<li><strong>评测口径变模糊</strong>。同一个模型，1K 上下文和 1M 上下文的成绩不能直接比较；榜单如果不说清长度，数字没有意义。</li>
+</ul>
+<p>原生多模态（文本/图像/音频/视频一起训）在长上下文下才真正有用：一小时的视频塞进去，模型得能定位到第 37 分钟那一帧。这是“上下文长度”和“多模态”两个能力交汇的地方，也是 Gemini 相对纯文本模型的差异点。</p>
+<h2 id="lmarena-第一说明不了全部">LMArena 第一说明不了全部</h2>
+<p>官方强调“debuts at #1 on LMArena”，这话没错，但要加三条注解：</p>
+<ol>
+<li>LMArena 是<strong>人类偏好</strong>投票，偏“讨喜”的风格（结构清晰、愿意展开、语气友好）会占便宜。</li>
+<li>偏好榜对推理题的区分度低，AIME/GPQA 这类可验证基准才看得清能力边界。</li>
+<li>榜单是<strong>动态</strong>的，几周内就会被别的模型顶掉；把它当“当期快照”而不是“能力结论”。</li>
+</ol>
+<p>Google 自己在博客里也给了基准对比，但更值得看的是它的定位：<strong>给 agent 用的模型</strong>。1M 上下文 + 原生多模态 + 默认思考，这三个能力组合起来，才是“让模型自己看完整份代码库/整段录屏再动手”的前提。</p>
+<h2 id="和同期模型的横向位置">和同期模型的横向位置</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>思考控制</th>
+<th>上下文</th>
+<th>权重</th>
+</tr></thead>
+<tbody>
+<tr><td>Gemini 2.5 Pro</td><td>默认开启</td><td>1M</td><td>闭源</td></tr>
+<tr><td>Claude 3.7 Sonnet</td><td>budget_tokens</td><td>200K</td><td>闭源</td></tr>
+<tr><td>o3-mini</td><td>reasoning_effort</td><td>200K</td><td>闭源</td></tr>
+<tr><td>DeepSeek-R1</td><td>固定长 CoT</td><td>128K</td><td>MIT</td></tr>
+</tbody>
+</table></div>
+<p>有意思的是，开源侧（R1）还在用“固定长 CoT”，闭源侧已经在做“按需思考”。差距不在模型能力，在<strong>推理服务的调度能力</strong>——能不能根据请求动态分配算力，本质上是一个系统问题。</p>
+<h2 id="几句判断">几句判断</h2>
+<ul>
+<li>默认思考会成为旗舰模型的标配，，但它要求产品侧重新设计延迟预期，否则用户会觉得“变卡了”。</li>
+<li><strong>1M 上下文真正的门槛是缓存和价格</strong>，不是模型能不能塞进去。谁的缓存单价低，谁的长上下文才可用。</li>
+<li>对自建服务：先做“按请求难度预估 → 选预算”的路由，比直接上最大思考长度划算得多。这一步的收益通常是 3～5 倍成本差。</li>
+<li>接下来要看的是<strong>思考预算的可控性</strong>：默认开启很好，但当我要 P99 延迟 &lt; 3 秒时，得有办法强制它少想。</li>
+</ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>发布公告：<a href="https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/">Gemini 2.5: Our most intelligent AI model</a></li>
+<li>模型卡与版本演进：<a href="https://deepmind.google/models/gemini/">Gemini models 文档</a></li>
+<li>上下文与价格：<a href="https://ai.google.dev/gemini-api/docs/pricing">Gemini API pricing</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/google/">Google</a><a class="tag" href="/tags/gemini/">Gemini</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/长上下文/">长上下文</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/deepseek-v3-0324-post-training/">← DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><a class="next" href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a><time>2025-02</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

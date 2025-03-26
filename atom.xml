@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-02-25T08:40:00+08:00</updated>
+  <updated>2025-03-26T21:15:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</title>
+    <link href="https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/"/>
+    <id>https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/</id>
+    <updated>2025-03-26T21:15:00+08:00</updated>
+    <summary>架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。</summary>
+  </entry>
+  <entry>
+    <title>Gemini 2.5 Pro：把「思考」设成默认行为</title>
+    <link href="https://farfoodyou.github.io/post/gemini-2.5-thinking-by-default/"/>
+    <id>https://farfoodyou.github.io/post/gemini-2.5-thinking-by-default/</id>
+    <updated>2025-03-25T23:30:00+08:00</updated>
+    <summary>Gemini 2.5 Pro 是第一个把 thinking 做成默认而不是开关的旗舰模型：1M 上下文、原生多模态、LMArena 登顶。默认思考带来的最大变化不在榜单，而在延迟分布和成本结构。</summary>
+  </entry>
   <entry>
     <title>Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</title>
     <link href="https://farfoodyou.github.io/post/claude-3.7-sonnet-hybrid-reasoning/"/>

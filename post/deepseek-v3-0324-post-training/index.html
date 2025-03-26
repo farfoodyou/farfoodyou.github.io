@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek-V3-0324：一次「点版本」更新暴露的方法论 - farfood</title>
+<meta name="description" content="架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-V3-0324：一次「点版本」更新暴露的方法论", "description": "架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。", "datePublished": "2025-03-26T21:15:00+08:00", "dateModified": "2025-03-26T21:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 开源模型, 后训练, MoE"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="DeepSeek-V3-0324：一次「点版本」更新暴露的方法论 - farfood">
+<meta property="og:description" content="架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DeepSeek-V3-0324：一次「点版本」更新暴露的方法论 - farfood">
+<meta name="twitter:description" content="架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。">
+<meta property="article:published_time" content="2025-03-26T21:15:00+08:00">
+<meta name="keywords" content="DeepSeek, 开源模型, 后训练, MoE">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</h1>
+    <p class="meta"><time datetime="2025-03-26T21:15:00">2025-03-26</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2290 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#这次更新改了什么">这次更新改了什么</a></li>
+<li class="h2"><a href="#为什么点版本能涨这么多">为什么&quot;点版本&quot;能涨这么多</a></li>
+<li class="h2"><a href="#对开源自部署的三个实际影响">对开源自部署的三个实际影响</a></li>
+<li class="h2"><a href="#和-r1-的关系不是替代是分叉">和 R1 的关系：不是替代，是分叉</a></li>
+<li class="h2"><a href="#写到这里的判断">写到这里的判断</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
+  <div class="post-content">
+<p>3 月 24 日，DeepSeek 在 Hugging Face 更新了 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324">DeepSeek-V3-0324</a>。名字里只有日期，没有“V3.1”，但模型卡给的三行对比很扎眼：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>基准</th>
+<th>V3</th>
+<th>V3-0324</th>
+</tr></thead>
+<tbody>
+<tr><td>AIME</td><td>39.6</td><td><strong>59.4</strong>（+19.8）</td></tr>
+<tr><td>GPQA</td><td>59.1</td><td><strong>68.4</strong>（+9.3）</td></tr>
+<tr><td>LiveCodeBench</td><td>39.2</td><td><strong>49.2</strong>（+10.0）</td></tr>
+</tbody>
+</table></div>
+<p>架构没变、总参数没变（<a href="https://github.com/deepseek-ai/DeepSeek-V3">671B MoE / 37B 激活</a>）、协议还是 MIT。<strong>涨的全是后训练。</strong></p>
+<h2 id="这次更新改了什么">这次更新改了什么</h2>
+<p>官方没有发技术报告，只有模型卡。从公开信息能确认的是：</p>
+<ul>
+<li>权重照旧 MIT，商用无附加条款；</li>
+<li>推理与函数调用能力提升，模型卡里专门给了“工具调用/多轮对话”的使用建议；</li>
+<li>中文写作风格有可见变化（社区反馈集中在“更少套话”）；</li>
+<li>分词器/推理配置未变，vLLM、SGLang 直接换权重即可。</li>
+</ul>
+<p>换句话说：<strong>数据配方 + RL 阶段 + 拒绝采样策略的调整，带来了 20 分的能力跃升</strong>，且不需要用户改任何部署。</p>
+<h2 id="为什么点版本能涨这么多">为什么“点版本”能涨这么多</h2>
+<p>要理解这个幅度，得先看基线有多低。V3 是 2024 年 12 月发的通用模型，AIME 39.6 属于“不会做题”。R1 证明了同一底座 + 长 CoT RL 能到 79.8。V3-0324 相当于<strong>把 R1 那套后训练的部分收益，回灌到通用模型里</strong>——不做“推理模式”，但让模型默认会想。</p>
+<p>这条路线的要点：</p>
+<ol>
+<li><strong>可验证数据是燃料</strong>。数学、代码、结构化推理，答案可自动校验，能大规模合成与筛选。</li>
+<li><strong>拒绝采样比 RL 便宜</strong>。给定强教师（R1 或 V3 自己 + 筛选），采样 → 校验 → SFT 的性价比远高于在线 RL；V3-0324 更像“离线蒸馏 + 精选”的产物。</li>
+<li><strong>通用能力不能被 RL 打坏</strong>。只见推理数据的模型会变成“解题机器”，中文写作和多轮对话退化。模型卡强调工具调用与写作，说明数据配比里留了大比例通用样本。</li>
+</ol>
+<h2 id="对开源自部署的三个实际影响">对开源自部署的三个实际影响</h2>
+<ul>
+<li><strong>换了权重就升级，不用改推理栈</strong>：这是开源模型相对闭源 API 的一个隐形优势。闭源升级意味着 prompt 重调、评测重跑、成本重算；开源换个 safetensors 就行（前提是没做激进架构改动）。</li>
+<li><strong>量化版本要重做</strong>：社区量化（GPTQ/AWQ/FP8）随权重更新失效，得等 24～72 小时。生产环境要有“权重版本锁”的意识。</li>
+<li><strong>benchmark 不可跨版本比较</strong>：V3 和 V3-0324 的 AIME 差 20 分，但这是同一架构，说明<strong>同一模型的两次后训练迭代，能力差异可以大于两个不同架构</strong>。拿三个月前的评测表做选型，基本等于瞎猜。</li>
+</ul>
+<h2 id="和-r1-的关系不是替代是分叉">和 R1 的关系：不是替代，是分叉</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>维度</th>
+<th>DeepSeek-R1</th>
+<th>V3-0324</th>
+</tr></thead>
+<tbody>
+<tr><td>定位</td><td>推理专家</td><td>通用基座</td></tr>
+<tr><td>输出风格</td><td>长 CoT（必须）</td><td>直接回答（可选展开）</td></tr>
+<tr><td>AIME</td><td>79.8</td><td>59.4</td></tr>
+<tr><td>延迟</td><td>高（长输出）</td><td>低</td></tr>
+<tr><td>适用</td><td>离线难题、比赛、复杂分析</td><td>线上对话、工具调用、批量处理</td></tr>
+</tbody>
+</table></div>
+<p>实际部署里这两个不是二选一，而是<strong>路由</strong>：简单请求走 V3-0324，命中难题（多步数学、复杂代码）才升级到 R1。这种“双模型路由”在 2025 年上半年成了开源侧的常见架构。</p>
+<pre data-lang="python"><code class="language-python"># 一个朴素的路由：先用小成本判断难度，再决定走谁
+DEEPSEEK_V3_0324 = dict(model=&quot;deepseek-v3-0324&quot;, max_tokens=4096)
+DEEPSEEK_R1      = dict(model=&quot;deepseek-r1&quot;,      max_tokens=32768)
+
+def route(prompt: str) -&gt; dict:
+    if hard_signals(prompt):        # 代码报错栈、数学符号、多约束问题
+        return DEEPSEEK_R1
+    return DEEPSEEK_V3_0324</code></pre>
+<h2 id="写到这里的判断">写到这里的判断</h2>
+<ul>
+<li>后训练是 2025 年的主战场，。从零训练的代价（数据 + 万卡）把大多数团队挡在门外，但后训练的收益正在变得可复制。</li>
+<li><strong>“点版本”会成为常态</strong>：同架构反复打磨比换架构更快见效，代价是版本管理变复杂。生产环境需要一个明确的“权重版本 + 评测快照”机制。</li>
+<li>开源模型的迭代节奏正在超过闭源 API 的季度节奏，。V3 → V3-0324 → V3.1 的节奏是月级，闭源旗舰是季度级。对能力敏感的场景，这是选择开源的实际理由。</li>
+<li>也得承认局限：这种涨分主要发生在<strong>可验证域</strong>。开放式写作、长文档理解、多跳检索的收益要小得多，别指望一次点版本把这些一起解决。</li>
+</ul>
+<h2 id="参考与数据">参考与数据</h2>
+<ul>
+<li>模型卡（含对比表、使用建议）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324">DeepSeek-V3-0324</a></li>
+<li>底座架构：<a href="https://arxiv.org/abs/2412.19437">DeepSeek-V3 Technical Report</a></li>
+<li>底座仓库与架构：<a href="https://github.com/deepseek-ai/DeepSeek-V3">github.com/deepseek-ai/DeepSeek-V3</a></li>
+<li>定价：<a href="https://api-docs.deepseek.com/quick_start/pricing">api-docs.deepseek.com</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/后训练/">后训练</a><a class="tag" href="/tags/moe/">MoE</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/gemini-2.5-thinking-by-default/">Gemini 2.5 Pro：把「思考」设成默认行为 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a><time>2025-02</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-03-26T21:15:00+08:00</updated>
+  <updated>2025-04-29T22:00:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>Qwen3：把 thinking 开关做进开源权重</title>
+    <link href="https://farfoodyou.github.io/post/qwen3-hybrid-thinking-open-weights/"/>
+    <id>https://farfoodyou.github.io/post/qwen3-hybrid-thinking-open-weights/</id>
+    <updated>2025-04-29T22:00:00+08:00</updated>
+    <summary>4 月 29 日 Qwen3 一次性放出 8 个模型，0.6B 到 235B-A22B，全部 Apache 2.0。最有意思的不是分数，而是把「思考/不思考」做成推理时的一个参数，开源侧第一次有了和闭源对齐的接口形态。</summary>
+  </entry>
+  <entry>
+    <title>o3 与 o4-mini：在思考过程里调用工具</title>
+    <link href="https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/"/>
+    <id>https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/</id>
+    <updated>2025-04-17T09:50:00+08:00</updated>
+    <summary>4 月 16 日 o3 和 o4-mini 一起上线。它们的关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」：模型可以在 CoT 里搜网页、跑 Python、放大图片。</summary>
+  </entry>
   <entry>
     <title>DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</title>
     <link href="https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/"/>

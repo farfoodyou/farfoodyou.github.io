@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek-R1-0528：多想 11K token，涨 17 分 - farfood</title>
+<meta name="description" content="小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-R1-0528：多想 11K token，涨 17 分", "description": "小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。", "datePublished": "2025-05-29T22:40:00+08:00", "dateModified": "2025-05-29T22:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 推理模型, 强化学习, 蒸馏"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="DeepSeek-R1-0528：多想 11K token，涨 17 分 - farfood">
+<meta property="og:description" content="小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DeepSeek-R1-0528：多想 11K token，涨 17 分 - farfood">
+<meta name="twitter:description" content="小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。">
+<meta property="article:published_time" content="2025-05-29T22:40:00+08:00">
+<meta name="keywords" content="DeepSeek, 推理模型, 强化学习, 蒸馏">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">DeepSeek-R1-0528：多想 11K token，涨 17 分</h1>
+    <p class="meta"><time datetime="2025-05-29T22:40:00">2025-05-29</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2210 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#多想本身就是一种缩放">&quot;多想&quot;本身就是一种缩放</a></li>
+<li class="h2"><a href="#后训练配方变了什么">后训练配方变了什么</a></li>
+<li class="h2"><a href="#8b-蒸馏追平-235b真正值得琢磨的是">8B 蒸馏追平 235B：真正值得琢磨的是</a></li>
+<li class="h2"><a href="#推理模型的选型矩阵">推理模型的选型矩阵</a></li>
+<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
+  <div class="post-content">
+<p>5 月 28 日，DeepSeek 更新了 R1，标签是 <code>0528</code>。<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">模型卡</a>的第一段就给了核心数字：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>指标</th>
+<th>R1（1 月）</th>
+<th>R1-0528</th>
+</tr></thead>
+<tbody>
+<tr><td>AIME 2024</td><td>79.8</td><td><strong>91.4</strong></td></tr>
+<tr><td>AIME 2025</td><td>70.0</td><td><strong>87.5</strong></td></tr>
+<tr><td>GPQA Diamond</td><td>71.5</td><td><strong>81.0</strong></td></tr>
+<tr><td>LiveCodeBench (2408–2505)</td><td>63.5</td><td><strong>73.3</strong></td></tr>
+</tbody>
+</table></div>
+<p>而这些提升的来源被写得很直白：<strong>思考更长</strong>（<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">模型卡</a>）。同一批 AIME 题，旧版平均用 12K token，新版用 23K。</p>
+<h2 id="多想本身就是一种缩放">“多想”本身就是一种缩放</h2>
+<p>这是 2025 年上半年最实在的一条经验：<strong>test-time compute 的曲线还在有效区间</strong>。</p>
+<pre><code>平均思考 12K → 23K   （×1.9）
+AIME 2025 70.0 → 87.5 （+17.5）</code></pre>
+<p>粗糙地换算：每多 1K 思考 token，AIME 涨约 1.6 分。当然这不是线性关系，越往后边际收益越低，但至少在这个区间还没饱和。</p>
+<p>代价同样线性：</p>
+<ul>
+<li>输出 token 翻倍 → 成本翻倍（R1 定价 \$0.55/\$2.19，长思考后单题成本约 \$0.05）；</li>
+<li>延迟翻倍 → 交互式产品基本不可用，只能放到异步队列；</li>
+<li>上下文压力变大（128K 上限里，思考占掉大半）。</li>
+</ul>
+<p>所以“多想”不是免费的进步，而是<strong>用钱和延迟换分数</strong>。能不能接受，取决于业务形态。</p>
+<h2 id="后训练配方变了什么">后训练配方变了什么</h2>
+<p>官方说明是“增加了后训练算力 + 引入算法优化机制”。结合对比结果可以推断几件事：</p>
+<ol>
+<li><strong>RL 阶段更长了</strong>。思考长度自发增长到 23K，说明训练时的长度惩罚被放松，或者课程学习把长度上限推高了。</li>
+<li><strong>数据配比扩了</strong>。LiveCodeBench 涨 9.8 分（63.5→73.3），说明代码类可验证数据占比提升。</li>
+<li><strong>工具调用补上了</strong>。模型卡把 Tool 类基准单列，这一版开始正经支持函数调用——1 月的 R1 在这一块基本是空白。</li>
+</ol>
+<p>第 3 点很重要：R1 最初是“推理专家”，不是“agent 底座”。0528 让它具备了当 agent 脑子的基本条件。</p>
+<h2 id="8b-蒸馏追平-235b真正值得琢磨的是">8B 蒸馏追平 235B：真正值得琢磨的是</h2>
+<p>同一份模型卡里还有一个小模型：</p>
+<blockquote><p>把 R1-0528 的 CoT 蒸馏到 Qwen3-8B Base，得到 R1-0528-Qwen3-8B，AIME 2024 超过 Qwen3-8B 10 分，<strong>追平 Qwen3-235B-thinking</strong>。</p></blockquote>
+<p>这句话的分量：</p>
+<ul>
+<li>一个 8B dense 模型，在数学上追平 235B MoE（22B 激活）；</li>
+<li>单卡可跑，延迟和成本低两个数量级；</li>
+<li>说明<strong>推理能力的载体是数据，不是参数量</strong>——至少在有标准答案的领域是这样。</li>
+</ul>
+<p>代价也很清楚：8B 模型的常识、长文、多语言、指令跟随会全面弱于 235B。它是“专项选手”，不能当通用推理底座。</p>
+<pre data-lang="bash"><code class="language-bash"># 单卡跑蒸馏版做批量数学/代码评审
+vllm serve deepseek-ai/DeepSeek-R1-0528-Qwen3-8B \
+  --max-model-len 65536 --gpu-memory-utilization 0.92</code></pre>
+<h2 id="推理模型的选型矩阵">推理模型的选型矩阵</h2>
+<p>到 5 月底，开源侧的选择已经比较清晰：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>需求</th>
+<th>选择</th>
+<th>理由</th>
+</tr></thead>
+<tbody>
+<tr><td>批量数学/代码，成本敏感</td><td>R1-0528-Qwen3-8B</td><td>单卡、够用</td></tr>
+<tr><td>线上通用对话 + 偶尔推理</td><td>V3-0324 / Qwen3-32B（no-think）</td><td>延迟低</td></tr>
+<tr><td>高难度离线分析</td><td>R1-0528 / Qwen3-235B（think）</td><td>分数优先</td></tr>
+<tr><td>长文档 + 推理</td><td>暂无好的开源选择</td><td>原生长上下文仍是短板</td></tr>
+</tbody>
+</table></div>
+<p>“推理”不再是模型属性，而是<strong>一次调用里要不要打开的策略</strong>。</p>
+<h2 id="最后说三句">最后说三句</h2>
+<ul>
+<li>“更长思考”还能继续涨分，但商业上快到头了，。23K token 的思考意味着单次请求几十秒，只有离线/异步场景能吃。</li>
+<li><strong>蒸馏依然是性价比之王</strong>。8B 追平 235B 这件事，会在下半年被各家反复复制（Qwen、Kimi、GLM 都会出小尺寸推理模型）。</li>
+<li>R1 系列的天花板是非推理能力，写代码能过测试，但不懂业务上下文；做数学能拿高分，但不会查资料。下一代要解决的是“推理 + 工具 + 记忆”的组合，而不是继续加长 CoT。</li>
+<li>对使用者的实际建议：<strong>别迷信最大思考长度</strong>。把 effort 做成可配置项，按请求难度分档，成本能省 3～5 倍，分数只掉 1～2 分。</li>
+</ul>
+<h2 id="参考与数据">参考与数据</h2>
+<ul>
+<li>模型卡（基准、蒸馏说明、使用建议）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">DeepSeek-R1-0528</a></li>
+<li>初版报告：<a href="https://arxiv.org/abs/2501.12948">arXiv:2501.12948</a></li>
+<li>8B 蒸馏权重：<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B">DeepSeek-R1-0528-Qwen3-8B</a></li>
+<li>定价：<a href="https://api-docs.deepseek.com/quick_start/pricing">api-docs.deepseek.com</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/强化学习/">强化学习</a><a class="tag" href="/tags/蒸馏/">蒸馏</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a><time>2025-02</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

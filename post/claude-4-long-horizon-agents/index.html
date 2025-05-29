@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude 4：长时间自主任务，和被重新定义的「上下文」 - farfood</title>
+<meta name="description" content="5 月 22 日 Opus 4 与 Sonnet 4 发布，主线不是分数而是「连续工作几小时」：SWE-bench 72.5%、Terminal-bench 43.2%，工具可以在思考中并行调用，Claude Code 转正。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/claude-4-long-horizon-agents/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Claude 4：长时间自主任务，和被重新定义的「上下文」", "description": "5 月 22 日 Opus 4 与 Sonnet 4 发布，主线不是分数而是「连续工作几小时」：SWE-bench 72.5%、Terminal-bench 43.2%，工具可以在思考中并行调用，Claude Code 转正。", "datePublished": "2025-05-23T08:30:00+08:00", "dateModified": "2025-05-23T08:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/claude-4-long-horizon-agents/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Anthropic, Claude, Agent, 编码"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Claude 4：长时间自主任务，和被重新定义的「上下文」 - farfood">
+<meta property="og:description" content="5 月 22 日 Opus 4 与 Sonnet 4 发布，主线不是分数而是「连续工作几小时」：SWE-bench 72.5%、Terminal-bench 43.2%，工具可以在思考中并行调用，Claude Code 转正。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/claude-4-long-horizon-agents/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Claude 4：长时间自主任务，和被重新定义的「上下文」 - farfood">
+<meta name="twitter:description" content="5 月 22 日 Opus 4 与 Sonnet 4 发布，主线不是分数而是「连续工作几小时」：SWE-bench 72.5%、Terminal-bench 43.2%，工具可以在思考中并行调用，Claude Code 转正。">
+<meta property="article:published_time" content="2025-05-23T08:30:00+08:00">
+<meta name="keywords" content="Anthropic, Claude, Agent, 编码">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Claude 4：长时间自主任务，和被重新定义的「上下文」</h1>
+    <p class="meta"><time datetime="2025-05-23T08:30:00">2025-05-23</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2097 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#swe-bench-与-terminal-bench-的区别">SWE-bench 与 Terminal-bench 的区别</a></li>
+<li class="h2"><a href="#官方说的三个新能力">官方说的三个新能力</a></li>
+<li class="h2"><a href="#定价没涨是这一轮最狠的地方">定价没涨，是这一轮最狠的地方</a></li>
+<li class="h2"><a href="#多步可靠性的工程手段">多步可靠性的工程手段</a></li>
+<li class="h2"><a href="#写到这里的判断">写到这里的判断</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
+  <div class="post-content">
+<p>5 月 22 日，<a href="https://www.anthropic.com/news/claude-4">Claude 4</a> 发布：Opus 4 和 Sonnet 4 两个型号同时上，接管 3.7 的位置。官方给的两个数字很有指向性——<strong>SWE-bench <a href="https://www.anthropic.com/news/claude-4">72.5%</a>、Terminal-bench <a href="https://www.anthropic.com/news/claude-4">43.2%</a></strong>，配合一句“能连续工作数小时、执行上千步”。</p>
+<p>从 3.7 到 4，能力提升的重点不在单轮问答，而在<strong>任务时长</strong>。</p>
+<h2 id="swe-bench-与-terminal-bench-的区别">SWE-bench 与 Terminal-bench 的区别</h2>
+<p>这两个指标经常被混着讲，其实测的是不同东西：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>基准</th>
+<th>测什么</th>
+<th>通过标准</th>
+</tr></thead>
+<tbody>
+<tr><td>SWE-bench Verified</td><td>修真实 GitHub issue</td><td>仓库测试全部通过</td></tr>
+<tr><td>Terminal-bench</td><td>在终端里完成多步任务</td><td>最终文件/系统状态正确</td></tr>
+</tbody>
+</table></div>
+<p>SWE-bench 的难点是“读懂代码库 + 定位 bug”；Terminal-bench 的难点是“多步操作不出错”——中间任何一步 <code>rm</code> 错目录、改错配置文件就前功尽弃。</p>
+<p><strong>72.5% vs 43.2% 的落差说明：单步能力强，不代表多步可靠。</strong> 假设单步成功率 0.98，走 30 步的总体成功率只有 0.55；走 100 步只剩 0.13。这就是“长时间自主任务”的真实瓶颈：误差累积。</p>
+<h2 id="官方说的三个新能力">官方说的三个新能力</h2>
+<ol>
+<li><strong>思考中调用工具</strong>：和 o3 同方向，模型可以在 extended thinking 期间搜索、读文件，来回交替。</li>
+<li><strong>并行工具调用</strong>：一次决策里同时发起多个工具调用（读三个文件、查两个接口），减少串行轮次。这对延迟的改善是数量级的。</li>
+<li><strong>本地记忆</strong>：开发者给文件访问权限后，模型可以自己写“备忘文件”，把关键事实（约定、踩过的坑）落盘，后续任务再读取。</li>
+</ol>
+<p>第三条最容易被忽略，但工程意义最大。它把“上下文”从<strong>一次请求的 token 窗口</strong>扩展成<strong>一个目录里的持久状态</strong>——模型自己决定记什么、写到哪里。</p>
+<pre data-lang="text"><code class="language-text">一次长任务的上下文管理（示意）
+
+memory/
+  conventions.md   # 模型自己写的：命名规范、构建方式
+  tried.md         # 失败过的方案，避免重复踩坑
+  todo.md          # 未完成项</code></pre>
+<p>这比“塞满 200K 上下文”便宜得多，也更可控：上下文会溢出，磁盘不会。</p>
+<h2 id="定价没涨是这一轮最狠的地方">定价没涨，是这一轮最狠的地方</h2>
+<ul>
+<li>Opus 4：\$15 / \$75 每百万 token；</li>
+<li>Sonnet 4：\$3 / \$15，且对免费用户开放。</li>
+</ul>
+<p>对比 3.7 的 \$3/\$15（Sonnet），能力涨了一档，价格没动。同期 o3 是 \$10/\$40、Gemini 2.5 Pro 在打价格战——<strong>前沿模型的单位智能价格在 2025 年上半年跌了一个数量级</strong>。</p>
+<p>对自建服务的影响是反直觉的：推理成本下降了，但<strong>总支出往往上升</strong>，因为便宜之后大家开始跑 agent——一次任务 50 万 token 变成常态。</p>
+<h2 id="多步可靠性的工程手段">多步可靠性的工程手段</h2>
+<p>要在生产里用这类模型做长任务，光靠模型能力不够，Harness（外部框架）要做四件事：</p>
+<ol>
+<li><strong>检查点</strong>：每 N 步保存状态（文件、git commit），失败可回滚，不必从头再来。</li>
+<li><strong>验证闭环</strong>：每步之后跑测试/lint，用外部信号确认“这一步真的成立”，而不是相信模型的自述。</li>
+<li><strong>预算熔断</strong>：token、时间、工具调用次数三条线都要有硬上限。</li>
+<li><strong>可回放</strong>：记录每步的输入输出，出问题能定位到“哪一步开始跑偏”。</li>
+</ol>
+<p>这四条和模型本身无关，但决定了“能不能托管”。2025 年下半年各种 coding agent 的差距，很大一部分其实在这里。</p>
+<h2 id="写到这里的判断">写到这里的判断</h2>
+<ul>
+<li>agent 能力的分水岭是“多步成功率”，不是单步分数，。看到新模型发榜，先找 Terminal-bench / SWE-bench 这类多步任务，AIME 只能当参考。</li>
+<li><strong>并行工具调用被低估</strong>。它同时改善了延迟和上下文占用，是性价比最高的一项工程优化。</li>
+<li>模型自己写记忆，会成为标配，随之而来的是权限与审计问题：agent 写的文件要不要 review？谁能改？</li>
+<li><strong>价格战会持续到 2025 年底</strong>。真正稀缺的不是模型，而是“能可靠跑长任务的 harness”。</li>
+</ul>
+<h2 id="参考与数据">参考与数据</h2>
+<ul>
+<li>发布公告（含定价与基准）：<a href="https://www.anthropic.com/news/claude-4">Introducing Claude 4</a></li>
+<li>模型规格：<a href="https://docs.claude.com/en/docs/about-claude/models/overview">Models overview</a></li>
+<li>安全与系统卡：<a href="https://www.anthropic.com/transparency">Anthropic Transparency Hub</a></li>
+<li>Claude Code：<a href="https://www.anthropic.com/claude-code">anthropic.com/claude-code</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/anthropic/">Anthropic</a><a class="tag" href="/tags/claude/">Claude</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/deepseek-r1-0528-more-thinking/">← DeepSeek-R1-0528：多想 11K token，涨 17 分</a><a class="next" href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

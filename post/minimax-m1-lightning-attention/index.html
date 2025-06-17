@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来 - farfood</title>
+<meta name="description" content="456B 总参数 / 45.9B 激活、原生 1M 上下文、Apache 2.0，还带一个改过的 RL 算法 CISPO。官方给的对比数字很关键：生成 100K token 时，算力只有 R1 的 25%。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/minimax-m1-lightning-attention/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来", "description": "456B 总参数 / 45.9B 激活、原生 1M 上下文、Apache 2.0，还带一个改过的 RL 算法 CISPO。官方给的对比数字很关键：生成 100K token 时，算力只有 R1 的 25%。", "datePublished": "2025-06-17T23:20:00+08:00", "dateModified": "2025-06-17T23:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/minimax-m1-lightning-attention/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "MiniMax, 开源模型, MoE, 长上下文, 强化学习"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来 - farfood">
+<meta property="og:description" content="456B 总参数 / 45.9B 激活、原生 1M 上下文、Apache 2.0，还带一个改过的 RL 算法 CISPO。官方给的对比数字很关键：生成 100K token 时，算力只有 R1 的 25%。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/minimax-m1-lightning-attention/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来 - farfood">
+<meta name="twitter:description" content="456B 总参数 / 45.9B 激活、原生 1M 上下文、Apache 2.0，还带一个改过的 RL 算法 CISPO。官方给的对比数字很关键：生成 100K token 时，算力只有 R1 的 25%。">
+<meta property="article:published_time" content="2025-06-17T23:20:00+08:00">
+<meta name="keywords" content="MiniMax, 开源模型, MoE, 长上下文, 强化学习">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</h1>
+    <p class="meta"><time datetime="2025-06-17T23:20:00">2025-06-17</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2723 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#长-cot-的成本结构">长 CoT 的成本结构</a></li>
+<li class="h2"><a href="#cispo只裁重要性权重不裁-token">CISPO：只裁重要性权重，不裁 token</a></li>
+<li class="h2"><a href="#规格表的现实检查">规格表的现实检查</a></li>
+<li class="h2"><a href="#长上下文的评测陷阱">长上下文的评测陷阱</a></li>
+<li class="h2"><a href="#摊开算1m-上下文为什么没把显存撑爆">摊开算：1M 上下文为什么没把显存撑爆</a></li>
+<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav>
+  <div class="post-content">
+<p>6 月 16 日，MiniMax 开源 <a href="https://huggingface.co/MiniMaxAI/MiniMax-M1-80k">M1</a>。规格先摆出来：</p>
+<ul>
+<li><strong>456B 总参数 / 45.9B 激活</strong>（hybrid MoE + lightning attention）；</li>
+<li><strong>原生 1M token 上下文</strong>，官方说相当于 R1 的 8 倍；</li>
+<li><strong>Apache 2.0</strong>，两个版本分别对应 40K / 80K 的思考预算；</li>
+<li>附带一个自研 RL 算法 <strong>CISPO</strong>。</li>
+</ul>
+<p>这篇的重点不是它多强，而是它<strong>怎么把长思考变便宜</strong>——这是 2025 年下半年开源推理模型的主战场。</p>
+<h2 id="长-cot-的成本结构">长 CoT 的成本结构</h2>
+<p>一个 80K 思考预算的请求，成本几乎全在 decode：</p>
+<pre data-lang="text"><code class="language-text">成本 ≈ prefill(输入长度) + decode(输出长度) × 每 token 算力</code></pre>
+<p>标准 softmax 注意力下，每生成一个 token 都要和全部历史 token 算注意力，<strong>每 token 成本随长度线性增长</strong>，总成本随长度平方增长。80K 思考意味着最后几个 token 的注意力开销是最初的几十倍。这就是“想得越久越贵”的数学根源。</p>
+<p>lightning attention（线性注意力的一种工程实现）把这个关系改成：</p>
+<ul>
+<li>标准注意力：每 token 成本 ∝ 当前长度 → 总成本 ∝ L²</li>
+<li>线性注意力：每 token 成本 ∝ 固定状态大小 → 总成本 ∝ L</li>
+</ul>
+<p>官方的对比数字是：<strong>生成到 100K token 时，M1 的 FLOPs 约为 DeepSeek-R1 的 25%</strong>（<a href="https://huggingface.co/MiniMaxAI/MiniMax-M1-80k">模型卡</a>）。这个量级和理论预期吻合（二次项在长序列上占主导）。</p>
+<p>混合结构（部分层用线性注意力、部分层保留 softmax）是为了不掉质量：纯线性注意力在精确检索上弱，混一点全注意力层能把“大海捞针”类任务拉回来。</p>
+<h2 id="cispo只裁重要性权重不裁-token">CISPO：只裁重要性权重，不裁 token</h2>
+<p>M1 的 RL 部分换掉了常见的 PPO/GRPO 变体，用的是 CISPO（clipped importance sampling policy optimization）。差别在一句话里：</p>
+<blockquote><p>裁剪的是 importance sampling 的权重，而不是每个 token 的更新量。</p></blockquote>
+<p>为什么重要？长 CoT 场景下，一条轨迹动辄几万 token，序列里少数“关键决策 token”（比如决定换思路、决定放弃某个解法）承担了大部分 reward 方差。传统做法对每个 token 的更新做裁剪，容易把这类稀有但关键的更新一起裁掉；只裁权重则保留了更新方向。</p>
+<p>报告还提到“shadow start”之类的技巧：从已有轨迹的中途重启采样，提高样本利用率——和 k1.5 的 partial rollout 是同一个问题的不同解法。</p>
+<h2 id="规格表的现实检查">规格表的现实检查</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>数值</th>
+<th>现实含义</th>
+</tr></thead>
+<tbody>
+<tr><td>总参数</td><td>456B</td><td>fp8 权重约 456GB，至少 8 卡 H100/H200</td></tr>
+<tr><td>激活参数</td><td>45.9B</td><td>单 token 计算量相当于一个 46B dense 模型</td></tr>
+<tr><td>原生上下文</td><td>1M</td><td>需配合 80K 思考预算，否则显存吃紧</td></tr>
+<tr><td>许可证</td><td>Apache 2.0</td><td>可商用，无月活限制</td></tr>
+</tbody>
+</table></div>
+<p><strong>自部署门槛不低</strong>：8 卡起步，且 1M 上下文需要分块 prefill + KV 分层存储。对大多数团队，实际用法还是调 API 或用更小的模型。</p>
+<p>它的真正价值在于<strong>证明长上下文 + 长思考可以便宜地做</strong>，给小模型团队一个可抄的架构方向。</p>
+<h2 id="长上下文的评测陷阱">长上下文的评测陷阱</h2>
+<p>模型卡给了 OpenAI-MRCR（1M）等长文基准。看这类数字要注意三点：</p>
+<ol>
+<li><strong>检索 ≠ 理解</strong>。MRCR 测的是“多轮对话里找到指定片段”，和“读完 50 万字报告做归纳”是两种能力。</li>
+<li><strong>长度越界就掉点</strong>。原生 1M 的模型在 900K 时通常已经明显衰减，标称值只是“能塞进去”。</li>
+<li><strong>成本非线性</strong>。即使用了线性注意力，1M 上下文的 prefill 仍然很贵；缓存命中率决定实际账单。</li>
+</ol>
+<h2 id="摊开算1m-上下文为什么没把显存撑爆">摊开算：1M 上下文为什么没把显存撑爆</h2>
+<p>标准注意力下，KV cache 随长度线性增长。以 GQA（8 KV heads × 128 dim × 2B × 80 层）算，每 token 约 <strong>327 KB</strong>；1M 上下文就是 <strong>327 GB</strong>——任何单机都放不下。这就是“1M 上下文”在工程上长期是营销词的真正原因。</p>
+<p>lightning attention 换了一种记账方式：它不存历史 KV，而是维护一个<strong>固定大小的状态</strong>（每层 d×d 量级）。于是：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>softmax 注意力</th>
+<th>线性注意力（M1）</th>
+</tr></thead>
+<tbody>
+<tr><td>每 token 额外显存</td><td>随 L 线性增长</td><td><strong>常数</strong></td></tr>
+<tr><td>1M 上下文的 KV</td><td>数百 GB</td><td>状态大小 × 层数</td></tr>
+<tr><td>decode 读 KV 的带宽</td><td>O(L) 每层</td><td><strong>O(1)</strong> 每层</td></tr>
+</tbody>
+</table></div>
+<p>这直接改变了“谁在搬”：</p>
+<ul>
+<li>decode 阶段的数据搬运主要是<strong>权重</strong>（45.9B × 1B ≈ 46 GB / token，H200 的 4.8 TB/s 下约 9.6 ms，单流上限 ~100 token/s）；</li>
+<li>KV 不再是带宽黑洞，长上下文请求的显存预算可以提前算准；</li>
+<li>代价是 <strong>prefill 仍然是顺序状态更新</strong>，1M token 的长文档要分块喂进去（chunked prefill），每块都要把 hidden state 从 HBM 搬进 SMEM 再写回。</li>
+</ul>
+<p>混合结构（部分层保留 softmax）就是为了补线性注意力在“精确检索”上的弱项——那些层仍然持有真正的 KV，只是层数少，显存可控。</p>
+<h2 id="最后说三句">最后说三句</h2>
+<ul>
+<li>线性/混合注意力会成为长上下文模型的标配，。softmax 的二次项在 100K 以上无法承受，这不是优化问题，是数学问题。</li>
+<li><strong>“1M 上下文”是营销指标，“100K 可用”才是工程指标</strong>。别按标称值设计产品。</li>
+<li>RL 算法的微创新在长序列上很有价值，CISPO 这类改动单看很小，但在 80K 轨迹上的稳定性差异会被放大。</li>
+<li><strong>开源推理模型的竞争维度已经变成“每百万思考 token 的成本”</strong>，而不是榜单分数。M1、R1-0528、Qwen3 的差异更多在账单上，不在 AIME 上。</li>
+</ul>
+<h2 id="出处">出处</h2>
+<ul>
+<li>模型卡（架构、CISPO、基准表）：<a href="https://huggingface.co/MiniMaxAI/MiniMax-M1-80k">MiniMax-M1-80k</a></li>
+<li>技术报告：<a href="https://arxiv.org/abs/2506.13585">MiniMax-M1: Scaling Test-Time Compute Efficiently with Lightning Attention</a></li>
+<li>仓库与部署：<a href="https://github.com/MiniMax-AI/MiniMax-M1">github.com/MiniMax-AI/MiniMax-M1</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/minimax/">MiniMax</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/强化学习/">强化学习</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

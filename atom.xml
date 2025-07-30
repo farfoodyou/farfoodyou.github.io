@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-06-17T23:20:00+08:00</updated>
+  <updated>2025-07-30T22:30:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>GLM-4.5：把「思考开关」做成开源模型的默认项</title>
+    <link href="https://farfoodyou.github.io/post/glm-4.5-hybrid-thinking-mit/"/>
+    <id>https://farfoodyou.github.io/post/glm-4.5-hybrid-thinking-mit/</id>
+    <updated>2025-07-30T22:30:00+08:00</updated>
+    <summary>355B 总参数 / 32B 激活、MIT 协议、128K 上下文、thinking 与 non-thinking 双模式。GLM-4.5 的看点是把「混合推理 + agent 工具链」打包成一套可直接部署的开源方案。</summary>
+  </entry>
+  <entry>
+    <title>Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</title>
+    <link href="https://farfoodyou.github.io/post/kimi-k2-1t-moe-muonclip/"/>
+    <id>https://farfoodyou.github.io/post/kimi-k2-1t-moe-muonclip/</id>
+    <updated>2025-07-12T23:10:00+08:00</updated>
+    <summary>32B 激活 / 1T 总参数、15.5T token、Modified MIT。K2 最有价值的信息不是分数，而是它在 1T 规模上把 Muon 优化器跑通了，还顺手解决了 attention logits 爆炸。</summary>
+  </entry>
   <entry>
     <title>MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</title>
     <link href="https://farfoodyou.github.io/post/minimax-m1-lightning-attention/"/>

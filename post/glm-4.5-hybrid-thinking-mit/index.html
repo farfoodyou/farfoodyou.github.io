@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GLM-4.5：把「思考开关」做成开源模型的默认项 - farfood</title>
+<meta name="description" content="355B 总参数 / 32B 激活、MIT 协议、128K 上下文、thinking 与 non-thinking 双模式。GLM-4.5 的看点是把「混合推理 + agent 工具链」打包成一套可直接部署的开源方案。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/glm-4.5-hybrid-thinking-mit/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GLM-4.5：把「思考开关」做成开源模型的默认项", "description": "355B 总参数 / 32B 激活、MIT 协议、128K 上下文、thinking 与 non-thinking 双模式。GLM-4.5 的看点是把「混合推理 + agent 工具链」打包成一套可直接部署的开源方案。", "datePublished": "2025-07-30T22:30:00+08:00", "dateModified": "2025-07-30T22:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/glm-4.5-hybrid-thinking-mit/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "智谱, GLM, 开源模型, MoE, Agent"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="GLM-4.5：把「思考开关」做成开源模型的默认项 - farfood">
+<meta property="og:description" content="355B 总参数 / 32B 激活、MIT 协议、128K 上下文、thinking 与 non-thinking 双模式。GLM-4.5 的看点是把「混合推理 + agent 工具链」打包成一套可直接部署的开源方案。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/glm-4.5-hybrid-thinking-mit/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GLM-4.5：把「思考开关」做成开源模型的默认项 - farfood">
+<meta name="twitter:description" content="355B 总参数 / 32B 激活、MIT 协议、128K 上下文、thinking 与 non-thinking 双模式。GLM-4.5 的看点是把「混合推理 + agent 工具链」打包成一套可直接部署的开源方案。">
+<meta property="article:published_time" content="2025-07-30T22:30:00+08:00">
+<meta name="keywords" content="智谱, GLM, 开源模型, MoE, Agent">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">GLM-4.5：把「思考开关」做成开源模型的默认项</h1>
+    <p class="meta"><time datetime="2025-07-30T22:30:00">2025-07-30</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2393 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#双模式怎么切">双模式怎么切</a></li>
+<li class="h2"><a href="#355b32b-这个尺寸的用意">355B/32B 这个尺寸的用意</a></li>
+<li class="h2"><a href="#agent-能力是重点">agent 能力是重点</a></li>
+<li class="h2"><a href="#开源侧的横向位置2025-07">开源侧的横向位置（2025-07）</a></li>
+<li class="h2"><a href="#选型时的三个坑">选型时的三个坑</a></li>
+<li class="h2"><a href="#我的看法">我的看法</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>7 月 28 日，智谱开源 <a href="https://huggingface.co/zai-org/GLM-4.5">GLM-4.5 系列</a>：GLM-4.5（355B 总 / 32B 激活）和 GLM-4.5-Air（106B / 12B），Base、混合推理版、FP8 版一起放，<strong>MIT 协议</strong>（<a href="https://huggingface.co/zai-org/GLM-4.5">模型卡</a>）。</p>
+<p>到 7 月底，“开源 + MIT + 双模式”已经不是差异化了。GLM-4.5 真正的区别在它把 agent 工具链一起做了。</p>
+<h2 id="双模式怎么切">双模式怎么切</h2>
+<p>模型卡给的接口很直接：thinking 模式用于复杂推理和工具调用，non-thinking 用于即时响应；切换靠 chat template 参数。</p>
+<pre data-lang="python"><code class="language-python"># vLLM / SGLang 部署后，thinking 默认开启
+resp = client.chat.completions.create(
+    model=&quot;glm-4.5&quot;,
+    messages=msgs,
+    extra_body={&quot;chat_template_kwargs&quot;: {&quot;enable_thinking&quot;: False}},  # 关掉思考
+)</code></pre>
+<p>这和 Qwen3 的 <code>enable_thinking</code> 几乎一模一样——<strong>接口正在趋同</strong>，对使用者是好事：同一套路由代码可以对接多家模型。</p>
+<p>双模式的实际价值在于<strong>成本分层</strong>，而不是“能力更强”：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>请求类型</th>
+<th>模式</th>
+<th>典型 token</th>
+<th>相对成本</th>
+</tr></thead>
+<tbody>
+<tr><td>分类、抽取、改写</td><td>non-thinking</td><td>200～800</td><td>1×</td></tr>
+<tr><td>代码审查、方案对比</td><td>thinking</td><td>3K～15K</td><td>10×～30×</td></tr>
+<tr><td>复杂调试、多步规划</td><td>thinking（长预算）</td><td>20K+</td><td>50×+</td></tr>
+</tbody>
+</table></div>
+<p>一个中等规模的业务，如果能把 70% 的请求留在 non-thinking，账单能砍掉八成。</p>
+<h2 id="355b32b-这个尺寸的用意">355B/32B 这个尺寸的用意</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>型号</th>
+<th>总参数</th>
+<th>激活</th>
+<th>用途</th>
+</tr></thead>
+<tbody>
+<tr><td>GLM-4.5</td><td>355B</td><td>32B</td><td>主力，双卡以上</td></tr>
+<tr><td>GLM-4.5-Air</td><td>106B</td><td>12B</td><td>单机 8 卡以内</td></tr>
+<tr><td>GLM-4.5-FP8</td><td>355B</td><td>32B</td><td>显存省一半，吞吐更高</td></tr>
+</tbody>
+</table></div>
+<p>355B/32B 的激活比例约 9%，比 Kimi K2（3.2%）保守，比 Qwen3-235B/22B（9.4%）接近。<strong>这是“能力/成本”折中的甜区</strong>：单 token 算力约等于 32B dense 模型，但知识容量接近 355B。</p>
+<p>官方同时放 FP8 权重，是很实际的一步：BF16 的 355B 需要 ~710GB 显存，FP8 降到 ~355GB，8 卡 H100/H200 就能跑，部署门槛从“机房”降到“一台机器”。</p>
+<h2 id="agent-能力是重点">agent 能力是重点</h2>
+<p>GLM-4.5 的定位写的是 “foundation models designed for intelligent agents”。落到工程上，agent 能力 = 三件事的组合：</p>
+<ol>
+<li><strong>工具调用格式稳定</strong>：多轮 function call 不乱、不丢参数；</li>
+<li><strong>长任务不跑偏</strong>：几十步之后还记着自己的目标；</li>
+<li><strong>失败可恢复</strong>：工具报错时能读懂错误信息并换方案。</li>
+</ol>
+<p>这三条都没有标准基准，只能靠实际 harness 测（SWE-bench、Terminal-bench、自建任务集）。模型卡给的分数是参考，真实差距在“跑 50 步之后还剩多少成功率”。</p>
+<h2 id="开源侧的横向位置2025-07">开源侧的横向位置（2025-07）</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>总/激活</th>
+<th>上下文</th>
+<th>许可证</th>
+<th>特点</th>
+</tr></thead>
+<tbody>
+<tr><td>Kimi K2</td><td>1T / 32B</td><td>128K</td><td>Modified MIT</td><td>不做长思考，agent 底座</td></tr>
+<tr><td>GLM-4.5</td><td>355B / 32B</td><td>128K</td><td>MIT</td><td>双模式 + FP8 权重</td></tr>
+<tr><td>Qwen3-235B</td><td>235B / 22B</td><td>32K（YaRN 131K）</td><td>Apache 2.0</td><td>尺寸谱系最全</td></tr>
+<tr><td>DeepSeek-V3-0324</td><td>671B / 37B</td><td>128K</td><td>MIT</td><td>通用基座，推理靠 R1</td></tr>
+</tbody>
+</table></div>
+<p>有意思的是<strong>激活参数高度收敛在 22B～37B</strong>。这不是巧合：这个区间刚好对应“单 token 算力 &lt; 2 张卡的持续供给能力”，是推理成本曲线上的一个合理落点。</p>
+<h2 id="选型时的三个坑">选型时的三个坑</h2>
+<ol>
+<li><strong>别只看激活参数</strong>。MoE 的显存由总参数决定，355B 即使激活 32B，也得按 355B 备显存；“激活小”不等于“卡少”。</li>
+<li><strong>FP8 权重要配对应 kernel</strong>。老版本 vLLM/SGLang 可能不支持新的 scale 格式，部署前先确认版本矩阵。</li>
+<li><strong>双模式的评测要分开报</strong>。同一个模型 thinking/non-thinking 是两条曲线，混着比没有意义。</li>
+</ol>
+<h2 id="我的看法">我的看法</h2>
+<ul>
+<li>“开源 + MIT + 双模式 + FP8”会成为 2025 年下半年开源旗舰的标配四件套，。缺任何一项，工程团队都会犹豫。</li>
+<li><strong>激活参数会继续收敛在 20B～40B</strong>，除非硬件（显存容量/带宽）出现代际变化。</li>
+<li>agent 能力会成为新的分水岭，，但它无法靠榜单衡量——这会让选型更依赖自建评测集，而不是公开 benchmark。</li>
+<li>对自部署团队：<strong>先上 FP8 + non-thinking 做主力</strong>，把 thinking 留给异步队列，这是当前性价比最高的组合。</li>
+</ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>模型卡（规格、部署、模式开关）：<a href="https://huggingface.co/zai-org/GLM-4.5">GLM-4.5</a></li>
+<li>仓库与推理示例：<a href="https://github.com/zai-org/GLM-4.5">github.com/zai-org/GLM-4.5</a></li>
+<li>官方博客：<a href="https://z.ai/blog/glm-4.5">z.ai/blog/glm-4.5</a></li>
+<li>技术报告：<a href="https://arxiv.org/abs/2508.06471">GLM-4.5: ARC Foundation Models (arXiv:2508.06471)</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/智谱/">智谱</a><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/agent/">Agent</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

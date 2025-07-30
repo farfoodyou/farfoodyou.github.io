@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考 - farfood</title>
+<meta name="description" content="32B 激活 / 1T 总参数、15.5T token、Modified MIT。K2 最有价值的信息不是分数，而是它在 1T 规模上把 Muon 优化器跑通了，还顺手解决了 attention logits 爆炸。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/kimi-k2-1t-moe-muonclip/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考", "description": "32B 激活 / 1T 总参数、15.5T token、Modified MIT。K2 最有价值的信息不是分数，而是它在 1T 规模上把 Muon 优化器跑通了，还顺手解决了 attention logits 爆炸。", "datePublished": "2025-07-12T23:10:00+08:00", "dateModified": "2025-07-12T23:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/kimi-k2-1t-moe-muonclip/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Moonshot, 开源模型, MoE, 训练稳定性, Agent"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考 - farfood">
+<meta property="og:description" content="32B 激活 / 1T 总参数、15.5T token、Modified MIT。K2 最有价值的信息不是分数，而是它在 1T 规模上把 Muon 优化器跑通了，还顺手解决了 attention logits 爆炸。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/kimi-k2-1t-moe-muonclip/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考 - farfood">
+<meta name="twitter:description" content="32B 激活 / 1T 总参数、15.5T token、Modified MIT。K2 最有价值的信息不是分数，而是它在 1T 规模上把 Muon 优化器跑通了，还顺手解决了 attention logits 爆炸。">
+<meta property="article:published_time" content="2025-07-12T23:10:00+08:00">
+<meta name="keywords" content="Moonshot, 开源模型, MoE, 训练稳定性, Agent">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</h1>
+    <p class="meta"><time datetime="2025-07-12T23:10:00">2025-07-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2275 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#muon-优化器的规模化">Muon 优化器的规模化</a></li>
+<li class="h2"><a href="#155t-token-与-agentic-数据">15.5T token 与 agentic 数据</a></li>
+<li class="h2"><a href="#1t-moe-的部署现实">1T MoE 的部署现实</a></li>
+<li class="h2"><a href="#不做长思考是一种判断">不做长思考，是一种判断</a></li>
+<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>7 月 11 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K2-Instruct">Kimi K2</a>。规格：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>数值</th>
+</tr></thead>
+<tbody>
+<tr><td>总参数 / 激活参数</td><td>1T / 32B（MoE）</td></tr>
+<tr><td>训练 token</td><td>15.5T</td></tr>
+<tr><td>上下文</td><td>128K</td></tr>
+<tr><td>许可证</td><td>Modified MIT</td></tr>
+<tr><td>定位</td><td>&quot;reflex-grade model without long thinking&quot;</td></tr>
+</tbody>
+</table></div>
+<p>最后一行很有意思：<strong>它故意不做长思考</strong>。在所有人往 reasoning 上冲的时候，K2 把自己定位成“快速反应 + 会用工具”的 agent 底座。</p>
+<h2 id="muon-优化器的规模化">Muon 优化器的规模化</h2>
+<p>K2 的技术重点写在模型卡的第一条：<strong>在 1T 参数规模上用 Muon 优化器，并且零训练不稳定</strong>（<a href="https://arxiv.org/abs/2507.20534">报告</a> 与 <a href="https://huggingface.co/moonshotai/Kimi-K2-Instruct">模型卡</a>）。</p>
+<p>Muon 和 AdamW 的差别在对梯度矩阵的处理：AdamW 逐元素做二阶矩归一化，Muon 对矩阵做近似正交化（Newton–Schulz 迭代），让更新方向更“均匀”。它在小模型上早有好结果，但大规模上的问题是<strong>数值爆炸</strong>——1T 参数、15.5T token 的训练里，只要有一个 head 的 attention logits 翘起来，整个 run 就废了。</p>
+<p>他们的解法是 MuonClip：</p>
+<pre data-lang="text"><code class="language-text">每个 step:
+  if max(attention_logits) &gt; τ:            # τ 是阈值
+      q_proj *= τ / max_logit              # 对 QK 投影做缩放
+      k_proj *= τ / max_logit
+  update with Muon(orthogonalized gradient)</code></pre>
+<p>思路很工程：不去改 loss，也不加辅助正则，而是在<strong>检测到越界时直接把权重缩回来</strong>。代价是每次 forward 多一次 max 归约（可融合进 flash attention 的 log-sum-exp 路径），收益是整个训练过程不需要为稳定性调参。</p>
+<p>这条经验值得抄的地方在于：<strong>大模型训练的大部分事故不是“学不会”，而是“发散”</strong>。任何能在不改变优化目标的前提下把数值钉住的技巧，都比换算法更实用。</p>
+<h2 id="155t-token-与-agentic-数据">15.5T token 与 agentic 数据</h2>
+<p>15.5T 的语料规模接近“能公开拿到的全部高质量文本”的极限。再往上堆，边际收益很低——所以 K2 的重心放在<strong>数据质量与合成</strong>：</p>
+<ul>
+<li>大量工具调用轨迹（多轮 function call、失败重试、错误处理）；</li>
+<li>代码仓库级任务（跨文件修改，而不是单函数补全）；</li>
+<li>“agentic&quot; 数据合成管线：用强模型生成任务 + 用环境执行验证，只留成功的轨迹。</li>
+</ul>
+<p>这解释了为什么它的定位是 agent 底座：<strong>训练数据里就写满了“怎么用工具”</strong>。</p>
+<h2 id="1t-moe-的部署现实">1T MoE 的部署现实</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>精度</th>
+<th>权重体积</th>
+<th>最小可用集群</th>
+</tr></thead>
+<tbody>
+<tr><td>FP8</td><td>~1 TB</td><td>8 × H200（141GB）或 16 × H100</td></tr>
+<tr><td>INT4</td><td>~500 GB</td><td>8 × H100（勉强）</td></tr>
+<tr><td>BF16</td><td>~2 TB</td><td>32 × H100</td></tr>
+</tbody>
+</table></div>
+<p>也就是说：<strong>开源不等于可自托管</strong>。能跑得动 K2 的团队，全球数量有限。它的真实作用是：</p>
+<ol>
+<li>给闭源 API 定价施加压力；</li>
+<li>让有卡的机构（云厂商、大企业）能私有化部署；</li>
+<li>提供一套可复现的配方，让小模型团队抄思路。</li>
+</ol>
+<p>对照 671B/37B 的 DeepSeek 系列，1T/32B 的稀疏度更高：<strong>激活比例只有 3.2%</strong>。稀疏度越高，单 token 算力越省，但对显存容量和专家负载均衡的要求越高。</p>
+<h2 id="不做长思考是一种判断">不做长思考，是一种判断</h2>
+<p>K2-Instruct 明确是“没有长思考的反射级模型”。2025 年 7 月的时点上，这是一个反共识的选择：</p>
+<ul>
+<li>长思考的收益集中在数学/竞赛/复杂调试；</li>
+<li>代价是延迟和成本翻几倍，且对 agent 循环不利（每步都等 30 秒，多步任务没法用）；</li>
+<li>agent 场景里 80% 的步骤是“读文件/调接口/改一行”，不需要深思。</li>
+</ul>
+<p>所以 K2 的路线是：<strong>先做一个又快又稳的执行者，把思考留给需要的地方</strong>（后续的 K2-Thinking 补上了这一块）。这个分工和 Claude 的 Sonnet/Opus、Gemini 的 Flash/Pro 是同一逻辑，只是 K2 是从“完全不思考”起步。</p>
+<h2 id="不确定的部分">不确定的部分</h2>
+<ul>
+<li>Muon + clip 会成为大模型预训练的标准组合之一，。AdamW 不是不能跑 1T，而是它对超参太敏感，工程上不划算。</li>
+<li><strong>“零不稳定”比“高 MFU”更值钱</strong>。一个 15.5T token 的 run 失败一次，损失的是几百万美元和两个月。</li>
+<li>1T 开源模型的象征意义大于实用价值，。它证明“前沿规模可以被复现”，但真正被广泛部署的会是 100B 以下的模型。</li>
+<li><strong>agent 数据的合成管线是新的护城河</strong>。谁的“任务生成 + 环境验证”闭环更强，谁的 agent 模型就更像人写的——这一块比模型结构更难抄。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>模型卡（架构、优化器、训练细节）：<a href="https://huggingface.co/moonshotai/Kimi-K2-Instruct">Kimi-K2-Instruct</a></li>
+<li>代码与部署说明：<a href="https://github.com/MoonshotAI/Kimi-K2">github.com/MoonshotAI/Kimi-K2</a></li>
+<li>技术报告：<a href="https://arxiv.org/abs/2507.20534">Kimi K2: Open Agentic Intelligence (arXiv:2507.20534)</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/moonshot/">Moonshot</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/训练稳定性/">训练稳定性</a><a class="tag" href="/tags/agent/">Agent</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/glm-4.5-hybrid-thinking-mit/">← GLM-4.5：把「思考开关」做成开源模型的默认项</a><a class="next" href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

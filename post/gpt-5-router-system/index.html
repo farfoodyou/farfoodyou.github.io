@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPT-5 是个路由器，那评测到底在测谁？ - farfood</title>
+<meta name="description" content="和做模型的、做网关的、做 SRE 的三种视角聊完 GPT-5 之后，把问题整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/gpt-5-router-system/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GPT-5 是个路由器，那评测到底在测谁？", "description": "和做模型的、做网关的、做 SRE 的三种视角聊完 GPT-5 之后，把问题整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。", "datePublished": "2025-08-08T09:40:00+08:00", "dateModified": "2025-08-08T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/gpt-5-router-system/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, GPT-5, 架构, 产品设计"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="GPT-5 是个路由器，那评测到底在测谁？ - farfood">
+<meta property="og:description" content="和做模型的、做网关的、做 SRE 的三种视角聊完 GPT-5 之后，把问题整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/gpt-5-router-system/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GPT-5 是个路由器，那评测到底在测谁？ - farfood">
+<meta name="twitter:description" content="和做模型的、做网关的、做 SRE 的三种视角聊完 GPT-5 之后，把问题整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
+<meta property="article:published_time" content="2025-08-08T09:40:00+08:00">
+<meta name="keywords" content="OpenAI, GPT-5, 架构, 产品设计">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">GPT-5 是个路由器，那评测到底在测谁？</h1>
+    <p class="meta"><time datetime="2025-08-08T09:40:00">2025-08-08</time><span class="sep">·</span>3 分钟<span class="sep">·</span>1309 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  
+  <div class="post-content">
+<p>GPT-5 发布后我们内部拉了个小讨论，三种角色吵得挺厉害。把问题整理成问答，比写成“技术分析”更接近现场。</p>
+<p><strong>问：它到底是一个模型还是几个？</strong></p>
+<p>答：按官方描述是“一个系统”——快模型 + 推理模型 + 实时路由器，路由依据是对话类型、复杂度、工具需求和用户意图（<a href="https://en.wikipedia.org/wiki/GPT-5">Wikipdia 条目</a> 有对应描述）。它同时顶掉了 GPT-4.1、o3、o4-mini 三条线。</p>
+<p><strong>问：那榜单上的分数是谁的？</strong></p>
+<p>答：这就是争议点。固定 effort 跑 AIME，测的是推理分支；混跑真实流量，测的是路由 + 两个分支的组合。<strong>两者没有可比性，但发布时通常只给一个数字。</strong></p>
+<p>做评测的同事给了个说法我觉得挺准：“这就像给一支球队报个人得分。”</p>
+<p><strong>问：对做网关的人来说，最大的变化是什么？</strong></p>
+<p>答：<strong>决策点从客户端挪到了服务端。</strong> 以前是我们的路由代码决定走哪个模型，现在是供应商决定，我们只能给个 hint（<code>minimal</code> / low / medium / high，或者界面上的“跳过思考”按钮）。</p>
+<p>坏处很直接：</p>
+<ul>
+<li>回归基线会漂。同一个 prompt，供应商一调权重，行为可能变；</li>
+<li>成本不可预测。走快路径和走推理路径差一个数量级；</li>
+<li>出错难定位。日志里只有总 token，看不出走了哪条路。</li>
+</ul>
+<p>好处也有：不用维护“N 个模型 × M 个任务”的路由表，兜底交给上游。</p>
+<p><strong>问：SRE 关心什么？</strong></p>
+<p>答：延迟分布变成双峰。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>分支</th>
+<th>典型延迟</th>
+<th>占比（我们的观察）</th>
+</tr></thead>
+<tbody>
+<tr><td>快路径</td><td>0.8～2 s</td><td>约 70%</td></tr>
+<tr><td>推理路径</td><td>8～40 s</td><td>约 30%</td></tr>
+</tbody>
+</table></div>
+<p>双峰意味着两件事：<strong>P50 好看但 P99 难看</strong>；超时重试会二次计费。我们最后的做法是按分支设两套 SLO，并且把重试改成“只上报不重试”。</p>
+<p><strong>问：prompt 要不要改？</strong></p>
+<p>答：要，而且是减法。以前为了让模型认真点，大家爱写“请一步一步思考”。在系统级模型里，这类指令可能<strong>把请求推去推理分支</strong>，白付钱。</p>
+<p>一个反直觉的观察：删掉这些“叮嘱”后，简单任务的正确率没变，延迟降了一半。</p>
+<p><strong>问：那还会有人想用别的模型吗？</strong></p>
+<p>答：会，两类人。</p>
+<ol>
+<li><strong>需要可解释路由的</strong>：合规、审计场景要知道“为什么这条请求走了慢路径”；</li>
+<li><strong>需要控成本的</strong>：系统级模型给不了“每千次调用最多花多少钱”的硬保证。</li>
+</ol>
+<p>这两类需求恰好是开源模型的入口。8 月 5 日出的 <a href="https://huggingface.co/openai/gpt-oss-120b">gpt-oss</a>（120B/20B、MoE、MXFP4、Apache 2.0）就是同一家公司的另一半答案：<strong>要么把选择权交出去换省心，要么自己维护路由换控制</strong>。</p>
+<p><strong>问：一句话总结？</strong></p>
+<p>答：<strong>GPT-5 把“选模型”这件事从产品界面搬进了服务端</strong>，代价是我们失去了对成本与行为的精细控制，换来的是普通用户不用再理解“推理 / 非推理”这种概念。</p>
+<p>对我们这种要算账的团队，结论没那么浪漫：系统级模型适合做通用入口，关键的、要控成本的路径，还是得自己路由。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li>路由结构、能力与“safe completions”：&lt;https://en.wikipedia.org/wiki/GPT-5&gt;</li>
+<li>系统卡：&lt;https://cdn.openai.com/gpt-5-system-card.pdf&gt;</li>
+<li>开放权重姊妹模型：&lt;https://huggingface.co/openai/gpt-oss-120b&gt;</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/openai/">OpenAI</a><a class="tag" href="/tags/gpt-5/">GPT-5</a><a class="tag" href="/tags/架构/">架构</a><a class="tag" href="/tags/产品设计/">产品设计</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/deepseek-v3.1-hybrid-fp8/">← DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a><a class="next" href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><time>2025-06</time></li><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a><time>2025-02</time></li><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-07-30T22:30:00+08:00</updated>
+  <updated>2025-08-22T22:15:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</title>
+    <link href="https://farfoodyou.github.io/post/deepseek-v3.1-hybrid-fp8/"/>
+    <id>https://farfoodyou.github.io/post/deepseek-v3.1-hybrid-fp8/</id>
+    <updated>2025-08-22T22:15:00+08:00</updated>
+    <summary>8 月 21 日 V3.1 发布：671B/37B 不变，把 thinking 与 non-thinking 合进一个权重，靠 chat template 切换；长上下文扩到 128K；权重与激活统一用 UE8M0 FP8 scale。</summary>
+  </entry>
+  <entry>
+    <title>GPT-5 是个路由器，那评测到底在测谁？</title>
+    <link href="https://farfoodyou.github.io/post/gpt-5-router-system/"/>
+    <id>https://farfoodyou.github.io/post/gpt-5-router-system/</id>
+    <updated>2025-08-08T09:40:00+08:00</updated>
+    <summary>和做模型的、做网关的、做 SRE 的三种视角聊完 GPT-5 之后，把问题整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。</summary>
+  </entry>
   <entry>
     <title>GLM-4.5：把「思考开关」做成开源模型的默认项</title>
     <link href="https://farfoodyou.github.io/post/glm-4.5-hybrid-thinking-mit/"/>

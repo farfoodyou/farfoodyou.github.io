@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注 - farfood</title>
+<meta name="description" content="8 月 21 日 V3.1 发布：671B/37B 不变，把 thinking 与 non-thinking 合进一个权重，靠 chat template 切换；长上下文扩到 128K；权重与激活统一用 UE8M0 FP8 scale。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-v3.1-hybrid-fp8/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注", "description": "8 月 21 日 V3.1 发布：671B/37B 不变，把 thinking 与 non-thinking 合进一个权重，靠 chat template 切换；长上下文扩到 128K；权重与激活统一用 UE8M0 FP8 scale。", "datePublished": "2025-08-22T22:15:00+08:00", "dateModified": "2025-08-22T22:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v3.1-hybrid-fp8/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 开源模型, FP8, Agent, 推理优化"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注 - farfood">
+<meta property="og:description" content="8 月 21 日 V3.1 发布：671B/37B 不变，把 thinking 与 non-thinking 合进一个权重，靠 chat template 切换；长上下文扩到 128K；权重与激活统一用 UE8M0 FP8 scale。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-v3.1-hybrid-fp8/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注 - farfood">
+<meta name="twitter:description" content="8 月 21 日 V3.1 发布：671B/37B 不变，把 thinking 与 non-thinking 合进一个权重，靠 chat template 切换；长上下文扩到 128K；权重与激活统一用 UE8M0 FP8 scale。">
+<meta property="article:published_time" content="2025-08-22T22:15:00+08:00">
+<meta name="keywords" content="DeepSeek, 开源模型, FP8, Agent, 推理优化">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</h1>
+    <p class="meta"><time datetime="2025-08-22T22:15:00">2025-08-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1983 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一个权重两种模式的实现">一个权重，两种模式的实现</a></li>
+<li class="h2"><a href="#128k-是续训出来的">128K 是&quot;续训&quot;出来的</a></li>
+<li class="h2"><a href="#ue8m0-fp8一条不太显眼但很关键的线">UE8M0 FP8：一条不太显眼但很关键的线</a></li>
+<li class="h2"><a href="#工具调用从能调到调得对">工具调用：从&quot;能调&quot;到&quot;调得对&quot;</a></li>
+<li class="h2"><a href="#我的看法">我的看法</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>8 月 21 日，DeepSeek 放出 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.1">V3.1</a>。这是把两条产品线合并的一步：<strong>R1 的推理能力 + V3 的通用能力，合成一个权重</strong>。</p>
+<p>到 8 月底，“混合推理”已经是行业共识，V3.1 的看点变成了三件更硬的事：上下文扩展方式、FP8 数据格式、以及工具调用到底修好了没有。</p>
+<h2 id="一个权重两种模式的实现">一个权重，两种模式的实现</h2>
+<p>V3.1 的切换不是靠参数，而是靠 chat template 里的一个 token：</p>
+<pre data-lang="text"><code class="language-text"># thinking 模式
+&lt;｜begin▁of▁sentence｜&gt;{system}&lt;｜User｜&gt;{query}&lt;｜Assistant｜&gt;
+# → 模型先生成思考内容，再给答案
+
+# non-thinking 模式（注意这里的 &lt;/think&gt;）
+&lt;｜begin▁of▁sentence｜&gt;{system}&lt;｜User｜&gt;{query}&lt;｜Assistant｜&gt;&lt;/think&gt;</code></pre>
+<p>官方说明很直白：non-thinking 模式下，只要在 assistant 前缀补上 <code>&lt;/think&gt;</code>，模型就直接输出答案，跳过思考段。这比“传一个布尔参数”更底层，也更省事——<strong>切换成本为零，不需要两套权重、两套 KV 布局</strong>。</p>
+<p>代价是<strong>prompt 里多了一个需要维护的约定</strong>。自建服务时如果在 chat template 里写错，模型会按错误模式回答，而且不会报错——这类静默失败最难查。</p>
+<h2 id="128k-是续训出来的">128K 是“续训”出来的</h2>
+<p>模型卡把长上下文的做法写得很清楚：分两阶段扩展，32K 阶段的数据量扩到原来的 10 倍（630B token），128K 阶段扩到 3.3 倍（209B token）（<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.1">模型卡</a>）。</p>
+<p>这条信息比“支持 128K”重要得多：</p>
+<ul>
+<li><strong>长上下文不是改个配置就行</strong>，需要几百 B token 的长文档数据做续训；</li>
+<li>两个阶段分别扩，是因为直接跳到 128K 会让短上下文能力退化（“长度换质量”）；</li>
+<li>630B / 209B 这两个数字说明：<strong>长上下文的成本主要在数据工程</strong>，不在算力。</li>
+</ul>
+<p>对使用者：标称 128K 的模型，实际可用区间通常在 60～100K（再长就开始丢细节）。做产品时按 64K 设计比较稳。</p>
+<h2 id="ue8m0-fp8一条不太显眼但很关键的线">UE8M0 FP8：一条不太显眼但很关键的线</h2>
+<p>V3.1 的权重和激活都用 <strong>UE8M0 的 FP8 scale 格式</strong>（无符号指数、8 位尾数共享 scale），目的写的是“适配 microscaling 数据格式”，实现细节在 <a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a>。</p>
+<p>为什么值得单独说：</p>
+<ul>
+<li>FP8 推理的精度问题主要来自 <strong>scale 的选择</strong>，不是 8 位本身；</li>
+<li>UE8M0 的 scale 只有 2 的幂，硬件实现简单（移位即可），但需要软件侧保证动态范围；</li>
+<li>这套格式和下一代加速器的 microscaling 指令对齐，等于<strong>提前把权重格式准备好了</strong>。</li>
+</ul>
+<p>工程上的直接影响：老版本推理框架可能不认这种 scale，部署前要确认 vLLM/SGLang 的版本矩阵；另外 FP8 下数值稳定性对长思考更敏感，温度与 top-p 的默认值要重新调。</p>
+<h2 id="工具调用从能调到调得对">工具调用：从“能调”到“调得对”</h2>
+<p>V3.1 明确说 post-training 里强化了工具使用，Think 模式在<strong>质量接近 R1-0528 的同时响应更快</strong>。</p>
+<p>“更快”这件事在 agent 场景里价值很大：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>场景</th>
+<th>长思考（R1-0528）</th>
+<th>V3.1-Think</th>
+</tr></thead>
+<tbody>
+<tr><td>单次难题</td><td>平均 23K token</td><td>更短，质量接近</td></tr>
+<tr><td>多步 agent（20 步）</td><td>20 × 23K ≈ 460K token</td><td>显著更低</td></tr>
+<tr><td>延迟</td><td>每步几十秒</td><td>每步数秒</td></tr>
+</tbody>
+</table></div>
+<p>agent 的成本是<strong>步数乘思考长度</strong>。把单步思考压下来，比把单步分数提上去更省钱——这也是“混合模式 + 高效思考”成为主流的原因。</p>
+<h2 id="我的看法">我的看法</h2>
+<ul>
+<li>“一个权重两种模式 + 一个 token 切换”会成为开源标准做法，。两套权重的时代基本结束了。</li>
+<li><strong>FP8 格式之争刚开始</strong>。谁的低精度格式被硬件和框架同时支持，谁就能在推理成本上占两年便宜。</li>
+<li>长上下文的价格被高估了能力、低估了成本，。续训数据是门槛，不是算力。</li>
+<li>给自部署团队的一条实用建议：<strong>V3.1 的价值主要在“单权重 + FP8 + 128K”这套组合</strong>，如果只要推理能力，R1-0528 蒸馏版更划算；如果要做 agent 底座，V3.1 是目前开源里最省心的选择之一。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>模型卡（模式切换、上下文扩展、FP8 格式）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.1">DeepSeek-V3.1</a></li>
+<li>FP8 GEMM 实现：<a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a></li>
+<li>定价页：<a href="https://api-docs.deepseek.com/quick_start/pricing">api-docs.deepseek.com</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/fp8/">FP8</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/推理优化/">推理优化</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/gpt-5-router-system/">GPT-5 是个路由器，那评测到底在测谁？ →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

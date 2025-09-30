@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-08-22T22:15:00+08:00</updated>
+  <updated>2025-09-30T09:10:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</title>
+    <link href="https://farfoodyou.github.io/post/claude-sonnet-4.5-swe-bench-77/"/>
+    <id>https://farfoodyou.github.io/post/claude-sonnet-4.5-swe-bench-77/</id>
+    <updated>2025-09-30T09:10:00+08:00</updated>
+    <summary>SWE-bench Verified 77.2%、OSWorld 61.4%、能连续工作 30 小时以上。比分数更值得读的是它的评测脚注：scaffold 用了什么工具、跑了几次、为什么不用 1M 配置。</summary>
+  </entry>
+  <entry>
+    <title>DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</title>
+    <link href="https://farfoodyou.github.io/post/deepseek-v3.2-exp-sparse-attention/"/>
+    <id>https://farfoodyou.github.io/post/deepseek-v3.2-exp-sparse-attention/</id>
+    <updated>2025-09-29T23:50:00+08:00</updated>
+    <summary>V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。</summary>
+  </entry>
   <entry>
     <title>DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</title>
     <link href="https://farfoodyou.github.io/post/deepseek-v3.1-hybrid-fp8/"/>
@@ -201,12 +215,5 @@
     <id>https://farfoodyou.github.io/2017/09/18/hexo/</id>
     <updated>2017-09-18T18:09:00+08:00</updated>
     <summary>hexo的安装配置和常用命令安装# 安装hexo npm install hexo -g #-g表示全局安装, npm默认为当前项目安装 hexo version # 初始化博客文件夹 hexo init blog # 切换到该路径 cd blog # 安装hexo的扩展插件 npm install # 安装其它插件 npm install hexo-admin --save npm instal…</summary>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <link href="https://farfoodyou.github.io/2017/09/18/hello-world/"/>
-    <id>https://farfoodyou.github.io/2017/09/18/hello-world/</id>
-    <updated>2017-09-18T17:09:00+08:00</updated>
-    <summary>Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick…</summary>
   </entry>
 </feed>

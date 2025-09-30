@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明 - farfood</title>
+<meta name="description" content="SWE-bench Verified 77.2%、OSWorld 61.4%、能连续工作 30 小时以上。比分数更值得读的是它的评测脚注：scaffold 用了什么工具、跑了几次、为什么不用 1M 配置。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/claude-sonnet-4.5-swe-bench-77/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明", "description": "SWE-bench Verified 77.2%、OSWorld 61.4%、能连续工作 30 小时以上。比分数更值得读的是它的评测脚注：scaffold 用了什么工具、跑了几次、为什么不用 1M 配置。", "datePublished": "2025-09-30T09:10:00+08:00", "dateModified": "2025-09-30T09:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/claude-sonnet-4.5-swe-bench-77/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Anthropic, Claude, 编码, Agent, 评测"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明 - farfood">
+<meta property="og:description" content="SWE-bench Verified 77.2%、OSWorld 61.4%、能连续工作 30 小时以上。比分数更值得读的是它的评测脚注：scaffold 用了什么工具、跑了几次、为什么不用 1M 配置。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/claude-sonnet-4.5-swe-bench-77/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明 - farfood">
+<meta name="twitter:description" content="SWE-bench Verified 77.2%、OSWorld 61.4%、能连续工作 30 小时以上。比分数更值得读的是它的评测脚注：scaffold 用了什么工具、跑了几次、为什么不用 1M 配置。">
+<meta property="article:published_time" content="2025-09-30T09:10:00+08:00">
+<meta name="keywords" content="Anthropic, Claude, 编码, Agent, 评测">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</h1>
+    <p class="meta"><time datetime="2025-09-30T09:10:00">2025-09-30</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2117 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#772-是怎么来的">77.2% 是怎么来的</a></li>
+<li class="h2"><a href="#osworld-的跳变说明什么">OSWorld 的跳变说明什么</a></li>
+<li class="h2"><a href="#30-小时连续工作意味着什么">30 小时连续工作意味着什么</a></li>
+<li class="h2"><a href="#和同期模型的相对位置">和同期模型的相对位置</a></li>
+<li class="h2"><a href="#测评该怎么读">测评该怎么读</a></li>
+<li class="h2"><a href="#我的看法">我的看法</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>9 月 29 日，<a href="https://www.anthropic.com/news/claude-sonnet-4-5">Claude Sonnet 4.5</a> 发布，定价保持 \$3/\$15。三个数字撑起了整篇公告：</p>
+<ul>
+<li><strong>SWE-bench Verified 77.2%</strong></li>
+<li><strong>OSWorld <a href="https://www.anthropic.com/news/claude-sonnet-4-5">61.4%</a></strong>（四个月前 Sonnet 4 是 42.2%）</li>
+<li>客户反馈里说“能连续 30 小时以上处理复杂多步任务”</li>
+</ul>
+<p>这篇不逐条复述榜单，重点讲它的<strong>测评口径</strong>——在 2025 年下半年，这是最容易被忽略、也最影响结论的部分。</p>
+<h2 id="772-是怎么来的">77.2% 是怎么来的</h2>
+<p>官方脚注写得非常具体：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>口径</th>
+</tr></thead>
+<tbody>
+<tr><td>scaffold</td><td>两个工具：bash + 字符串替换式文件编辑</td></tr>
+<tr><td>样本</td><td>SWE-bench Verified 全量 500 题</td></tr>
+<tr><td>试验次数</td><td>10 次取平均</td></tr>
+<tr><td>test-time compute</td><td>无（不额外采样/投票）</td></tr>
+<tr><td>思考预算</td><td>200K</td></tr>
+<tr><td>prompt</td><td>额外加了一句“尽量多用工具、先自己写测试”</td></tr>
+</tbody>
+</table></div>
+<p>四件事值得注意：</p>
+<ol>
+<li><strong>scaffold 极简</strong>。只有 bash 和文件编辑，没有复杂的多 agent 编排——说明分数主要来自模型能力，不是脚手架堆出来的。</li>
+<li><strong>10 次平均、无 test-time compute</strong>。这比“采样 64 次取最好”诚实得多，也更接近生产环境。</li>
+<li><strong>一句 prompt 就能加分</strong>。“先写测试”这类指令会显著改变结果，所以横评时 prompt 必须公开。</li>
+<li><strong>1M 配置能到 78.2%，但没被采用</strong>。官方说 1M 配置牵涉到近期的推理稳定性问题，所以主分数用 200K。</li>
+</ol>
+<p>第 4 点是我最欣赏的地方：<strong>主动说明“更高分为什么不采信”</strong>。大多数发布只报最好的那个数。</p>
+<h2 id="osworld-的跳变说明什么">OSWorld 的跳变说明什么</h2>
+<p>OSWorld 测的是“在真实桌面环境里完成任务”——点按钮、填表单、切窗口。42.2% → 61.4% 四个月涨 19 分，这个幅度比 SWE-bench 更值得注意，因为：</p>
+<ul>
+<li>它要求<strong>视觉定位 + 动作序列 + 错误恢复</strong>三者协同；</li>
+<li>失败模式很“人类”：点错位置、没等加载完、关错了弹窗；</li>
+<li>这类任务的评测几乎无法作弊（有真实环境状态校验）。</li>
+</ul>
+<p>把 OSWorld 和 SWE-bench 放在一起看，Anthropic 押注的方向很清楚：<strong>能在真实环境里持续操作的 agent</strong>，而不是“回答更准的聊天模型”。</p>
+<h2 id="30-小时连续工作意味着什么">30 小时连续工作意味着什么</h2>
+<p>这句话在公告里来自客户证言，不是基准数字，但背后的工程含义很实在：</p>
+<ul>
+<li>长任务的瓶颈是<strong>上下文管理与状态持久化</strong>，不是单步能力；</li>
+<li>30 小时里模型需要自己决定“记什么、忘什么”，需要有检查点；</li>
+<li>成本是 30 小时 × 每小时数千次工具调用，账单量级和单次问答完全不同。</li>
+</ul>
+<p>所以“能跑 30 小时”其实是<strong>“能跑 30 小时后仍然可回滚、可审计”</strong> 的简称。没有 harness 支撑，这句话没有意义。</p>
+<h2 id="和同期模型的相对位置">和同期模型的相对位置</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>SWE-bench Verified</th>
+<th>定价（$/M）</th>
+</tr></thead>
+<tbody>
+<tr><td>Claude Sonnet 4.5</td><td>77.2%</td><td>3 / 15</td></tr>
+<tr><td>Claude Opus 4（5 月）</td><td>72.5%</td><td>15 / 75</td></tr>
+<tr><td>GPT-5（8 月）</td><td>系统级，未单列</td><td>—</td></tr>
+<tr><td>Kimi K2（开源）</td><td>约 65% 量级</td><td>自托管</td></tr>
+</tbody>
+</table></div>
+<p><strong>Sonnet 4.5 的分数超过了自家上一代 Opus，价格只有 1/5。</strong> 这是 2025 年最重要的趋势之一：中小尺寸模型通过更好的后训练与 harness 适配，把“旗舰能力”打到了主力价位。</p>
+<h2 id="测评该怎么读">测评该怎么读</h2>
+<p>给同类公告一个通用读法（顺序别搞反）：</p>
+<ol>
+<li>先看 <strong>scaffold 与 prompt</strong>，再看分数；</li>
+<li>看<strong>试验次数与是否用 test-time compute</strong>；</li>
+<li>看<strong>失败样本长什么样</strong>（公告通常不给，得自己跑）；</li>
+<li>最后才看排名，而且只和同口径的数字比。</li>
+</ol>
+<p>按这个顺序，77.2% 的可信度比很多“80%+”高——因为它的口径交代得最清楚。</p>
+<h2 id="我的看法">我的看法</h2>
+<ul>
+<li>编码能力会成为模型的主战场，，因为它是少数能自动验证结果的领域，也最接近企业付费意愿。</li>
+<li><strong>“分数 + 口径”一起发布会成为规范</strong>。评测透明度和模型能力同等重要，尤其在 agent 场景。</li>
+<li>小模型 + 好 harness 会持续挤压旗舰模型，。Opus 级别的价格只有在“必须一次成功”的场景才站得住。</li>
+<li>对工程团队：<strong>别用 1M 上下文的分数做决策</strong>。上下文越长，推理稳定性越差，200K 是当前更稳的工程区间。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>发布公告（含评测脚注）：<a href="https://www.anthropic.com/news/claude-sonnet-4-5">Introducing Claude Sonnet 4.5</a></li>
+<li>模型规格与上下文：<a href="https://docs.claude.com/en/docs/about-claude/models/overview">Models overview</a></li>
+<li>Claude Code：<a href="https://www.anthropic.com/claude-code">anthropic.com/claude-code</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/anthropic/">Anthropic</a><a class="tag" href="/tags/claude/">Claude</a><a class="tag" href="/tags/编码/">编码</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/评测/">评测</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」</a><time>2025-05</time></li><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

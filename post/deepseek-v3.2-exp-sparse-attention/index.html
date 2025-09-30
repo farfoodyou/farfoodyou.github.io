@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型 - farfood</title>
+<meta name="description" content="V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-v3.2-exp-sparse-attention/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型", "description": "V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。", "datePublished": "2025-09-29T23:50:00+08:00", "dateModified": "2025-09-29T23:50:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v3.2-exp-sparse-attention/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 稀疏注意力, 长上下文, 推理优化"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型 - farfood">
+<meta property="og:description" content="V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-v3.2-exp-sparse-attention/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型 - farfood">
+<meta name="twitter:description" content="V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。">
+<meta property="article:published_time" content="2025-09-29T23:50:00+08:00">
+<meta name="keywords" content="DeepSeek, 稀疏注意力, 长上下文, 推理优化">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</h1>
+    <p class="meta"><time datetime="2025-09-29T23:50:00">2025-09-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2121 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#稀疏注意力到底省了什么">稀疏注意力到底省了什么</a></li>
+<li class="h2"><a href="#为什么细粒度是难点">为什么&quot;细粒度&quot;是难点</a></li>
+<li class="h2"><a href="#对齐训练配置一个值得学的发布方式">对齐训练配置：一个值得学的发布方式</a></li>
+<li class="h2"><a href="#顺带说价格">顺带说价格</a></li>
+<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>9 月 29 日，DeepSeek 放出 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Exp">V3.2-Exp</a>。名字里带 Exp，说明它不是“更强”，而是“验证一个结构改动”：</p>
+<blockquote><p>引入 DeepSeek Sparse Attention（DSA），第一次做到细粒度稀疏注意力，长上下文的训练与推理效率显著提升，输出质量基本不变。</p></blockquote>
+<p>这句话里最有价值的是<strong>“基本上不变”</strong>——为了证明这一点，他们刻意把训练配置与 V3.1-Terminus 对齐。这种做法在模型发布里不常见，但它是唯一能让架构对比可信的方式。</p>
+<h2 id="稀疏注意力到底省了什么">稀疏注意力到底省了什么</h2>
+<p>标准注意力（MHA/MLA）对每个 query 都要和全部历史 key 做注意力计算：</p>
+<pre data-lang="text"><code class="language-text">计算量 ∝ L²        （L = 序列长度）
+显存占用 ∝ L       （KV cache）</code></pre>
+<p>“稀疏注意力”的常见做法是让每个 query 只看一部分 key。关键问题是<strong>怎么选</strong>：选得粗（按块选）会丢信息，选得细又要额外的索引开销。</p>
+<p>DSA 的思路是“细粒度 + 可学习的索引器”：先用一个轻量的 indexer 给每个 query 选出 top-k 相关的 key，再只在这些 key 上做完整注意力。用他们的实现来说，索引器的 logits kernel 放在 <a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a>，稀疏注意力的 kernel 放在 <a href="https://github.com/deepseek-ai/FlashMLA">FlashMLA</a>。</p>
+<p>省下来的部分：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>稠密注意力</th>
+<th>稀疏（top-k）</th>
+</tr></thead>
+<tbody>
+<tr><td>Attention FLOPs</td><td>O(L²)</td><td>O(L·k)</td></tr>
+<tr><td>KV cache 读取</td><td>全部历史</td><td>只读选中部分</td></tr>
+<tr><td>decoder 每 token 成本</td><td>随长度线性增长</td><td>近似常数（k 固定）</td></tr>
+</tbody>
+</table></div>
+<p>对 128K 上下文，这意味着 decode 阶段的显存带宽压力能降一个量级。<strong>长思考模型的成本大头在 decode</strong>，所以这条优化直接打在钱包上。</p>
+<h2 id="为什么细粒度是难点">为什么“细粒度”是难点</h2>
+<p>按块稀疏（block-sparse）实现简单、kernel 友好，但它有个硬伤：<strong>块内的无关信息也会被算进去，块间的相关信息可能被整块丢掉</strong>。序列越长，块粒度带来的质量损失越明显。</p>
+<p>细粒度（token 级）稀疏的难点在工程：</p>
+<ol>
+<li><strong>索引开销可能吃掉收益</strong>。每个 query 都要算一次“哪些 key 重要”，如果 indexer 本身是 O(L)，那就白干了；</li>
+<li><strong>不规则访存</strong>。选中的 key 是分散的，GPU 上很难做 coalesced access，实际加速比远低于理论值；</li>
+<li><strong>训练时梯度要能穿过选择过程</strong>。top-k 不可导，通常用 straight-through 或两阶段训练绕开。</li>
+</ol>
+<p>DeepSeek 把 kernel 单独开源，说明这套东西的难点确实在底层实现，而不是论文里的公式。</p>
+<h2 id="对齐训练配置一个值得学的发布方式">对齐训练配置：一个值得学的发布方式</h2>
+<p>这次发布里最“工程正确”的一点是<strong>控制变量</strong>：</p>
+<ul>
+<li>与 V3.1-Terminus 用同样的训练配置；</li>
+<li>在公开基准上，两版表现基本持平；</li>
+<li>结论因此可以归因到“注意力结构”这一个变量上。</li>
+</ul>
+<p>对比一下常见的发布方式（新版本 + 新数据 + 新后训练 + 新结构一起上，分数涨了 20 分），你根本无法知道是哪一项起作用。<strong>能做归因的发布，比分数更高的发布更有价值</strong>。</p>
+<h2 id="顺带说价格">顺带说价格</h2>
+<p>V3.2-Exp 上线时 API 价格同步下调（官方公告口径是大幅降价）。这里不重复具体数字——价格变动频繁，看官方定价页更靠谱： <a href="https://api-docs.deepseek.com/quick_start/pricing">api-docs.deepseek.com/quick_start/pricing</a></p>
+<p>但机制值得记：<strong>稀疏注意力省的是 decode 成本</strong>，所以降价空间主要来自长输出场景。短 prompt、短回答的请求，成本结构变化不大。这也解释了为什么“长思考模型”最先受益于这类优化。</p>
+<h2 id="不确定的部分">不确定的部分</h2>
+<ul>
+<li>稀疏注意力会在 2026 年成为长上下文模型的默认结构，。softmax 的二次项没法靠 kernel 优化抵消，只能改算法。</li>
+<li><strong>“质量不变 + 成本下降”是这一阶段最值钱的进步</strong>。榜单分数已经卷到边际收益很低，成本曲线才是真差距。</li>
+<li>对齐配置的对比方法会被更多人采用，。当所有模型都能刷到 90 分，可信度就成了稀缺品。</li>
+<li>给自部署团队的提醒：稀疏注意力的 kernel 支持依赖框架版本，上线前要跑真实长上下文压测，别只看 decode 吞吐的 microbenchmark。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>模型卡（DSA 说明、对比结论）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Exp">DeepSeek-V3.2-Exp</a></li>
+<li>索引器与稀疏注意力 kernel：<a href="https://github.com/deepseek-ai/DeepGEMM/pull/200">DeepGEMM PR #200</a>、<a href="https://github.com/deepseek-ai/FlashMLA/pull/98">FlashMLA PR #98</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/推理优化/">推理优化</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/claude-sonnet-4.5-swe-bench-77/">← Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</a><a class="next" href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a><time>2025-08</time></li><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

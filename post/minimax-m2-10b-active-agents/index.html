@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了 - farfood</title>
+<meta name="description" content="230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了", "description": "230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。", "datePublished": "2025-10-28T22:05:00+08:00", "dateModified": "2025-10-28T22:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "MiniMax, 开源模型, MoE, Agent, 编码"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了 - farfood">
+<meta property="og:description" content="230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了 - farfood">
+<meta name="twitter:description" content="230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。">
+<meta property="article:published_time" content="2025-10-28T22:05:00+08:00">
+<meta name="keywords" content="MiniMax, 开源模型, MoE, Agent, 编码">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</h1>
+    <p class="meta"><time datetime="2025-10-28T22:05:00">2025-10-28</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2579 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么激活参数重要">为什么激活参数重要</a></li>
+<li class="h2"><a href="#10b-激活-长推理-什么体验">10B 激活 + 长推理 = 什么体验</a></li>
+<li class="h2"><a href="#为-agent-而设计落到具体">&quot;为 agent 而设计&quot;落到具体</a></li>
+<li class="h2"><a href="#和大而全路线对照">和&quot;大而全&quot;路线对照</a></li>
+<li class="h2"><a href="#带宽视角10b-激活在机器上是什么样子">带宽视角：10B 激活在机器上是什么样子</a></li>
+<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>10 月 27 日，MiniMax 开源 <a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">M2</a>：<strong>230B 总参数 / 10B 激活</strong>（<a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">模型卡</a>），MoE，主打 coding 与 agentic workflow，许可证在模型卡里标为 MIT（<code>license_name: modified-mit</code>，使用前建议自己过一遍条款）。</p>
+<p>到 2025 年 10 月，开源 MoE 的激活参数已经形成一条清晰的下降曲线：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>时间</th>
+<th>激活参数</th>
+</tr></thead>
+<tbody>
+<tr><td>DeepSeek-V3</td><td>2024-12</td><td>37B</td></tr>
+<tr><td>Qwen3-235B</td><td>2025-04</td><td>22B</td></tr>
+<tr><td>GLM-4.5</td><td>2025-07</td><td>32B</td></tr>
+<tr><td>MiniMax-M2</td><td>2025-10</td><td><strong>10B</strong></td></tr>
+</tbody>
+</table></div>
+<p><strong>每半年砍一半</strong>，这是个很强的工程信号。</p>
+<h2 id="为什么激活参数重要">为什么激活参数重要</h2>
+<p>MoE 的成本结构是两段式的：</p>
+<pre data-lang="text"><code class="language-text">显存  ∝ 总参数（专家要全部驻留）
+算力  ∝ 激活参数（每 token 只走 top-k 专家）</code></pre>
+<p>所以“总参数/激活参数”的比例决定了性价比：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>比例</th>
+<th>含义</th>
+</tr></thead>
+<tbody>
+<tr><td>Kimi K2</td><td>1T / 32B ≈ 3%</td><td>知识量最大，算力最省，显存最贵</td></tr>
+<tr><td>MiniMax-M2</td><td>230B / 10B ≈ 4%</td><td>折中：单机可部署，算力接近 10B dense</td></tr>
+<tr><td>GLM-4.5</td><td>355B / 32B ≈ 9%</td><td>更“稠密”，能力强但每 token 更贵</td></tr>
+</tbody>
+</table></div>
+<p>M2 的 230B 总参数用 FP8 大约 230GB 显存——理论上 2 张 H200（141GB）就能跑，4 张很舒服。<strong>这是“能在一台机器上跑前沿 agent 模型”的门槛线</strong>。</p>
+<h2 id="10b-激活-长推理-什么体验">10B 激活 + 长推理 = 什么体验</h2>
+<p>一个粗略的算力换算：decode 阶段每 token 的计算量约等于 10B dense 模型。在 H200 上，单序列大概能跑到 60～100 token/s 量级（取决于 batch 与上下文长度）。</p>
+<p>对 agent 来说这个速度很关键：</p>
+<ul>
+<li>一次工具调用往返若需要 500 token 输出 → 约 5～8 秒；</li>
+<li>40 步的任务 → 4～5 分钟；</li>
+<li>同一硬件上并行 8 个任务的吞吐仍然可观。</li>
+</ul>
+<p>对比 32B 激活的模型，同样的硬件吞吐大约减半到三分之一。<strong>在 agent 场景，吞吐就是成本</strong>，因为任务是串行累积的。</p>
+<h2 id="为-agent-而设计落到具体">“为 agent 而设计”落到具体</h2>
+<p>模型卡强调 end-to-end tool use。这话要落地成可验证的东西，得看三点：</p>
+<ol>
+<li><strong>交错思考</strong>：在工具调用之间穿插推理（而不是先想完再调），失败时能重新规划；</li>
+<li><strong>长轨迹稳定性</strong>：50 步之后仍遵守最初的约束（不要改无关文件、不要跳过测试）；</li>
+<li><strong>错误语义理解</strong>：读到 <code>ModuleNotFoundError</code> 时知道装依赖，读到 <code>AssertionError</code> 时知道改代码而不是改测试。</li>
+</ol>
+<p>这三点在公开榜单上体现得很弱，真实差距得自己测。模型卡引用 Artificial Analysis 的综合分说它是开源第一，这类第三方聚合分可以参考，但仍然替代不了自己的任务集。</p>
+<h2 id="和大而全路线对照">和“大而全”路线对照</h2>
+<p>2025 年开源侧有两条路线：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>路线</th>
+<th>代表</th>
+<th>优点</th>
+<th>缺点</th>
+</tr></thead>
+<tbody>
+<tr><td>大而全</td><td>Kimi K2（1T/32B）</td><td>知识面广，通用性强</td><td>部署门槛高，延迟大</td></tr>
+<tr><td>小而专</td><td>MiniMax-M2（230B/10B）</td><td>便宜、快、易部署</td><td>长尾知识弱，需要 RAG 补</td></tr>
+</tbody>
+</table></div>
+<p>M2 明显选了后者：<strong>把有限容量压在 coding 与工具使用上，长尾知识交给检索</strong>。这个取舍在 agent 产品里是合理的——agent 的输入本来就来自环境，不需要模型背下来。</p>
+<h2 id="带宽视角10b-激活在机器上是什么样子">带宽视角：10B 激活在机器上是什么样子</h2>
+<p>把 M2 的 decode 翻译成字节数：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr><td>常驻权重</td><td>230B × 1B(FP8) ≈ <strong>230 GB</strong></td><td>必须全部驻留（MoE 所有专家都要在）</td></tr>
+<tr><td>每 token 读取</td><td>10B × 1B ≈ <strong>10 GB</strong></td><td>只有被激活的专家参与</td></tr>
+<tr><td>每 token KV</td><td>百 KB 量级（GQA）</td><td>随上下文线性增长</td></tr>
+</tbody>
+</table></div>
+<p>在 H200（4.8 TB/s）上，读 10 GB 需要约 <strong>2 ms</strong>，单流理论上限约 <strong>450 token/s</strong>；换算到 H100（3.35 TB/s）约 300 token/s。这是“每 token 成本”的硬地板——<strong>无论模型多聪明，都得先把这 10 GB 搬一遍</strong>。</p>
+<p>由此推出三个工程结论：</p>
+<ol>
+<li><strong>batch 是免费的性能</strong>。权重读一次可以服务 N 条请求，batch 越大，每 token 的权重搬运被摊得越薄；真正的限制是 KV cache 显存。</li>
+<li><strong>专家并行（EP）的通信量要单独算</strong>。EP 下每个 token 的 hidden 要 all-to-all 到持有目标专家的卡：按 hidden 4096、top-k 8、2 字节算，每层约 64 KB/token，几十层就是<strong>每 token 几 MB</strong>。单机内走 NVLink（900 GB/s）没问题，跨节点走 RDMA 就变成瓶颈。</li>
+<li><strong>10B 激活意味着“一张卡能算，两张卡能装”</strong>。230 GB 权重需要 2×H200 或 4×H100——这才是“可自托管”的真实门槛，跟“激活参数只有 10B”是两件事。</li>
+</ol>
+<h2 id="不确定的部分">不确定的部分</h2>
+<ul>
+<li>开源 MoE 的激活参数会继续下探到 6～10B，，总参数维持在 200～400B。这是“单机可部署 + 接近前沿”的甜区。</li>
+<li><strong>“小而专”会赢下 agent 场景</strong>，通用问答则还是大模型占优。两条线会长期并存。</li>
+<li>部署成本会成为选型第一指标，。2025 年上半年的问题是“能不能做到”，下半年变成了“每百万 token 多少钱、要多大的机器”。</li>
+<li>对做 agent 产品的团队：<strong>先把单步成本压到 1 分钱以下</strong>，再谈能力。否则再好的规划也会被账单否决。</li>
+</ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>模型卡（规格、许可、基准）：<a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">MiniMax-M2</a></li>
+<li>仓库与推理说明：<a href="https://github.com/MiniMax-AI/MiniMax-M2">github.com/MiniMax-AI/MiniMax-M2</a></li>
+<li>官方发布：<a href="https://www.minimax.io/news/minimax-m2">minimax.io/news/minimax-m2</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/minimax/">MiniMax</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

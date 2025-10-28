@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-09-30T09:10:00+08:00</updated>
+  <updated>2025-10-28T22:05:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</title>
+    <link href="https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/"/>
+    <id>https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/</id>
+    <updated>2025-10-28T22:05:00+08:00</updated>
+    <summary>230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。</summary>
+  </entry>
+  <entry>
+    <title>Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</title>
+    <link href="https://farfoodyou.github.io/post/claude-haiku-4.5-small-model-economics/"/>
+    <id>https://farfoodyou.github.io/post/claude-haiku-4.5-small-model-economics/</id>
+    <updated>2025-10-16T09:20:00+08:00</updated>
+    <summary>10 月 15 日 Haiku 4.5 上线：$1/$5、SWE-bench 73.3%（128K 思考预算、50 次平均）。它把「前沿能力」的价格压到 1/3，也让 sub-agent 架构第一次算得过账。</summary>
+  </entry>
   <entry>
     <title>Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</title>
     <link href="https://farfoodyou.github.io/post/claude-sonnet-4.5-swe-bench-77/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/2017/09/18/Vue-js/</id>
     <updated>2017-09-18T22:09:00+08:00</updated>
     <summary>在用 Vue.js 构建大型应用时推荐使用 NPM 安装: # 最新稳定版本 $ npm install vue # 最新稳定 CSP 兼容版本 $ npm install vue@csp # 开发版本（直接从 GitHub 安装） $ npm install vuejs/vue#dev 创建第一个 Vue 应用View 层 - HTML 代码如下：&lt;div id=&quot;app&quot;&gt; &amp;#123;&amp;#1…</summary>
-  </entry>
-  <entry>
-    <title>git remote</title>
-    <link href="https://farfoodyou.github.io/2017/09/18/git-remote/"/>
-    <id>https://farfoodyou.github.io/2017/09/18/git-remote/</id>
-    <updated>2017-09-18T18:09:00+08:00</updated>
-    <summary>git remote add origin https://github.com/farfoodyou/farfoodyou.github.io 本文作者： Farfoodyou 发布时间 : 2017年09月18日 - 18:09 最后更新 : 2017年09月18日 - 19:09 本文链接： https://farfoodyou.github.io/2017/09/18/git-remote…</summary>
-  </entry>
-  <entry>
-    <title>hexo</title>
-    <link href="https://farfoodyou.github.io/2017/09/18/hexo/"/>
-    <id>https://farfoodyou.github.io/2017/09/18/hexo/</id>
-    <updated>2017-09-18T18:09:00+08:00</updated>
-    <summary>hexo的安装配置和常用命令安装# 安装hexo npm install hexo -g #-g表示全局安装, npm默认为当前项目安装 hexo version # 初始化博客文件夹 hexo init blog # 切换到该路径 cd blog # 安装hexo的扩展插件 npm install # 安装其它插件 npm install hexo-admin --save npm instal…</summary>
   </entry>
 </feed>

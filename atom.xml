@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-10-28T22:05:00+08:00</updated>
+  <updated>2025-11-25T08:50:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</title>
+    <link href="https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/"/>
+    <id>https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/</id>
+    <updated>2025-11-25T08:50:00+08:00</updated>
+    <summary>11 月 24 日 Opus 4.5 发布，价格从 $15/$75 砍到 $5/$25，并首次把 effort 参数放到旗舰模型上：默认 high，可按任务降档。旗舰的定义从「最强」变成「最划算的上限」。</summary>
+  </entry>
+  <entry>
+    <title>Gemini 3：1501 Elo 之后，评测本身成了问题</title>
+    <link href="https://farfoodyou.github.io/post/gemini-3-benchmark-saturation/"/>
+    <id>https://farfoodyou.github.io/post/gemini-3-benchmark-saturation/</id>
+    <updated>2025-11-19T23:30:00+08:00</updated>
+    <summary>11 月 18 日 Gemini 3 Pro 发布：LMArena 1501、GPQA 91.9%、SWE-bench 76.2%、HLE 37.5%（无工具）。当分数普遍逼近上限，评测方法本身开始成为瓶颈。</summary>
+  </entry>
   <entry>
     <title>MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</title>
     <link href="https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/2017/09/20/mongoDB/</id>
     <updated>2017-09-20T19:09:00+08:00</updated>
     <summary>安装curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.6.tgz 下载tar -zxvf mongodb-linux-x86_64-3.0.6.tgz 解压 mv mongodb-linux-x86_64-3.0.6/ /usr/local/mongodb 将解压包拷贝到指定目录 export PATH=/bin:$…</summary>
-  </entry>
-  <entry>
-    <title>知识体系</title>
-    <link href="https://farfoodyou.github.io/2017/09/18/知识体系/"/>
-    <id>https://farfoodyou.github.io/2017/09/18/知识体系/</id>
-    <updated>2017-09-18T23:09:00+08:00</updated>
-    <summary>框架客户端 Vue.js,jquery.js服务器端 Spring，node.js,Mybatis 软件客户端 Navicat,Xmanager服务器端 docker,spring cloud,MySQL,mongoDB,Ngnix,apache,redis 开发软件vim,git,IDEA,atom,codeblock,eclipse,visual studio 开发语言C，C++，Java，G…</summary>
-  </entry>
-  <entry>
-    <title>Vue.js</title>
-    <link href="https://farfoodyou.github.io/2017/09/18/Vue-js/"/>
-    <id>https://farfoodyou.github.io/2017/09/18/Vue-js/</id>
-    <updated>2017-09-18T22:09:00+08:00</updated>
-    <summary>在用 Vue.js 构建大型应用时推荐使用 NPM 安装: # 最新稳定版本 $ npm install vue # 最新稳定 CSP 兼容版本 $ npm install vue@csp # 开发版本（直接从 GitHub 安装） $ npm install vuejs/vue#dev 创建第一个 Vue 应用View 层 - HTML 代码如下：&lt;div id=&quot;app&quot;&gt; &amp;#123;&amp;#1…</summary>
   </entry>
 </feed>

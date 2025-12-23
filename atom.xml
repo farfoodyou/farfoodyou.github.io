@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-11-25T08:50:00+08:00</updated>
+  <updated>2025-12-23T21:30:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</title>
+    <link href="https://farfoodyou.github.io/post/glm-4.7-thinking-before-acting/"/>
+    <id>https://farfoodyou.github.io/post/glm-4.7-thinking-before-acting/</id>
+    <updated>2025-12-23T21:30:00+08:00</updated>
+    <summary>355B/32B、MIT、SWE-bench 73.8%（+5.8）、Terminal-Bench 2.0 41%（+16.5）。GLM-4.7 的进步主要来自 agent 行为：每次动作前先想，跨轮保持思考一致。</summary>
+  </entry>
+  <entry>
+    <title>DeepSeek-V3.2：从「省算力」到「thinking with tools」</title>
+    <link href="https://farfoodyou.github.io/post/deepseek-v3.2-thinking-with-tools/"/>
+    <id>https://farfoodyou.github.io/post/deepseek-v3.2-thinking-with-tools/</id>
+    <updated>2025-12-02T22:40:00+08:00</updated>
+    <summary>12 月 1 日 V3.2 发布：DSA 稀疏注意力 + 大规模 RL + agentic 数据合成三件套，把「推理」和「工具调用」焊在一起；同期的高算力版本 Speciale 在官方口径里已经摸到 GPT-5 的水平。</summary>
+  </entry>
   <entry>
     <title>Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</title>
     <link href="https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/2017/09/20/NodeJS/</id>
     <updated>2017-09-20T23:09:00+08:00</updated>
     <summary>console.log(“Hello World”); node helloworld.js npm install express -g # 全局安装express 安装好之后，express 包就放在了工程目录下的 node_modules 目录中，因此在代码中只需要通过 require(‘express’) 的方式就好，无需指定第三方包路径。var express = require(‘ex…</summary>
-  </entry>
-  <entry>
-    <title>npm</title>
-    <link href="https://farfoodyou.github.io/2017/09/20/npm/"/>
-    <id>https://farfoodyou.github.io/2017/09/20/npm/</id>
-    <updated>2017-09-20T22:09:00+08:00</updated>
-    <summary>npm install -g cnpm –registry=https://registry.npm.taobao.org 安装模块 从 registry.npm.taobao.org 安装所有模块. 当安装的时候发现安装的模块还没有同步过来, 淘宝 NPM 会自动在后台进行同步, 并且会让你从官方 NPM registry.npmjs.org 进行安装. 下次你再安装这个模块的时候, 就会直接从…</summary>
-  </entry>
-  <entry>
-    <title>mongoDB</title>
-    <link href="https://farfoodyou.github.io/2017/09/20/mongoDB/"/>
-    <id>https://farfoodyou.github.io/2017/09/20/mongoDB/</id>
-    <updated>2017-09-20T19:09:00+08:00</updated>
-    <summary>安装curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.6.tgz 下载tar -zxvf mongodb-linux-x86_64-3.0.6.tgz 解压 mv mongodb-linux-x86_64-3.0.6/ /usr/local/mongodb 将解压包拷贝到指定目录 export PATH=/bin:$…</summary>
   </entry>
 </feed>

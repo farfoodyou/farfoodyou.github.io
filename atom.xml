@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2025-12-23T21:30:00+08:00</updated>
+  <updated>2026-01-20T22:10:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>KV cache 账本：128K 上下文到底要多少张卡</title>
+    <link href="https://farfoodyou.github.io/post/kv-cache-ledger-128k/"/>
+    <id>https://farfoodyou.github.io/post/kv-cache-ledger-128k/</id>
+    <updated>2026-01-20T22:10:00+08:00</updated>
+    <summary>把「长上下文」换算成显存和带宽：MHA/GQA/MLA 每 token 各占多少、128K 与 1M 分别需要多少卡、分页与量化能省多少、以及这些字节在机器上由谁搬。</summary>
+  </entry>
+  <entry>
+    <title>2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</title>
+    <link href="https://farfoodyou.github.io/post/inference-engines-2025-review/"/>
+    <id>https://farfoodyou.github.io/post/inference-engines-2025-review/</id>
+    <updated>2026-01-08T09:30:00+08:00</updated>
+    <summary>把 2025 年推理引擎的版本记录翻一遍：vLLM 从 V1 重写、V0 下线到 CUDA Graph 默认；SGLang 从 RadixAttention 走向 PD 分离和网关；NVIDIA Dynamo / llm-d 把「分布式推理」做成独立一层。</summary>
+  </entry>
   <entry>
     <title>GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</title>
     <link href="https://farfoodyou.github.io/post/glm-4.7-thinking-before-acting/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/2017/09/23/platformio/</id>
     <updated>2017-09-23T03:09:00+08:00</updated>
     <summary>我的单片机手上有一块BBB还是大二那时候买的，现在却没有怎么好好玩过platformio有atom下开发arduino程序的IDE插件。看上去很不错的样子，就是左边的边框一直都在太占地方了毕竟也不是没次都写这个程序。我想到的办法是，平常不用的时候就disable了然后要用了再打开。 说实话，我买了Beagle Bone Black却还没有怎么玩过几次。打算工作了周末玩一玩这写一些小东西。 毕竟在文…</summary>
-  </entry>
-  <entry>
-    <title>markdown</title>
-    <link href="https://farfoodyou.github.io/2017/09/21/markdown/"/>
-    <id>https://farfoodyou.github.io/2017/09/21/markdown/</id>
-    <updated>2017-09-21T22:09:00+08:00</updated>
-    <summary>常用markdown代码[TOC]二八定律： 百分之二十的知识解决百分之八十的问题。 &gt;这个可以用来表示引用 &gt; 这是一级引用 &gt;&gt;这是二级引用 &gt;&gt;&gt; 这是三级引用 &gt;这是一级引用 这是一级引用 这是二级引用 这是三级引用 这是一级引用 \//这是代码块 \ ![Markdown](http://images.cnitblog.com/blog/404392/201501/12225723104…</summary>
-  </entry>
-  <entry>
-    <title>NodeJS</title>
-    <link href="https://farfoodyou.github.io/2017/09/20/NodeJS/"/>
-    <id>https://farfoodyou.github.io/2017/09/20/NodeJS/</id>
-    <updated>2017-09-20T23:09:00+08:00</updated>
-    <summary>console.log(“Hello World”); node helloworld.js npm install express -g # 全局安装express 安装好之后，express 包就放在了工程目录下的 node_modules 目录中，因此在代码中只需要通过 require(‘express’) 的方式就好，无需指定第三方包路径。var express = require(‘ex…</summary>
   </entry>
 </feed>

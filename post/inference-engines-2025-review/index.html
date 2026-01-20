@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关 - farfood</title>
+<meta name="description" content="把 2025 年推理引擎的版本记录翻一遍：vLLM 从 V1 重写、V0 下线到 CUDA Graph 默认；SGLang 从 RadixAttention 走向 PD 分离和网关；NVIDIA Dynamo / llm-d 把「分布式推理」做成独立一层。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/inference-engines-2025-review/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关", "description": "把 2025 年推理引擎的版本记录翻一遍：vLLM 从 V1 重写、V0 下线到 CUDA Graph 默认；SGLang 从 RadixAttention 走向 PD 分离和网关；NVIDIA Dynamo / llm-d 把「分布式推理」做成独立一层。", "datePublished": "2026-01-08T09:30:00+08:00", "dateModified": "2026-01-08T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/inference-engines-2025-review/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "vLLM, SGLang, 推理引擎, 系统, KV缓存"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关 - farfood">
+<meta property="og:description" content="把 2025 年推理引擎的版本记录翻一遍：vLLM 从 V1 重写、V0 下线到 CUDA Graph 默认；SGLang 从 RadixAttention 走向 PD 分离和网关；NVIDIA Dynamo / llm-d 把「分布式推理」做成独立一层。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/inference-engines-2025-review/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关 - farfood">
+<meta name="twitter:description" content="把 2025 年推理引擎的版本记录翻一遍：vLLM 从 V1 重写、V0 下线到 CUDA Graph 默认；SGLang 从 RadixAttention 走向 PD 分离和网关；NVIDIA Dynamo / llm-d 把「分布式推理」做成独立一层。">
+<meta property="article:published_time" content="2026-01-08T09:30:00+08:00">
+<meta name="keywords" content="vLLM, SGLang, 推理引擎, 系统, KV缓存">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</h1>
+    <p class="meta"><time datetime="2026-01-08T09:30:00">2026-01-08</time><span class="sep">·</span>8 分钟<span class="sep">·</span>3319 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#vllm一次真正的内核替换">vLLM：一次真正的内核替换</a></li>
+<li class="h2"><a href="#sglang从-radixattention-到网关">SGLang：从 RadixAttention 到网关</a></li>
+<li class="h2"><a href="#dynamo-llm-d分布式推理成为独立一层">Dynamo / llm-d：分布式推理成为独立一层</a></li>
+<li class="h2"><a href="#算笔账引擎优化的四条主线">算笔账：引擎优化的四条主线</a></li>
+<li class="h2"><a href="#几句判断">几句判断</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>模型在台前，引擎在台后。2025 年真正决定“能不能用”的，是引擎这一层。这篇把一年的版本记录和架构变化过一遍——数据全部来自各项目的 release note，可点开核对。</p>
+<h2 id="vllm一次真正的内核替换">vLLM：一次真正的内核替换</h2>
+<p>vLLM 在 2025 年做了一件很少见的事：<strong>在高速迭代期把核心引擎整体重写，并干掉了旧引擎</strong>。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>时间</th>
+<th>版本</th>
+<th>事件</th>
+</tr></thead>
+<tbody>
+<tr><td>2025-01-27</td><td><a href="https://github.com/vllm-project/vllm/releases/tag/v0.7.0">v0.7.0</a></td><td>V1 引擎可试用；<code>torch.compile</code> 默认开启</td></tr>
+<tr><td>2025-03-18</td><td><a href="https://github.com/vllm-project/vllm/releases/tag/v0.8.0">v0.8.0</a></td><td>V1 成为默认</td></tr>
+<tr><td>2025-05-15</td><td><a href="https://github.com/vllm-project/vllm/releases/tag/v0.9.0">v0.9.0</a></td><td>PyTorch 2.7 / CUDA 12.8；Blackwell kernel</td></tr>
+<tr><td>2025-07-24</td><td><a href="https://github.com/vllm-project/vllm/releases/tag/v0.10.0">v0.10.0</a></td><td>开始移除 V0 代码</td></tr>
+<tr><td>2025-10-02</td><td><a href="https://github.com/vllm-project/vllm/releases/tag/v0.11.0">v0.11.0</a></td><td>V0 完全删除；CUDA Graph 默认 <code>FULL_AND_PIECEWISE</code></td></tr>
+<tr><td>2025-12-19</td><td><a href="https://github.com/vllm-project/vllm/releases/tag/v0.13.0">v0.13.0</a></td><td>常规迭代，模型支持为主</td></tr>
+</tbody>
+</table></div>
+<p>V1 到底改了什么？官方博客的说法是“为性能和架构简洁重写”（<a href="https://blog.vllm.ai/2025/01/27/v1-alpha-release.html">vLLM V1 alpha 公告</a>），落到工程上是四件事：</p>
+<ol>
+<li><strong>调度器与执行器解耦</strong>：CPU 侧的调度开销成为瓶颈后，把 tokenize/调度/采样的流水线拆开，避免 GPU 空转；</li>
+<li><strong><code>torch.compile</code> 进入主路径</strong>：默认编译，减少 Python 侧逐 op 派发的开销（decode 每 token 要走几百个 kernel，Python 的 10 μs × N 很致命）；</li>
+<li><strong>前缀缓存默认开启</strong>：同一 system prompt 的重复 prefill 被省掉；</li>
+<li><strong>CUDA Graph 覆盖更完整</strong>：<code>FULL_AND_PIECEWISE</code> 默认，把 decode 的 launch 开销压到最低。</li>
+</ol>
+<p>这四条指向同一个敌人：<strong>CPU 侧开销</strong>。当 GPU 上每 token 只需要 6～10 ms 时，几百次 kernel launch 的 host 开销能有 20%～30%。这也是 2025 年所有引擎的共同战场。</p>
+<h2 id="sglang从-radixattention-到网关">SGLang：从 RadixAttention 到网关</h2>
+<p>SGLang 的起点是 <strong>RadixAttention</strong>（前缀共享的基数树 + KV 复用），在 2024 年就以多轮对话/agent 场景的高缓存命中率出名。2025 年它的动作分两条线：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>方向</th>
+<th>动作</th>
+</tr></thead>
+<tbody>
+<tr><td>引擎本体</td><td>v0.4.6（4 月）→ v0.4.8（6 月）→ v0.5.x（8 月起）持续迭代；PD 分离、投机解码、多 LoRA</td></tr>
+<tr><td>系统层</td><td>2025 年 10 月起连续发布 <code>gateway-*</code> 版本（<a href="https://github.com/sgl-project/sglang/releases">releases</a>）</td></tr>
+</tbody>
+</table></div>
+<p><strong>引擎开始自带网关</strong>，这是 2025 年下半年一个很明显的趋势：把“KV cache 感知的路由”从外部负载均衡器挪进推理栈。原因很简单——传统 LB 按 QPS 轮询，会把带长前缀的请求打到没有缓存的副本上，缓存命中率瞬间归零。</p>
+<p>正确的路由要能回答：“哪个副本上有这段前缀的 KV？”这需要引擎把 KV 元数据暴露出来，于是网关自然下沉到引擎项目里。</p>
+<h2 id="dynamo-llm-d分布式推理成为独立一层">Dynamo / llm-d：分布式推理成为独立一层</h2>
+<ul>
+<li><strong>NVIDIA Dynamo</strong>（2025 年 3 月 GTC 发布，<a href="https://developer.nvidia.com/blog/introducing-nvidia-dynamo-a-low-latency-distributed-inference-framework-for-scaling-reasoning-ai-models/">博客</a>）把“分离式推理”（disaggregated serving）做成框架：prefill/decode 拆机、KV 通过 NIXL 直接传输、KV-aware 路由。</li>
+<li><strong>llm-d</strong>（Kubernetes 原生）把同一套思路搬到 K8s 上：用 Gateway API + InferencePool 做路由，用 KV 事件驱动调度。</li>
+</ul>
+<p>它们解决的是同一件事：<strong>单机放不下/不划算时，怎么把 prefill 和 decode 分到不同机器上，并且让 KV 高效地流动。</strong></p>
+<h2 id="算笔账引擎优化的四条主线">算笔账：引擎优化的四条主线</h2>
+<p>把 2025 年所有引擎 PR 归类，其实只有四条主线：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>主线</th>
+<th>优化对象</th>
+<th>典型手段</th>
+<th>收益量级</th>
+</tr></thead>
+<tbody>
+<tr><td>减少 host 开销</td><td>kernel launch / Python</td><td>CUDA Graph、torch.compile、异步调度</td><td>10%～30%</td></tr>
+<tr><td>减少重复计算</td><td>prefill 算力</td><td>前缀缓存、RadixAttention、KV 复用路由</td><td>长 prompt 场景 2～10×</td></tr>
+<tr><td>减少数据搬运</td><td>HBM 带宽</td><td>FP8/FP4 量化、MLA、稀疏注意力、KV 分层（HBM→CPU→NVMe）</td><td>1.5～4×</td></tr>
+<tr><td>拆分异构负载</td><td>资源错配</td><td>PD 分离、chunked prefill、EP/TP 混合并行</td><td>吞吐 2～5×</td></tr>
+</tbody>
+</table></div>
+<p>注意第三条：<strong>引擎能做的“搬得少”，前提是模型结构允许</strong>（MLA、稀疏注意力、量化友好）。这也是 2025 年模型和引擎开始“共同设计”的原因——DeepSeek 出 DSA 时同时给了 <a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a> 和 <a href="https://github.com/deepseek-ai/FlashMLA">FlashMLA</a> 的 kernel，Moonshot 在 K2 Thinking 里直接用 INT4 原生量化。</p>
+<h2 id="几句判断">几句判断</h2>
+<ul>
+<li>引擎的竞争从“支持多少模型”转向“系统层能力”，路由、KV 复用、分离式部署，这些决定集群吞吐，而不是单卡性能。</li>
+<li><strong>网关会继续下沉</strong>。KV-aware routing 需要引擎内部信息，外挂 LB 做不好。</li>
+<li>模型与 kernel 共同设计会成为前沿团队的标配，，通用引擎只能被动跟进。</li>
+<li>如果你自己部署：<strong>先做前缀缓存与路由，再考虑量化</strong>。前者收益快且无精度损失，后者要重新跑评测。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>vLLM 版本记录：<a href="https://github.com/vllm-project/vllm/releases">github.com/vllm-project/vllm/releases</a></li>
+<li>vLLM V1 设计说明：<a href="https://blog.vllm.ai/2025/01/27/v1-alpha-release.html">vLLM V1 alpha 公告</a></li>
+<li>SGLang 版本与网关：<a href="https://github.com/sgl-project/sglang/releases">github.com/sgl-project/sglang/releases</a></li>
+<li>NVIDIA Dynamo：<a href="https://developer.nvidia.com/blog/introducing-nvidia-dynamo-a-low-latency-distributed-inference-framework-for-scaling-reasoning-ai-models/">developer.nvidia.com/blog</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/vllm/">vLLM</a><a class="tag" href="/tags/sglang/">SGLang</a><a class="tag" href="/tags/推理引擎/">推理引擎</a><a class="tag" href="/tags/系统/">系统</a><a class="tag" href="/tags/kv缓存/">KV缓存</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/kv-cache-ledger-128k/">← KV cache 账本：128K 上下文到底要多少张卡</a><a class="next" href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡</a><time>2026-01</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

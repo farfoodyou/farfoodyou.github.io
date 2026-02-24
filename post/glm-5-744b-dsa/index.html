@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件 - farfood</title>
+<meta name="description" content="744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/glm-5-744b-dsa/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件", "description": "744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。", "datePublished": "2026-02-13T09:40:00+08:00", "dateModified": "2026-02-13T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/glm-5-744b-dsa/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "智谱, GLM, 开源模型, MoE, 稀疏注意力, Agent"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件 - farfood">
+<meta property="og:description" content="744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/glm-5-744b-dsa/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件 - farfood">
+<meta name="twitter:description" content="744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。">
+<meta property="article:published_time" content="2026-02-13T09:40:00+08:00">
+<meta name="keywords" content="智谱, GLM, 开源模型, MoE, 稀疏注意力, Agent">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</h1>
+    <p class="meta"><time datetime="2026-02-13T09:40:00">2026-02-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2401 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#官方成绩单">官方成绩单</a></li>
+<li class="h2"><a href="#285t-token-与-dsa-的组合意图">28.5T token 与 DSA 的组合意图</a></li>
+<li class="h2"><a href="#摊开算744b-在机房里是什么样">摊开算：744B 在机房里是什么样</a></li>
+<li class="h2"><a href="#长程-agent-任务的真实含义">长程 agent 任务的真实含义</a></li>
+<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
+  <div class="post-content">
+<p>2 月 12 日，智谱开源 <a href="https://huggingface.co/zai-org/GLM-5">GLM-5</a>。从 4.5 到 5 的变化很干脆：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>GLM-4.5</th>
+<th>GLM-5</th>
+</tr></thead>
+<tbody>
+<tr><td>总参数 / 激活</td><td>355B / 32B</td><td><strong>744B / 40B</strong></td></tr>
+<tr><td>训练 token</td><td>23T</td><td><strong>28.5T</strong></td></tr>
+<tr><td>注意力</td><td>稠密</td><td><strong>集成 DSA（稀疏注意力）</strong></td></tr>
+<tr><td>协议</td><td>MIT</td><td>MIT</td></tr>
+<tr><td>定位</td><td>agent 基座</td><td><strong>复杂系统工程 + 长程 agent</strong></td></tr>
+</tbody>
+</table></div>
+<p>一个半月前（12 月）DeepSeek 刚把 DSA 用在 V3.2 上；两个月后，智谱把同一套稀疏注意力放进了自己的旗舰。<strong>结构上的最佳实践开始跨团队收敛了。</strong></p>
+<h2 id="官方成绩单">官方成绩单</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>基准</th>
+<th>GLM-5</th>
+<th>GLM-4.7</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr><td>SWE-bench Verified</td><td><strong>77.8</strong></td><td>73.8</td><td>编码</td></tr>
+<tr><td>SWE-bench Multilingual</td><td><strong>73.3</strong></td><td>66.7</td><td>多语言仓库</td></tr>
+<tr><td>Terminal-Bench 2.0</td><td><strong>56.2</strong>（验证版 60.7）</td><td>41.0</td><td>多步终端任务</td></tr>
+<tr><td>BrowseComp（带上下文管理）</td><td><strong>75.9</strong></td><td>67.5</td><td>浏览型 agent</td></tr>
+<tr><td>IMOAnswerBench</td><td>82.5</td><td>—</td><td>数学推理</td></tr>
+</tbody>
+</table></div>
+<p>注意 Terminal-Bench 的两个数：<code>56.2 / 60.7 †</code>，官方把“修正了模糊指令的验证版”单列。这种双口径披露在 2026 年成了惯例——<strong>基准本身的缺陷比模型差异还大</strong>。</p>
+<h2 id="285t-token-与-dsa-的组合意图">28.5T token 与 DSA 的组合意图</h2>
+<p>两个改动放在一起看，方向很清楚：</p>
+<ul>
+<li><strong>加数据（23T → 28.5T）</strong>：补知识覆盖，尤其是工程/多语言代码；</li>
+<li><strong>加稀疏注意力</strong>：把“更长的上下文/更长的思考”变得可负担。</li>
+</ul>
+<p>如果没有 DSA，744B 规模 + 40B 激活 + 长思考预算，decode 阶段的 KV 读取会很夸张；有了 DSA，长上下文的成本从 O(L) 压到 O(k)，才谈得上“长程 agent”。</p>
+<p>这也是 2026 年开源旗舰的典型配方：<strong>大总参数（知识容量）+ 小激活（单 token 成本）+ 稀疏注意力（长上下文）+ MIT（商业友好）</strong>。</p>
+<h2 id="摊开算744b-在机房里是什么样">摊开算：744B 在机房里是什么样</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>路径</th>
+<th>谁在搬</th>
+</tr></thead>
+<tbody>
+<tr><td>常驻权重</td><td>744B × 1B(FP8) ≈ <strong>744 GB</strong></td><td>HBM 常驻</td><td>加载一次</td></tr>
+<tr><td>每 token 激活权重</td><td>40B × 1B ≈ <strong>40 GB</strong></td><td>HBM → SMEM</td><td>TMA / cp.async</td></tr>
+<tr><td>每 token 选中的 KV</td><td>top-k × 每层压缩维度</td><td>HBM → SMEM（gather）</td><td>稀疏注意力 kernel</td></tr>
+<tr><td>MoE all-to-all</td><td>每层 8 专家 × hidden × 2B</td><td>GPU ↔ GPU</td><td>NVSHMEM / NCCL</td></tr>
+</tbody>
+</table></div>
+<p>算一下硬指标：</p>
+<ul>
+<li><strong>容量</strong>：744GB FP8 权重 → 至少 6 张 H200（141GB）或 5 张 B200（180GB），实际要留 KV/激活空间，8 卡是舒服配置；</li>
+<li><strong>单流 decode 上限</strong>：读 40GB / 4.8TB/s ≈ <strong>8.3 ms/token → 约 120 token/s</strong>（H200）；B200（8TB/s）约 200 token/s；</li>
+<li><strong>batch 摊薄</strong>：权重读一次服务 N 条请求，吞吐随 batch 上升，直到 KV 占满；</li>
+<li><strong>EP 通信</strong>：40B 激活意味着专家分散在多卡，每层 all-to-all 的 hidden 搬运是固定成本，跨节点时走 RDMA（400G ≈ 50GB/s），一个 token 的专家通信常在 100 μs 量级——<strong>比算一遍贵</strong>。</li>
+</ul>
+<p>所以 744B 的部署现实是：<strong>单机 8 卡勉强、两个节点正常</strong>。这也是为什么“稀疏注意力 + FP8”是必需品而不是加分项。</p>
+<h2 id="长程-agent-任务的真实含义">长程 agent 任务的真实含义</h2>
+<p>官方定位写的是 “long-horizon agentic tasks”。这个词在 2026 年有具体含义：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>能力</th>
+<th>对应基准</th>
+<th>失败模式</th>
+</tr></thead>
+<tbody>
+<tr><td>长链工具调用</td><td>Terminal-Bench 2.0</td><td>中途放弃、重复同一动作</td></tr>
+<tr><td>浏览与信息整合</td><td>BrowseComp</td><td>迷失在无关页面、编造引用</td></tr>
+<tr><td>跨文件修改</td><td>SWE-bench Multilingual</td><td>改坏其他模块、不跑测试</td></tr>
+<tr><td>上下文管理</td><td>BrowseComp（带管理）</td><td>上下文溢出后丢失目标</td></tr>
+</tbody>
+</table></div>
+<p>注意 BrowseComp 的括注“w/ Context Management”：<strong>这类基线的分数强依赖 harness 的记忆管理策略</strong>。模型卡甚至写明了“无上下文管理时只保留最近 5 轮”——评分条件本身就是工程实现的一部分。</p>
+<h2 id="最后说三句">最后说三句</h2>
+<ul>
+<li>DSA 会成为 2026 年开源旗舰的默认结构，（DeepSeek 先验证、智谱跟进，剩下几家大概率跟上）。</li>
+<li><strong>“总参数↑、激活参数持平”会成为主流</strong>：知识靠容量，成本靠稀疏，二者解耦。</li>
+<li>agent 基准的分数会越来越不可比，，因为 harness 的上下文管理、重试策略、工具质量都会显著影响结果。发布方不写清 harness，数字就没意义。</li>
+<li>对自部署团队：<strong>744B 级模型先别急着自己扛</strong>。除非你有稳定的 8 卡以上资源和成熟的 EP 调优经验，否则走 API 更划算——自建的隐性成本（网络、并行策略、故障恢复）远高于权重本身。</li>
+</ul>
+<h2 id="参考与数据">参考与数据</h2>
+<ul>
+<li>模型卡（规格、基准表、评测设置）：<a href="https://huggingface.co/zai-org/GLM-5">GLM-5</a></li>
+<li>上一代技术报告：<a href="https://arxiv.org/abs/2508.06471">GLM-4.5: ARC Foundation Models (arXiv:2508.06471)</a></li>
+<li>稀疏注意力实现：<a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a></li>
+<li>部署与推理说明：<a href="https://z.ai/blog/glm-4.5">z.ai/blog/glm-4.5</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/智谱/">智谱</a><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/agent/">Agent</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/agent-evaluation-methodology/">← Agent 测评：别信单次分数，先算方差和账单</a><a class="next" href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><time>2025-12</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2026-01-20T22:10:00+08:00</updated>
+  <updated>2026-02-24T22:30:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>Agent 测评：别信单次分数，先算方差和账单</title>
+    <link href="https://farfoodyou.github.io/post/agent-evaluation-methodology/"/>
+    <id>https://farfoodyou.github.io/post/agent-evaluation-methodology/</id>
+    <updated>2026-02-24T22:30:00+08:00</updated>
+    <summary>agent 的分数由模型、harness、工具、环境四者共同决定。要判断「能不能托管」，得看 pass^k 而不是 pass@k、看方差而不是均值、看每任务成本而不是榜单排名。</summary>
+  </entry>
+  <entry>
+    <title>GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</title>
+    <link href="https://farfoodyou.github.io/post/glm-5-744b-dsa/"/>
+    <id>https://farfoodyou.github.io/post/glm-5-744b-dsa/</id>
+    <updated>2026-02-13T09:40:00+08:00</updated>
+    <summary>744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。</summary>
+  </entry>
   <entry>
     <title>KV cache 账本：128K 上下文到底要多少张卡</title>
     <link href="https://farfoodyou.github.io/post/kv-cache-ledger-128k/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/2017/10/04/MB/</id>
     <updated>2017-10-04T03:10:00+08:00</updated>
     <summary>终于可以在手机上看电脑里地资料了下午的时候从同事哪里知道了可以通过win10自带的共享实现，手机上在线看视频的功能。晚上我回校内网络尝试了，结果怎么都不能够搜索到我的台式机。然后我就把笔记本也接入了热点中，结果手机可以搜索到我的笔记本，但是仍然无法搜索到我的台式机。 居然，bug了这就有点尴尬了，不知道为什么，Vmare Workstation的两张虚拟卡倒是可以找到共享的资源，但是用无线网卡虚拟…</summary>
-  </entry>
-  <entry>
-    <title>从现在开始走向梦想吧</title>
-    <link href="https://farfoodyou.github.io/2017/09/25/现在开始走向梦想吧/"/>
-    <id>https://farfoodyou.github.io/2017/09/25/现在开始走向梦想吧/</id>
-    <updated>2017-09-25T21:09:00+08:00</updated>
-    <summary>从现在开始走向梦想吧我不知道十年以后下面的东西我能看多少，但是我想如果我开始看，一天看一点，总有一天会成为一个高手的。 目录 语言无关 IDE MySQL NoSQL PostgreSQL Web WEB服务器 其它 函数式概念 分布式系统 在线教育 大数据 操作系统 数据库 智能系统 正则表达式 版本控制 程序员杂谈 管理和监控 编程艺术 编译原理 编辑器 计算机图形学 设计模式 软件开发方法…</summary>
-  </entry>
-  <entry>
-    <title>platformio</title>
-    <link href="https://farfoodyou.github.io/2017/09/23/platformio/"/>
-    <id>https://farfoodyou.github.io/2017/09/23/platformio/</id>
-    <updated>2017-09-23T03:09:00+08:00</updated>
-    <summary>我的单片机手上有一块BBB还是大二那时候买的，现在却没有怎么好好玩过platformio有atom下开发arduino程序的IDE插件。看上去很不错的样子，就是左边的边框一直都在太占地方了毕竟也不是没次都写这个程序。我想到的办法是，平常不用的时候就disable了然后要用了再打开。 说实话，我买了Beagle Bone Black却还没有怎么玩过几次。打算工作了周末玩一玩这写一些小东西。 毕竟在文…</summary>
   </entry>
 </feed>

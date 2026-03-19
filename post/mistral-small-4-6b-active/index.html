@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略 - farfood</title>
+<meta name="description" content="119B 总参数 / 6B 激活、Apache 2.0、把指令跟随/推理/编码合进一个模型。6B 激活意味着单卡可跑，这是欧洲团队在算力受限下的现实主义选择。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/mistral-small-4-6b-active/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略", "description": "119B 总参数 / 6B 激活、Apache 2.0、把指令跟随/推理/编码合进一个模型。6B 激活意味着单卡可跑，这是欧洲团队在算力受限下的现实主义选择。", "datePublished": "2026-03-18T22:40:00+08:00", "dateModified": "2026-03-18T22:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/mistral-small-4-6b-active/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Mistral, 开源模型, MoE, 部署, 成本"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略 - farfood">
+<meta property="og:description" content="119B 总参数 / 6B 激活、Apache 2.0、把指令跟随/推理/编码合进一个模型。6B 激活意味着单卡可跑，这是欧洲团队在算力受限下的现实主义选择。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/mistral-small-4-6b-active/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略 - farfood">
+<meta name="twitter:description" content="119B 总参数 / 6B 激活、Apache 2.0、把指令跟随/推理/编码合进一个模型。6B 激活意味着单卡可跑，这是欧洲团队在算力受限下的现实主义选择。">
+<meta property="article:published_time" content="2026-03-18T22:40:00+08:00">
+<meta name="keywords" content="Mistral, 开源模型, MoE, 部署, 成本">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</h1>
+    <p class="meta"><time datetime="2026-03-18T22:40:00">2026-03-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1975 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#6b-激活意味着什么">6B 激活意味着什么</a></li>
+<li class="h2"><a href="#一个模型做三件事的产品逻辑">&quot;一个模型做三件事&quot;的产品逻辑</a></li>
+<li class="h2"><a href="#数据怎么搬单卡部署的真实体验">数据怎么搬：单卡部署的真实体验</a></li>
+<li class="h2"><a href="#欧洲算力现实下的选择">欧洲算力现实下的选择</a></li>
+<li class="h2"><a href="#我的看法">我的看法</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>3 月 17 日，Mistral 发布 <a href="https://mistral.ai/news/mistral-small-4">Mistral Small 4</a>：<strong>119B 总参数 / 6B 激活</strong>，Apache 2.0（<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">参数与许可</a>）。</p>
+<p>在一个 1T 参数满天飞的月份里，这个尺寸显得很“反潮流”。但它可能是最值得工程团队研究的那个。</p>
+<h2 id="6b-激活意味着什么">6B 激活意味着什么</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>指标</th>
+<th>数值</th>
+<th>含义</th>
+</tr></thead>
+<tbody>
+<tr><td>总参数</td><td>119B</td><td>FP8 约 119GB，单张 H200 能装</td></tr>
+<tr><td>激活参数</td><td>6B</td><td>每 token 算力 ≈ 6B dense</td></tr>
+<tr><td>上下文</td><td>长上下文支持</td><td>按官方说明</td></tr>
+<tr><td>许可</td><td>Apache 2.0</td><td>无附加条款</td></tr>
+</tbody>
+</table></div>
+<p>算力侧：6B 激活在 H200 上读一遍权重约 <strong>1.25 ms</strong>（6GB / 4.8TB/s），理论上限 <strong>800 token/s</strong> 量级。这意味着<strong>单卡就能提供生产级的并发吞吐</strong>。</p>
+<p>对比同月的 1T 模型（42B 激活，需要 16 卡跨节点）：Mistral Small 4 的部署成本是它的 1/16～1/20，而很多任务的绝对质量差距可能只有几个点。</p>
+<h2 id="一个模型做三件事的产品逻辑">“一个模型做三件事”的产品逻辑</h2>
+<p>官方定位是“把指令跟随、推理、编码合并进一个 128B 级模型”，避免用户在多模型之间切换。</p>
+<p>这和 2025 年“双模式/多模式”的思路不同：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>思路</th>
+<th>代表</th>
+<th>代价</th>
+</tr></thead>
+<tbody>
+<tr><td>一个模型 + 思考开关</td><td>Qwen3、GLM-4.5、V3.1</td><td>需要 prompt/template 约定</td></tr>
+<tr><td>一个模型 + effort 档位</td><td>o3-mini、Opus 4.5</td><td>黑盒，可控性差</td></tr>
+<tr><td><strong>一个模型 + 统一后训练</strong></td><td>Mistral Small 4</td><td>每种能力都不极致</td></tr>
+</tbody>
+</table></div>
+<p>第三条的风险很清楚：<strong>通用化会摊薄单项能力</strong>。Mistral 的赌注是“中小企业的真实需求是 80 分的全能，而不是 95 分的偏科”。</p>
+<h2 id="数据怎么搬单卡部署的真实体验">数据怎么搬：单卡部署的真实体验</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>路径</th>
+<th>谁在搬</th>
+</tr></thead>
+<tbody>
+<tr><td>常驻权重</td><td>119B × 1B(FP8) ≈ <strong>119 GB</strong></td><td>HBM 常驻</td><td>加载一次</td></tr>
+<tr><td>每 token 激活权重</td><td>6B × 1B ≈ <strong>6 GB</strong></td><td>HBM → SMEM</td><td>TMA / cp.async</td></tr>
+<tr><td>KV（GQA 假设）</td><td>百 KB 量级 / token</td><td>HBM → SMEM</td><td>TMA（paged）</td></tr>
+<tr><td>专家 all-to-all</td><td>单卡内无（除非 EP 拆分）</td><td>—</td><td>—</td></tr>
+</tbody>
+</table></div>
+<p>单卡（H200 141GB）的账：</p>
+<ol>
+<li><strong>权重 119GB</strong>，剩 20GB 左右给 KV —— 按 164KB/token（GQA-4 假设）算，约 <strong>12 万 token 的总 KV 预算</strong>；</li>
+<li>也就是“合理并发”是：8 条 8K 上下文，或 1 条 100K 上下文；</li>
+<li><strong>吞吐靠 batch</strong>：权重读一次服务 N 条请求，batch=16 时每 token 的权重摊销降到 1/16，H200 上能跑到数千 token/s 的聚合吞吐。</li>
+</ol>
+<p>和 1T 模型比，差距不在单卡算力，而在<strong>“能不能水平扩展得便宜”</strong>：单卡模型可以简单地加机器扩容，1T 模型加机器要考虑网络拓扑和专家分布。</p>
+<h2 id="欧洲算力现实下的选择">欧洲算力现实下的选择</h2>
+<p>2026 年欧洲的 AI 算力仍然受制于采购与能耗，做大模型的路只有两条：堆稀疏（降低单 token 成本）或做小（降低部署门槛）。Mistral Small 4 走了两条路的交集：<strong>MoE 稀疏 + 小激活 + 单卡可部署</strong>。</p>
+<p>这也解释了 Apache 2.0 的选择：<strong>许可越宽松，越容易被集成进别人的产品</strong>，而欧洲市场的优势本来就在 B 端集成与合规，不在消费级流量。</p>
+<h2 id="我的看法">我的看法</h2>
+<ul>
+<li>6～10B 激活是 2026 年的“可部署性”分水岭，单卡能装、能水平扩展、能私有化。</li>
+<li><strong>“全能但不极致”在 B 端是有效策略</strong>，因为采购方讨厌维护多模型栈。</li>
+<li>1T 模型的竞争会集中在少数有集群的团队，，其余市场属于 100B 级 + 好的 harness。</li>
+<li>给自建团队的建议：<strong>先用 6B 激活的模型跑通流量，再按任务分桶把难题升级到大模型</strong>。反过来做（先上大模型）会把成本结构焊死。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>官方发布：<a href="https://mistral.ai/news/mistral-small-4">Introducing Mistral Small 4</a></li>
+<li>参数与许可汇总：<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">Wikipedia: List of large language models</a></li>
+<li>同类小激活对比：<a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">MiniMax-M2</a></li>
+<li>部署与引擎：<a href="https://github.com/vllm-project/vllm/releases">vLLM releases</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/mistral/">Mistral</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/部署/">部署</a><a class="tag" href="/tags/成本/">成本</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/mimo-v2-pro-hybrid-attention/">← MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a><a class="next" href="/post/agent-evaluation-methodology/">Agent 测评：别信单次分数，先算方差和账单 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

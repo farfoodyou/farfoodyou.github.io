@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1 - farfood</title>
+<meta name="description" content="小米的旗舰 agent 模型：总参数超 1T、激活 42B、1M 上下文，混合注意力比例从 5:1 提到 7:1，并加了轻量 MTP 层做快速生成。先以 Hunter Alpha 匿名出现在 OpenRouter 上，被误认成 DeepSeek。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/mimo-v2-pro-hybrid-attention/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1", "description": "小米的旗舰 agent 模型：总参数超 1T、激活 42B、1M 上下文，混合注意力比例从 5:1 提到 7:1，并加了轻量 MTP 层做快速生成。先以 Hunter Alpha 匿名出现在 OpenRouter 上，被误认成 DeepSeek。", "datePublished": "2026-03-19T09:20:00+08:00", "dateModified": "2026-03-19T09:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/mimo-v2-pro-hybrid-attention/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "小米, 开源模型, MoE, 长上下文, 注意力, Agent"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1 - farfood">
+<meta property="og:description" content="小米的旗舰 agent 模型：总参数超 1T、激活 42B、1M 上下文，混合注意力比例从 5:1 提到 7:1，并加了轻量 MTP 层做快速生成。先以 Hunter Alpha 匿名出现在 OpenRouter 上，被误认成 DeepSeek。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/mimo-v2-pro-hybrid-attention/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1 - farfood">
+<meta name="twitter:description" content="小米的旗舰 agent 模型：总参数超 1T、激活 42B、1M 上下文，混合注意力比例从 5:1 提到 7:1，并加了轻量 MTP 层做快速生成。先以 Hunter Alpha 匿名出现在 OpenRouter 上，被误认成 DeepSeek。">
+<meta property="article:published_time" content="2026-03-19T09:20:00+08:00">
+<meta name="keywords" content="小米, 开源模型, MoE, 长上下文, 注意力, Agent">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</h1>
+    <p class="meta"><time datetime="2026-03-19T09:20:00">2026-03-19</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2274 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合注意力-71-是什么意思">混合注意力 7:1 是什么意思</a></li>
+<li class="h2"><a href="#mtp一次前向出多个-token">MTP：一次前向出多个 token</a></li>
+<li class="h2"><a href="#带宽视角1t42b-的账">带宽视角：1T/42B 的账</a></li>
+<li class="h2"><a href="#为什么大厂都在做agent-大脑">为什么大厂都在做&quot;agent 大脑&quot;</a></li>
+<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>3 月 18 日，小米发布 <a href="https://mimo.xiaomi.com/mimo-v2-pro">MiMo-V2-Pro</a>。规格先摆：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>数值</th>
+</tr></thead>
+<tbody>
+<tr><td>总参数 / 激活</td><td><strong>&gt;1T / 42B</strong></td></tr>
+<tr><td>上下文</td><td><strong>1M token</strong></td></tr>
+<tr><td>注意力</td><td>混合注意力，比例 <strong>7:1</strong>（前代 5:1）</td></tr>
+<tr><td>生成加速</td><td>轻量 MTP（Multi-Token Prediction）层</td></tr>
+<tr><td>定位</td><td>agent 系统的“大脑”</td></tr>
+</tbody>
+</table></div>
+<p>发布前它以 <strong>Hunter Alpha</strong> 的代号挂在 OpenRouter 上，一度被社区当成 DeepSeek 的新模型——这个插曲比参数更能说明 2026 年的模型生态：<strong>大家都先匿名放权重，看真实流量反馈再开发布会。</strong></p>
+<h2 id="混合注意力-71-是什么意思">混合注意力 7:1 是什么意思</h2>
+<p>混合注意力 = 大部分层用线性注意力（省带宽、省显存），少部分层保留 softmax 注意力（保精确检索）。比例 7:1 意味着<strong>每 8 层里有 7 层是线性的</strong>。</p>
+<p>这个方向 2025 年就有（MiniMax 的 lightning attention 是纯线性 + 少量全注意力），2026 年的变化是<strong>比例往线性一侧加码</strong>：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>结构</th>
+<th>每 token KV</th>
+<th>1M 上下文 KV</th>
+<th>检索精度</th>
+</tr></thead>
+<tbody>
+<tr><td>全 softmax（GQA）</td><td>数百 KB</td><td>数百 GB</td><td>最好</td></tr>
+<tr><td>5:1 混合</td><td>显著降低</td><td>数十 GB</td><td>好</td></tr>
+<tr><td><strong>7:1 混合</strong></td><td>更低</td><td>十 GB 级</td><td>略降</td></tr>
+<tr><td>纯线性</td><td>常数</td><td>常数</td><td>明显下降</td></tr>
+</tbody>
+</table></div>
+<p>7:1 的选择说明一件事：<strong>在 1M 上下文这个量级，精度损失可以接受，显存和带宽不能妥协。</strong></p>
+<h2 id="mtp一次前向出多个-token">MTP：一次前向出多个 token</h2>
+<p>MTP（Multi-Token Prediction）不是新概念（DeepSeek-V3 训练时就用过），但把它做成<strong>轻量推理层</strong>是 2026 年的工程趋势：</p>
+<pre data-lang="text"><code class="language-text">标准 decode：  前向一次 → 1 个 token
+MTP decode：   前向一次 → 主干 token + 投机草案 → 验证 → 一次接受多个</code></pre>
+<p>本质上它是<strong>投机解码的内置版本</strong>：模型自己猜后面几个 token，再用主干并行验证。收益取决于接受率，通常 1.5～2.5× 吞吐。</p>
+<p>代价：</p>
+<ul>
+<li>显存多一份 MTP 头（小）；</li>
+<li>接受率低时白算，延迟反而变差；</li>
+<li>对采样温度敏感（高温时接受率下降）。</li>
+</ul>
+<h2 id="带宽视角1t42b-的账">带宽视角：1T/42B 的账</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>路径</th>
+<th>谁在搬</th>
+</tr></thead>
+<tbody>
+<tr><td>常驻权重</td><td>1T × 1B(FP8) ≈ <strong>1 TB</strong></td><td>HBM 常驻</td><td>加载一次</td></tr>
+<tr><td>每 token 激活权重</td><td>42B × 1B ≈ <strong>42 GB</strong></td><td>HBM → SMEM</td><td>TMA / cp.async</td></tr>
+<tr><td>1M 上下文的 KV</td><td>混合注意力下十 GB 级</td><td>HBM ↔ SMEM</td><td>稀疏/gather 访问</td></tr>
+<tr><td>MoE all-to-all</td><td>每层 8 专家 × hidden × 2B</td><td>GPU ↔ GPU</td><td>NVSHMEM / NCCL</td></tr>
+</tbody>
+</table></div>
+<p>硬指标：</p>
+<ul>
+<li><strong>容量</strong>：1TB 权重至少 8 张 H200（141GB，合计 1.13TB）——几乎没有余量给 KV，实际要 2 个节点（16 卡）；</li>
+<li><strong>单流 decode</strong>：42GB / 4.8TB/s ≈ 8.8 ms/token → 约 110 token/s；开 MTP 且接受率高时可到 200+；</li>
+<li><strong>长上下文 prefill</strong>：1M token 的一次 prefill 是数十秒级，必须配合前缀缓存，否则交互式产品没法用；</li>
+<li><strong>跨节点 EP</strong>：16 卡跨机时，专家并行的 all-to-all 走 RDMA，网络拓扑（rail-optimized）比 FLOPs 更决定吞吐。</li>
+</ul>
+<p>直白点讲：<strong>1T 参数 + 1M 上下文在 2026 年仍然不是“一台机器”的东西。</strong></p>
+<h2 id="为什么大厂都在做agent-大脑">为什么大厂都在做“agent 大脑”</h2>
+<p>官方定位是“agent 系统的 brain”，官方给的对标也很直白：编码能力超过 Claude Sonnet 4.6，通用 agent（ClawEval）接近 Opus 4.6。</p>
+<p>这背后的判断是：<strong>agent 的价值不在单轮回答，而在长任务里的稳定性</strong>。所以 2026 年旗舰模型的卖点从“知识/推理分数”转向：</p>
+<ul>
+<li>工具调用稳定性（不乱传参、不重复同一错误）；</li>
+<li>长上下文下的目标保持；</li>
+<li>多步任务的成功率曲线；</li>
+<li>单位任务成本。</li>
+</ul>
+<p>这些能力没有统一榜单，只能靠 ClawEval、Terminal-Bench 这类“带环境”的基准，加上自家任务集。</p>
+<h2 id="不确定的部分">不确定的部分</h2>
+<ul>
+<li>混合注意力会继续往线性侧偏，，7:1 可能还不是终点；代价是检索型任务（长文档精确问答）需要外挂检索，而不是指望注意力。</li>
+<li><strong>MTP/投机解码会变成引擎默认</strong>，2026 年下半年不开投机解码的部署基本等于浪费 GPU。</li>
+<li>“匿名放权重”会成为发布常态，真实流量比发布会更能验证 agent 能力。</li>
+<li>如果你自己部署：1T 级模型的意义是“能不能私有化”，不是“能不能省 API 费”。评估时先算网络与运维成本，再算 GPU。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>官方发布页（架构、混合注意力比例、MTP）：<a href="https://mimo.xiaomi.com/mimo-v2-pro">MiMo-V2-Pro</a></li>
+<li>版本与参数汇总：<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">Wikipedia: List of large language models</a></li>
+<li>混合/线性注意力背景：<a href="https://arxiv.org/abs/2506.13585">MiniMax-M1 (arXiv:2506.13585)</a></li>
+<li>MTP 训练来源：<a href="https://arxiv.org/abs/2412.19437">DeepSeek-V3 Technical Report</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/小米/">小米</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/注意力/">注意力</a><a class="tag" href="/tags/agent/">Agent</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

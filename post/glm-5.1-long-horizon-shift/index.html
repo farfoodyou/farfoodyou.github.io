@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 - farfood</title>
+<meta name="description" content="同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GLM-5.1：8 小时工作日，agent 从「步」变成「班次」", "description": "同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。", "datePublished": "2026-04-08T09:10:00+08:00", "dateModified": "2026-04-08T09:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "智谱, GLM, 开源模型, Agent, 编码"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 - farfood">
+<meta property="og:description" content="同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 - farfood">
+<meta name="twitter:description" content="同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。">
+<meta property="article:published_time" content="2026-04-08T09:10:00+08:00">
+<meta name="keywords" content="智谱, GLM, 开源模型, Agent, 编码">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</h1>
+    <p class="meta"><time datetime="2026-04-08T09:10:00">2026-04-08</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2068 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#8-小时工作日要解决什么">&quot;8 小时工作日&quot;要解决什么</a></li>
+<li class="h2"><a href="#swe-bench-pro-与-terminal-bench-20-的区别">SWE-Bench Pro 与 Terminal-Bench 2.0 的区别</a></li>
+<li class="h2"><a href="#算笔账长程任务的账">算笔账：长程任务的账</a></li>
+<li class="h2"><a href="#和闭源的差距在哪">和闭源的差距在哪</a></li>
+<li class="h2"><a href="#几句判断">几句判断</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>4 月 7 日，智谱开源 <a href="https://huggingface.co/zai-org/GLM-5.1">GLM-5.1</a>（MIT）。和 GLM-5 相比参数不变，进步全在<strong>长程任务的耐久度</strong>上：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>基准</th>
+<th>GLM-5</th>
+<th>GLM-5.1</th>
+</tr></thead>
+<tbody>
+<tr><td>SWE-Bench Pro</td><td>55.1</td><td><strong>58.4</strong></td></tr>
+<tr><td>Terminal-Bench 2.0（Terminus-2）</td><td>56.2</td><td><strong>63.5</strong></td></tr>
+<tr><td>Terminal-Bench 2.0（Claude Code harness）</td><td>56.2</td><td><strong>69.0</strong></td></tr>
+<tr><td>BrowseComp（带上下文管理）</td><td>75.9</td><td><strong>79.3</strong></td></tr>
+<tr><td>IMOAnswerBench</td><td>82.5</td><td>83.8</td></tr>
+</tbody>
+</table></div>
+<p>注意 Terminal-Bench 那两行：<strong>同一个模型，换个 harness 从 63.5 变成 69.0</strong>。这 5.5 分不是模型涨的，是脚手架涨的。</p>
+<h2 id="8-小时工作日要解决什么">“8 小时工作日”要解决什么</h2>
+<p>把任务时长从 10 分钟拉到 8 小时，难度不是线性的。假设单步成功率 0.995：</p>
+<pre data-lang="text"><code class="language-text">1000 步  → 0.995^1000 ≈ 0.7%
+3000 步  → 0.995^3000 ≈ 3e-7</code></pre>
+<p>所以长程任务的工程解法从来不是“让模型更聪明”，而是：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>手段</th>
+<th>作用</th>
+</tr></thead>
+<tbody>
+<tr><td>检查点</td><td>每 N 步落盘状态，失败可回滚</td></tr>
+<tr><td>外部验证</td><td>跑测试/lint，不信模型自述</td></tr>
+<tr><td>目标复述</td><td>定期把原始需求重新喂进上下文</td></tr>
+<tr><td>上下文压缩</td><td>把历史折叠成摘要，防止溢出</td></tr>
+<tr><td>预算熔断</td><td>token/时间/工具调用三线硬上限</td></tr>
+</tbody>
+</table></div>
+<p>GLM-5.1 的进步可以理解为“模型在这套 harness 下更配合”：更容易接受验证信号、更少重复错误动作、更愿意在失败后换方案。</p>
+<h2 id="swe-bench-pro-与-terminal-bench-20-的区别">SWE-Bench Pro 与 Terminal-Bench 2.0 的区别</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>基准</th>
+<th>环境</th>
+<th>难点</th>
+<th>失败模式</th>
+</tr></thead>
+<tbody>
+<tr><td>SWE-Bench Pro</td><td>仓库 + 测试</td><td>跨文件修改、理解约定</td><td>改坏别处、不跑测试</td></tr>
+<tr><td>Terminal-Bench 2.0</td><td>终端</td><td>多步命令、环境状态</td><td>路径错、死循环、污染环境</td></tr>
+</tbody>
+</table></div>
+<p>前者考“懂代码”，后者考“会操作机器”。<strong>真实 agent 产品两者都要</strong>：改完代码得会部署、会看日志、会回滚。</p>
+<h2 id="算笔账长程任务的账">算笔账：长程任务的账</h2>
+<p>8 小时 × 每步 500 token 输出 ≈ 数十万 token 的输出量，加上上下文重复读取，一次“班次”的账单结构是：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>量级</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr><td>输出 token</td><td>0.2M～1M</td><td>思考 + 动作说明</td></tr>
+<tr><td>输入 token（含重复）</td><td>5M～50M</td><td>每步都要带上下文，前缀缓存决定成败</td></tr>
+<tr><td>权重读取</td><td>每次 decode 40GB</td><td>GLM-5 系列激活参数</td></tr>
+<tr><td>KV 峰值</td><td>数十至数百 GB</td><td>随上下文增长</td></tr>
+<tr><td>工具调用</td><td>数百至数千次</td><td>沙箱与网络成本</td></tr>
+</tbody>
+</table></div>
+<p>关键结论：<strong>长程任务的成本由“输入侧重复”主导，不是输出侧</strong>。一条 100K 上下文的请求走 200 步，如果前缀缓存命中 90%，输入成本降一个数量级；命中不了，账单直接爆。</p>
+<p>这就是为什么 2026 年的引擎都在赌“前缀缓存 + KV 复用路由”（见 <a href="/post/inference-engines-2025-review/">2025 引擎复盘</a>）：<strong>长程 agent 的成本控制约等于缓存命中率优化。</strong></p>
+<h2 id="和闭源的差距在哪">和闭源的差距在哪</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>维度</th>
+<th>开源旗舰（GLM-5.1）</th>
+<th>闭源旗舰</th>
+</tr></thead>
+<tbody>
+<tr><td>单步能力</td><td>接近（SWE-Bench Pro 58.4）</td><td>略强</td></tr>
+<tr><td>长程稳定性</td><td>依赖 harness</td><td>依赖 harness</td></tr>
+<tr><td>路由/记忆</td><td>自己做</td><td>供应商做了（但不可见）</td></tr>
+<tr><td>成本</td><td>可预算（自建）</td><td>黑盒（token 计费）</td></tr>
+<tr><td>合规/私有化</td><td>可控</td><td>通常不可</td></tr>
+</tbody>
+</table></div>
+<p>2026 年的实际局面是：<strong>开源模型在“单步能力”上追到 1～3 分以内，差距转移到“系统整合”</strong>——谁的路由、缓存、验证闭环做得更好，谁的 agent 就更可靠。</p>
+<h2 id="几句判断">几句判断</h2>
+<ul>
+<li>“任务时长”会成为 2026 年的核心宣传指标，（8 小时、24 小时、7×24 后台），但它的含义是“能跑多久不回滚”，不是“能独立工作多久”。</li>
+<li><strong>harness 的分数贡献会超过模型</strong>。同模型换 harness 差 5.5 分，比两代模型的差距还大。</li>
+<li>MIT + 744B/40B + 长程调优，是目前开源最实用的组合，尤其对有合规要求的企业。</li>
+<li>对工程团队：<strong>先投缓存和验证，再投模型</strong>。这两项的 ROI 在长程任务里是数量级领先的。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>模型卡（基准表、harness 说明）：<a href="https://huggingface.co/zai-org/GLM-5.1">GLM-5.1</a></li>
+<li>上一代：<a href="https://huggingface.co/zai-org/GLM-5">GLM-5</a></li>
+<li>长程 agent 的评测口径：<a href="https://arxiv.org/abs/2310.06770">SWE-bench (arXiv:2310.06770)</a></li>
+<li>harness 差异的量化示例：<a href="https://www.anthropic.com/news/claude-3-7-sonnet">Claude 3.7 公告</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/智谱/">智谱</a><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/kimi-k2.6-agent-swarm/">← Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</a><a class="next" href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><time>2025-12</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2026-03-19T09:20:00+08:00</updated>
+  <updated>2026-04-21T22:20:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</title>
+    <link href="https://farfoodyou.github.io/post/kimi-k2.6-agent-swarm/"/>
+    <id>https://farfoodyou.github.io/post/kimi-k2.6-agent-swarm/</id>
+    <updated>2026-04-21T22:20:00+08:00</updated>
+    <summary>1T/32B、256K 上下文、原生多模态 agentic 模型，官方主打 agent swarm：300 个子 agent、4000 步协同，以及后台常驻的 24/7 agent。问题从「模型多强」变成「编排系统多能扛」。</summary>
+  </entry>
+  <entry>
+    <title>GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</title>
+    <link href="https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/"/>
+    <id>https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/</id>
+    <updated>2026-04-08T09:10:00+08:00</updated>
+    <summary>同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。</summary>
+  </entry>
   <entry>
     <title>MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</title>
     <link href="https://farfoodyou.github.io/post/mimo-v2-pro-hybrid-attention/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/post/o3-mini-reasoning-effort/</id>
     <updated>2025-02-03T10:05:00+08:00</updated>
     <summary>一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。</summary>
-  </entry>
-  <entry>
-    <title>Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</title>
-    <link href="https://farfoodyou.github.io/post/kimi-k1.5-long-context-rl/"/>
-    <id>https://farfoodyou.github.io/post/kimi-k1.5-long-context-rl/</id>
-    <updated>2025-01-23T22:10:00+08:00</updated>
-    <summary>和 R1 同一天，月之暗面放出 k1.5 技术报告：不用 MCTS、不用 value function、不用过程奖励模型，只靠 128K 长上下文 RL 与改过的策略优化。真正值得抄的是 partial rollout 和 long2short。</summary>
-  </entry>
-  <entry>
-    <title>DeepSeek-R1：纯 RL 把推理能力「逼」出来</title>
-    <link href="https://farfoodyou.github.io/post/deepseek-r1-pure-rl/"/>
-    <id>https://farfoodyou.github.io/post/deepseek-r1-pure-rl/</id>
-    <updated>2025-01-21T09:20:00+08:00</updated>
-    <summary>R1 报告里最反常识的不是追平 o1，而是 R1-Zero：不做 SFT，只做 RL。拆开看训练管线、GRPO、规则奖励与蒸馏，以及它对推理经济学的影响。</summary>
   </entry>
 </feed>

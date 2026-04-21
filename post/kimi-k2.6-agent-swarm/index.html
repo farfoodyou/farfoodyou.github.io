@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling - farfood</title>
+<meta name="description" content="1T/32B、256K 上下文、原生多模态 agentic 模型，官方主打 agent swarm：300 个子 agent、4000 步协同，以及后台常驻的 24/7 agent。问题从「模型多强」变成「编排系统多能扛」。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/kimi-k2.6-agent-swarm/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling", "description": "1T/32B、256K 上下文、原生多模态 agentic 模型，官方主打 agent swarm：300 个子 agent、4000 步协同，以及后台常驻的 24/7 agent。问题从「模型多强」变成「编排系统多能扛」。", "datePublished": "2026-04-21T22:20:00+08:00", "dateModified": "2026-04-21T22:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/kimi-k2.6-agent-swarm/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Moonshot, 开源模型, Agent, 多智能体, 系统"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling - farfood">
+<meta property="og:description" content="1T/32B、256K 上下文、原生多模态 agentic 模型，官方主打 agent swarm：300 个子 agent、4000 步协同，以及后台常驻的 24/7 agent。问题从「模型多强」变成「编排系统多能扛」。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/kimi-k2.6-agent-swarm/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling - farfood">
+<meta name="twitter:description" content="1T/32B、256K 上下文、原生多模态 agentic 模型，官方主打 agent swarm：300 个子 agent、4000 步协同，以及后台常驻的 24/7 agent。问题从「模型多强」变成「编排系统多能扛」。">
+<meta property="article:published_time" content="2026-04-21T22:20:00+08:00">
+<meta name="keywords" content="Moonshot, 开源模型, Agent, 多智能体, 系统">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</h1>
+    <p class="meta"><time datetime="2026-04-21T22:20:00">2026-04-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2047 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#swarm-是横向-scaling">swarm 是&quot;横向 scaling&quot;</a></li>
+<li class="h2"><a href="#300-个子-agent-意味着什么">300 个子 agent 意味着什么</a></li>
+<li class="h2"><a href="#数据怎么搬谁在搬搬到哪">数据怎么搬：谁在搬、搬到哪</a></li>
+<li class="h2"><a href="#247-后台-agent产品形态的变化">24/7 后台 agent：产品形态的变化</a></li>
+<li class="h2"><a href="#我的看法">我的看法</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>4 月 20 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K2.6">Kimi K2.6</a>（Modified MIT）。规格延续 K2 家族：<strong>1T 总参数 / 32B 激活、256K 上下文、原生多模态</strong>。</p>
+<p>但它的卖点已经不在模型本体，而在<strong>编排</strong>：</p>
+<blockquote><p>横向扩展到 300 个子 agent、执行 4000 步协同，把任务动态拆成并行的、领域特化的子任务。</p></blockquote>
+<h2 id="swarm-是横向-scaling">swarm 是“横向 scaling&quot;</h2>
+<p>2025 年的 scaling 是“让一个模型想更久”（长 CoT）。2026 年出现第二条路：<strong>让多个实例同时干</strong>。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>维度</th>
+<th>纵向（长 CoT）</th>
+<th>横向（swarm）</th>
+</tr></thead>
+<tbody>
+<tr><td>资源</td><td>单请求算力</td><td>多请求并发</td></tr>
+<tr><td>瓶颈</td><td>延迟、显存</td><td>调度、通信、汇聚</td></tr>
+<tr><td>失败模式</td><td>想偏了</td><td>子任务冲突、结果不一致</td></tr>
+<tr><td>成本</td><td>与思考长度成正比</td><td>与子 agent 数成正比</td></tr>
+</tbody>
+</table></div>
+<p>横向扩展的吸引力在于<strong>延迟不随任务规模线性增长</strong>：10 个子任务并行跑，墙钟时间约等于最慢的那个，而不是 10 个之和。</p>
+<p>代价是工程复杂度爆炸：任务拆分、依赖管理、并发写冲突、结果合并、失败重试——这些是分布式系统的老问题，只是把“服务”换成了“agent”。</p>
+<h2 id="300-个子-agent-意味着什么">300 个子 agent 意味着什么</h2>
+<p>保守估算一次 swarm 任务的资源占用：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>单 agent</th>
+<th>300 并发</th>
+</tr></thead>
+<tbody>
+<tr><td>上下文</td><td>32K～128K</td><td>10M～38M token</td></tr>
+<tr><td>KV 显存（35KB/token, MLA）</td><td>1～4.5 GB</td><td><strong>350 GB～1.4 TB</strong></td></tr>
+<tr><td>输出 token</td><td>5K～20K</td><td>1.5M～6M</td></tr>
+<tr><td>工具调用</td><td>10～50</td><td>3K～15K</td></tr>
+</tbody>
+</table></div>
+<p>结论很直接：<strong>swarm 不是“免费并行”，它把显存和网络变成主要成本</strong>。要在 256K 上下文下跑 300 并发，至少需要多节点 + KV 分层（HBM→CPU→NVMe），并且要能把“共享前缀”的 KV 复用掉，否则一遍上下文就能把集群撑满。</p>
+<h2 id="数据怎么搬谁在搬搬到哪">数据怎么搬：谁在搬、搬到哪</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>路径</th>
+<th>谁在搬</th>
+</tr></thead>
+<tbody>
+<tr><td>权重（1T, FP8 ≈ 1TB）</td><td>HBM 常驻</td><td>加载一次</td></tr>
+<tr><td>共享上下文 KV</td><td>HBM，跨 agent 复用</td><td>前缀缓存 / KV 复用路由</td></tr>
+<tr><td>子 agent 间消息</td><td>节点内 NVLink、节点间 RDMA</td><td>编排层序列化 + 传输</td></tr>
+<tr><td>工具结果</td><td>外部服务 → 上下文</td><td>由 harness 拼进 prompt</td></tr>
+<tr><td>汇总阶段</td><td>多个子结果 → 主 agent 上下文</td><td>压缩/摘要后重新 prefill</td></tr>
+</tbody>
+</table></div>
+<p>三个工程要点：</p>
+<ol>
+<li><strong>共享前缀是 swarm 的生命线</strong>。300 个子任务通常共享同一份代码库/文档，如果每个子 agent 都重新 prefill 一次，成本是单 agent 的 300 倍；命中缓存能降到 3～10 倍。</li>
+<li><strong>消息序列化格式决定带宽</strong>。子 agent 之间传 JSON 比传结构化二进制贵 2～4 倍，而 token 才是最终计费单位。</li>
+<li><strong>汇总阶段是一次巨大的 prefill</strong>。把 300 份结果塞进主 agent 的上下文，等于重新跑一次长文档 prefill——这也是“上下文压缩”在 swarm 里比在单 agent 里更关键的原因。</li>
+</ol>
+<h2 id="247-后台-agent产品形态的变化">24/7 后台 agent：产品形态的变化</h2>
+<p>官方提到的另一个用法是“常驻后台 agent”：自己管理日程、执行代码、跨平台操作，不需要人盯着。</p>
+<p>这带来两个新问题：</p>
+<ul>
+<li><strong>状态持久化</strong>：进程重启、机器迁移后，agent 的记忆和任务队列要能恢复；</li>
+<li><strong>审计与权限</strong>：无人值守的 agent 需要最小权限、操作日志、可撤销。</li>
+</ul>
+<p>这两件事在 2026 年还没有标准答案，各家都在自己造。</p>
+<h2 id="我的看法">我的看法</h2>
+<ul>
+<li>横向 scaling 会成为和长 CoT 并列的一条主线，，但它优化的是延迟而不是单位 token 成本。</li>
+<li><strong>“agent 编排”会变成独立的基础设施层</strong>：任务图、共享缓存、冲突解决、结果验证，这些和模型无关。</li>
+<li>开源 1T 模型的实际用途是“私有化编排集群”，，不是单机部署；选型时要按“集群吞吐/成本”算，不是按单卡 tok/s。</li>
+<li>对工程团队的提醒：<strong>先把“共享前缀 + 结果压缩”做对，再谈 300 并发</strong>。否则并行度越高，账单越失控。</li>
+</ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>模型卡（swarm 规格、上下文、许可）：<a href="https://huggingface.co/moonshotai/Kimi-K2.6">Kimi-K2.6</a></li>
+<li>前代与部署：<a href="https://huggingface.co/moonshotai/Kimi-K2-Instruct">Kimi-K2-Instruct</a>、<a href="https://github.com/MoonshotAI/Kimi-K2">github.com/MoonshotAI/Kimi-K2</a></li>
+<li>前缀缓存与复用：<a href="https://blog.vllm.ai/2025/01/27/v1-alpha-release.html">vLLM V1 说明</a></li>
+<li>KV 分层的系统背景：<a href="https://arxiv.org/abs/2407.00079">Mooncake (arXiv:2407.00079)</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/moonshot/">Moonshot</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/多智能体/">多智能体</a><a class="tag" href="/tags/系统/">系统</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a><time>2025-08</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

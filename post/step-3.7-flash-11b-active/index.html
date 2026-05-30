@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍 - farfood</title>
+<meta name="description" content="196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/step-3.7-flash-11b-active/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍", "description": "196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。", "datePublished": "2026-05-22T09:30:00+08:00", "dateModified": "2026-05-22T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/step-3.7-flash-11b-active/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "StepFun, 开源模型, MoE, 多模态, 推理优化"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍 - farfood">
+<meta property="og:description" content="196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/step-3.7-flash-11b-active/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍 - farfood">
+<meta name="twitter:description" content="196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。">
+<meta property="article:published_time" content="2026-05-22T09:30:00+08:00">
+<meta name="keywords" content="StepFun, 开源模型, MoE, 多模态, 推理优化">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</h1>
+    <p class="meta"><time datetime="2026-05-22T09:30:00">2026-05-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1829 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#11b-激活的工程含义">11B 激活的工程含义</a></li>
+<li class="h2"><a href="#三档-reasoning-level把预算交给调用方">三档 reasoning level：把预算交给调用方</a></li>
+<li class="h2"><a href="#多模态的生产级含义">多模态的&quot;生产级&quot;含义</a></li>
+<li class="h2"><a href="#给自建团队的现实账">给自建团队的现实账</a></li>
+<li class="h2"><a href="#结论以及我还不敢说的">结论，以及我还不敢说的</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
+  <div class="post-content">
+<p>5 月 29 日，阶跃星辰开源 <a href="https://huggingface.co/stepfun-ai/Step-3.7-Flash">Step 3.7 Flash</a>（Apache 2.0）。规格很“实用主义”：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>数值</th>
+</tr></thead>
+<tbody>
+<tr><td>总参数 / 激活</td><td>198B（196B 语言 + 1.8B 视觉）/ <strong>约 11B</strong></td></tr>
+<tr><td>上下文</td><td>256K</td></tr>
+<tr><td>推理档位</td><td>low / medium / high</td></tr>
+<tr><td>官方吞吐</td><td>最高 400 token/s</td></tr>
+<tr><td>定价（官方 API）</td><td>输入 $0.20/M（命中 $0.04）、输出 $1.15/M</td></tr>
+</tbody>
+</table></div>
+<p><strong>“高频生产负载”被写进了设计目标</strong>，而不是“最强模型”。</p>
+<h2 id="11b-激活的工程含义">11B 激活的工程含义</h2>
+<p>196B 主干 + top-k 稀疏激活，每 token 只走约 11B。按 FP8 算：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>路径</th>
+<th>谁在搬</th>
+</tr></thead>
+<tbody>
+<tr><td>常驻权重</td><td>198B × 1B ≈ <strong>198 GB</strong></td><td>HBM 常驻</td><td>加载一次</td></tr>
+<tr><td>每 token 激活权重</td><td>11B × 1B ≈ <strong>11 GB</strong></td><td>HBM → SMEM</td><td>TMA / cp.async</td></tr>
+<tr><td>KV（256K 上下文）</td><td>数十 GB 量级</td><td>HBM ↔ SMEM</td><td>TMA（paged）</td></tr>
+<tr><td>视觉 token</td><td>每张图数百至数千</td><td>主机 → GPU</td><td>H2D copy engine</td></tr>
+</tbody>
+</table></div>
+<p>在 H200（4.8 TB/s）上读 11 GB 约 <strong>2.3 ms</strong>，单流上限 430 token/s——官方说的 400 tok/s 基本贴着这个物理上限，说明<strong>权重搬运效率已经调到极致</strong>（MTP 投机解码把有效吞吐再乘一档，见 <code>--speculative_config &#x27;{&quot;method&quot;: &quot;mtp&quot;, &quot;num_speculative_tokens&quot;: 3}&#x27;</code>）。</p>
+<h2 id="三档-reasoning-level把预算交给调用方">三档 reasoning level：把预算交给调用方</h2>
+<p>和 o3-mini 的 effort、Qwen3 的 thinking 开关一样，Step 3.7 Flash 给了三档：</p>
+<ul>
+<li><strong>low</strong>：UI 元素识别、表单抽取这类“看一眼就答”；</li>
+<li><strong>medium</strong>：常规多模态问答、图表读数；</li>
+<li><strong>high</strong>：跨图推理、代码生成、多步校验。</li>
+</ul>
+<p>工程价值在于<strong>同一模型覆盖三类延迟预算</strong>，调用方不用维护多条模型线。代价是：档位越高，思考 token 越多，而思考 token 也按输出计费。</p>
+<h2 id="多模态的生产级含义">多模态的“生产级”含义</h2>
+<p>官方给的场景很具体：UI 线框图 → 结构化代码、GUI 截图 → 操作指令、图表 → 数据表。这类任务的共同点是<strong>输入是密集视觉信息，输出是结构化文本</strong>，对模型的要求是：</p>
+<ol>
+<li>空间定位准（按钮在哪、字段在哪）；</li>
+<li>能识别“缺信息”并主动查（官方提到“发现视觉资产不完整时会自己去找缺失数据”）；</li>
+<li>输出格式稳定（JSON/代码，不能自由发挥）。</li>
+</ol>
+<p>这类能力在公开榜单上体现得不好（SimpleVQA 79.2、V* 95.3 是官方口径），真实差距要靠自家页面截图集测。</p>
+<h2 id="给自建团队的现实账">给自建团队的现实账</h2>
+<ul>
+<li><strong>198GB 权重</strong>：FP8 至少要 2 张 H200，四张更舒服；单卡 H100（80GB）跑不了；</li>
+<li><strong>长上下文</strong>：256K 的 KV 需要分页 + 前缀缓存，否则并发上不去；</li>
+<li><strong>吞吐导向</strong>：这类模型的正确用法是<strong>大 batch + 低 effort</strong>，把 GPU 喂满，而不是单请求高 effort；</li>
+<li><strong>缓存定价是信号</strong>：命中价 $0.04 vs 未命中 $0.20，5 倍差距——说明厂商希望你复用前缀，这也是自建时最该优化的地方。</li>
+</ul>
+<h2 id="结论以及我还不敢说的">结论，以及我还不敢说的</h2>
+<ul>
+<li>11B 激活 + 256K 上下文，是 2026 年“生产级多模态”的甜区：单机能跑、吞吐够、价格能压。</li>
+<li><strong>三档 reasoning 会变成接口标准</strong>，但档位命名/语义各家不统一，跨模型路由需要自己抽象。</li>
+<li>多模态的真实门槛是“结构化输出稳定性”，，不是识别率。</li>
+<li>端侧/边缘场景暂时还轮不到 198B，但同样的“小激活 + MTP”思路正在往下沉（见 <a href="/post/on-device-inference-designs/">端侧推理</a>）。</li>
+</ul>
+<h2 id="参考与数据">参考与数据</h2>
+<ul>
+<li>模型卡（规格、三档推理、部署与 MTP 配置）：<a href="https://huggingface.co/stepfun-ai/Step-3.7-Flash">Step-3.7-Flash</a></li>
+<li>投机解码背景：<a href="https://arxiv.org/abs/2406.16858">EAGLE (arXiv:2406.16858)</a></li>
+<li>部署引擎：<a href="https://github.com/vllm-project/vllm/releases">vLLM releases</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/stepfun/">StepFun</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/多模态/">多模态</a><a class="tag" href="/tags/推理优化/">推理优化</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/speculative-decoding-economics/">← 投机解码账本：接受率每掉 10 个点，收益就归零</a><a class="next" href="/post/kimi-k2.6-agent-swarm/">Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

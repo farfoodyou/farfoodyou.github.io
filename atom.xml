@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2026-04-21T22:20:00+08:00</updated>
+  <updated>2026-05-30T22:15:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>投机解码账本：接受率每掉 10 个点，收益就归零</title>
+    <link href="https://farfoodyou.github.io/post/speculative-decoding-economics/"/>
+    <id>https://farfoodyou.github.io/post/speculative-decoding-economics/</id>
+    <updated>2026-05-30T22:15:00+08:00</updated>
+    <summary>2026 年不开投机解码的部署基本等于浪费 GPU。但收益完全取决于接受率：算清 draft 成本、验证成本、接受长度三者的关系，才知道该开几档、什么时候该关。</summary>
+  </entry>
+  <entry>
+    <title>Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</title>
+    <link href="https://farfoodyou.github.io/post/step-3.7-flash-11b-active/"/>
+    <id>https://farfoodyou.github.io/post/step-3.7-flash-11b-active/</id>
+    <updated>2026-05-22T09:30:00+08:00</updated>
+    <summary>196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。</summary>
+  </entry>
   <entry>
     <title>Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</title>
     <link href="https://farfoodyou.github.io/post/kimi-k2.6-agent-swarm/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/post/gemini-2.5-thinking-by-default/</id>
     <updated>2025-03-25T23:30:00+08:00</updated>
     <summary>Gemini 2.5 Pro 是第一个把 thinking 做成默认而不是开关的旗舰模型：1M 上下文、原生多模态、LMArena 登顶。默认思考带来的最大变化不在榜单，而在延迟分布和成本结构。</summary>
-  </entry>
-  <entry>
-    <title>Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</title>
-    <link href="https://farfoodyou.github.io/post/claude-3.7-sonnet-hybrid-reasoning/"/>
-    <id>https://farfoodyou.github.io/post/claude-3.7-sonnet-hybrid-reasoning/</id>
-    <updated>2025-02-25T08:40:00+08:00</updated>
-    <summary>同一天发了 Claude 3.7 Sonnet 和 Claude Code。前者是第一个「混合推理」商用模型：同一个 checkpoint，可即时回答也可长思考，思考预算由调用方按 token 指定。</summary>
-  </entry>
-  <entry>
-    <title>o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</title>
-    <link href="https://farfoodyou.github.io/post/o3-mini-reasoning-effort/"/>
-    <id>https://farfoodyou.github.io/post/o3-mini-reasoning-effort/</id>
-    <updated>2025-02-03T10:05:00+08:00</updated>
-    <summary>一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。</summary>
   </entry>
 </feed>

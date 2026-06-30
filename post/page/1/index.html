@@ -36,6 +36,18 @@
 <main class="wrap">
 <h1 class="page-title">全部文章</h1>
 <article class="card">
+  <h2><a href="/post/longcat-2.0-asic-superpod/">LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</a></h2>
+  <p class="meta"><time datetime="2026-06-30T22:40:00">2026-06-30</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。</p>
+  <a class="more" href="/post/longcat-2.0-asic-superpod/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a></h2>
+  <p class="meta"><time datetime="2026-06-17T09:20:00">2026-06-17</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">744B/40B 不变，两个改动：IndexShare 让每四层稀疏注意力复用同一个索引器（1M 上下文下每 token FLOPs 降 2.9×），MTP 接受长度 +20%。SWE-bench Pro 62.1，MIT。</p>
+  <a class="more" href="/post/glm-5.2-indexshare-1m-context/">阅读全文 →</a>
+</article>
+<article class="card">
   <h2><a href="/post/speculative-decoding-economics/">投机解码账本：接受率每掉 10 个点，收益就归零</a></h2>
   <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   <p class="excerpt">2026 年不开投机解码的部署基本等于浪费 GPU。但收益完全取决于接受率：算清 draft 成本、验证成本、接受长度三者的关系，才知道该开几档、什么时候该关。</p>
@@ -82,18 +94,6 @@
   <p class="meta"><time datetime="2026-02-13T09:40:00">2026-02-13</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。</p>
   <a class="more" href="/post/glm-5-744b-dsa/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡</a></h2>
-  <p class="meta"><time datetime="2026-01-20T22:10:00">2026-01-20</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
-  <p class="excerpt">把「长上下文」换算成显存和带宽：MHA/GQA/MLA 每 token 各占多少、128K 与 1M 分别需要多少卡、分页与量化能省多少、以及这些字节在机器上由谁搬。</p>
-  <a class="more" href="/post/kv-cache-ledger-128k/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a></h2>
-  <p class="meta"><time datetime="2026-01-08T09:30:00">2026-01-08</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
-  <p class="excerpt">把 2025 年推理引擎的版本记录翻一遍：vLLM 从 V1 重写、V0 下线到 CUDA Graph 默认；SGLang 从 RadixAttention 走向 PD 分离和网关；NVIDIA Dynamo / llm-d 把「分布式推理」做成独立一层。</p>
-  <a class="more" href="/post/inference-engines-2025-review/">阅读全文 →</a>
 </article>
 <nav class="pager"><a class="next" href="/post/page/2/">更早的文章 →</a></nav>
 </main>

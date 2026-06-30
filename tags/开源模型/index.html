@@ -34,7 +34,19 @@
   </div>
 </header>
 <main class="wrap">
-<h1 class="page-title">标签：开源模型 <span class="count">15 篇</span></h1>
+<h1 class="page-title">标签：开源模型 <span class="count">17 篇</span></h1>
+<article class="card">
+  <h2><a href="/post/longcat-2.0-asic-superpod/">LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</a></h2>
+  <p class="meta"><time datetime="2026-06-30T22:40:00">2026-06-30</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。</p>
+  <a class="more" href="/post/longcat-2.0-asic-superpod/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a></h2>
+  <p class="meta"><time datetime="2026-06-17T09:20:00">2026-06-17</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">744B/40B 不变，两个改动：IndexShare 让每四层稀疏注意力复用同一个索引器（1M 上下文下每 token FLOPs 降 2.9×），MTP 接受长度 +20%。SWE-bench Pro 62.1，MIT。</p>
+  <a class="more" href="/post/glm-5.2-indexshare-1m-context/">阅读全文 →</a>
+</article>
 <article class="card">
   <h2><a href="/post/step-3.7-flash-11b-active/">Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</a></h2>
   <p class="meta"><time datetime="2026-05-22T09:30:00">2026-05-22</time> <a class="cat" href="/categories/模型/">模型</a></p>

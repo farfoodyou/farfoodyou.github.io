@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2026-05-30T22:15:00+08:00</updated>
+  <updated>2026-06-30T22:40:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</title>
+    <link href="https://farfoodyou.github.io/post/longcat-2.0-asic-superpod/"/>
+    <id>https://farfoodyou.github.io/post/longcat-2.0-asic-superpod/</id>
+    <updated>2026-06-30T22:40:00+08:00</updated>
+    <summary>1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。</summary>
+  </entry>
+  <entry>
+    <title>GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</title>
+    <link href="https://farfoodyou.github.io/post/glm-5.2-indexshare-1m-context/"/>
+    <id>https://farfoodyou.github.io/post/glm-5.2-indexshare-1m-context/</id>
+    <updated>2026-06-17T09:20:00+08:00</updated>
+    <summary>744B/40B 不变，两个改动：IndexShare 让每四层稀疏注意力复用同一个索引器（1M 上下文下每 token FLOPs 降 2.9×），MTP 接受长度 +20%。SWE-bench Pro 62.1，MIT。</summary>
+  </entry>
   <entry>
     <title>投机解码账本：接受率每掉 10 个点，收益就归零</title>
     <link href="https://farfoodyou.github.io/post/speculative-decoding-economics/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/</id>
     <updated>2025-04-17T09:50:00+08:00</updated>
     <summary>4 月 16 日 o3 和 o4-mini 一起上线。它们的关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」：模型可以在 CoT 里搜网页、跑 Python、放大图片。</summary>
-  </entry>
-  <entry>
-    <title>DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</title>
-    <link href="https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/"/>
-    <id>https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/</id>
-    <updated>2025-03-26T21:15:00+08:00</updated>
-    <summary>架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。</summary>
-  </entry>
-  <entry>
-    <title>Gemini 2.5 Pro：把「思考」设成默认行为</title>
-    <link href="https://farfoodyou.github.io/post/gemini-2.5-thinking-by-default/"/>
-    <id>https://farfoodyou.github.io/post/gemini-2.5-thinking-by-default/</id>
-    <updated>2025-03-25T23:30:00+08:00</updated>
-    <summary>Gemini 2.5 Pro 是第一个把 thinking 做成默认而不是开关的旗舰模型：1M 上下文、原生多模态、LMArena 登顶。默认思考带来的最大变化不在榜单，而在延迟分布和成本结构。</summary>
   </entry>
 </feed>

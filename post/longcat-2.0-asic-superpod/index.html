@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LongCat-2.0：1.6T 模型，全程在 ASIC 上训完 - farfood</title>
+<meta name="description" content="1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/longcat-2.0-asic-superpod/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "LongCat-2.0：1.6T 模型，全程在 ASIC 上训完", "description": "1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。", "datePublished": "2026-06-30T22:40:00+08:00", "dateModified": "2026-06-30T22:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/longcat-2.0-asic-superpod/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "美团, 开源模型, MoE, ASIC, 训练系统"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="LongCat-2.0：1.6T 模型，全程在 ASIC 上训完 - farfood">
+<meta property="og:description" content="1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/longcat-2.0-asic-superpod/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LongCat-2.0：1.6T 模型，全程在 ASIC 上训完 - farfood">
+<meta name="twitter:description" content="1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。">
+<meta property="article:published_time" content="2026-06-30T22:40:00+08:00">
+<meta name="keywords" content="美团, 开源模型, MoE, ASIC, 训练系统">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</h1>
+    <p class="meta"><time datetime="2026-06-30T22:40:00">2026-06-30</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1595 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#asic-训练意味着什么">ASIC 训练意味着什么</a></li>
+<li class="h2"><a href="#稀疏度越过甜区">稀疏度&quot;越过甜区&quot;</a></li>
+<li class="h2"><a href="#数据怎么搬16t-的机房现实">数据怎么搬：1.6T 的机房现实</a></li>
+<li class="h2"><a href="#开源万亿俱乐部的现状2026-06">开源万亿俱乐部的现状（2026-06）</a></li>
+<li class="h2"><a href="#我的看法">我的看法</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>6 月 30 日，美团开源 <a href="https://huggingface.co/meituan-longcat/LongCat-2.0">LongCat-2.0</a>（MIT）：<strong>1.6T 总参数 / 48B 激活</strong>，35T token，支持 1M 上下文（用数百 B token 的 1M 语料专门训过）。</p>
+<p>模型卡里最“反常识”的一句话不是参数，而是：</p>
+<blockquote><p>整个训练与大规模部署都建立在 <strong>AI ASIC 超节点</strong>上，预训练跨越数百万加速器·天，<strong>没有回滚，也没有不可恢复的 loss 尖峰</strong>。</p></blockquote>
+<h2 id="asic-训练意味着什么">ASIC 训练意味着什么</h2>
+<p>大模型训练通常绑定 NVIDIA（CUDA 生态、NCCL、各种 kernel 库）。换成 ASIC 意味着整条栈都要重做：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>层次</th>
+<th>换 ASIC 要重做的事</th>
+</tr></thead>
+<tbody>
+<tr><td>算子</td><td>GEMM/Attention kernel 要重写（没有 cuBLAS/FlashAttention）</td></tr>
+<tr><td>通信</td><td>集合通信原语（all-reduce/all-to-all）要适配互联拓扑</td></tr>
+<tr><td>并行</td><td>TP/PP/EP 的切分策略要按实际带宽重新调</td></tr>
+<tr><td>稳定性</td><td>数值行为不同，loss spike 模式不同</td></tr>
+<tr><td>可观测</td><td>profiling 工具链要重建</td></tr>
+</tbody>
+</table></div>
+<p>“没有回滚”这句话的分量在这里：大模型训练常见做法是“发现 spike，回滚 checkpoint 调参重跑”，回滚一次损失几天到几周。<strong>能在新硬件上一次跑完 35T token，说明数值稳定性和故障恢复都做扎实了。</strong></p>
+<h2 id="稀疏度越过甜区">稀疏度“越过甜区”</h2>
+<p>模型卡里有一句判断：<strong>“The sparsity of MoE has crossed the sweet spot.&quot;</strong> 1.6T / 48B ≈ <strong>3%</strong> 激活比例，比 GLM-5（744B/40B ≈ 5.4%）更稀。</p>
+<p>稀疏度提高的好处与代价：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>稀疏度</th>
+<th>单 token 成本</th>
+<th>显存需求</th>
+<th>专家负载均衡难度</th>
+</tr></thead>
+<tbody>
+<tr><td>5%（40/744）</td><td>中</td><td>744GB</td><td>中</td></tr>
+<tr><td>3%（48/1600）</td><td>更低</td><td><strong>1.6TB</strong></td><td>高</td></tr>
+<tr><td>&lt;2%</td><td>最低</td><td>更大</td><td>很高（路由退化）</td></tr>
+</tbody>
+</table></div>
+<p>3% 基本是“还能稳定路由”的边界：再稀，专家会明显欠训练，长尾能力掉得厉害。</p>
+<h2 id="数据怎么搬16t-的机房现实">数据怎么搬：1.6T 的机房现实</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr><td>权重（FP8）</td><td><strong>1.6 TB</strong></td><td>≥12 张 H200，或 9 张 B200；跨节点几乎必然</td></tr>
+<tr><td>每 token 激活权重</td><td>48 GB</td><td>10ms @4.8TB/s → 100 tok/s</td></tr>
+<tr><td>MoE all-to-all</td><td>每层 8 专家 × hidden × 2B</td><td>跨节点走 RDMA，<strong>这是主要瓶颈</strong></td></tr>
+<tr><td>1M 上下文 KV</td><td>数十 GB（LongCat Sparse Attention）</td><td>需要 KV 分层</td></tr>
+</tbody>
+</table></div>
+<p>三点：</p>
+<ol>
+<li><strong>all-to-all 是命门</strong>。48B 激活分散在十几张卡上，每个 token 的 hidden 要在专家之间搬；按 hidden 7168、top-8、2B 算，每层约 114KB/token，几十层就是每 token 数 MB。</li>
+<li><strong>rail-optimized 拓扑比 FLOPs 重要</strong>。跨机 all-to-all 的延迟对拓扑极度敏感，同等 GPU 数量下不同组网能差 2 倍。</li>
+<li><strong>部署成本 &gt;&gt; 训练成本</strong>。训练是一次性的，部署是长期的；1.6T 模型的推理集群需要持续供电与运维。</li>
+</ol>
+<h2 id="开源万亿俱乐部的现状2026-06">开源万亿俱乐部的现状（2026-06）</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>总/激活</th>
+<th>协议</th>
+<th>特点</th>
+</tr></thead>
+<tbody>
+<tr><td>LongCat-2.0</td><td>1.6T / 48B</td><td>MIT</td><td>ASIC 训练、1M 上下文</td></tr>
+<tr><td>Kimi K2.6</td><td>1T / 32B</td><td>Modified MIT</td><td>agent swarm</td></tr>
+<tr><td>GLM-5.2</td><td>744B / 40B</td><td>MIT</td><td>IndexShare</td></tr>
+<tr><td>DeepSeek-V4-Pro</td><td>1.6T / 49B</td><td>MIT</td><td>CSA + HCA</td></tr>
+<tr><td>Hy4 preview</td><td>770B / 49B</td><td>Apache 2.0</td><td>Gated DSA + IndexCache</td></tr>
+</tbody>
+</table></div>
+<p><strong>开源已经进入“万亿是标配”的阶段</strong>，真正的差异在：许可证、长上下文效率、以及能不能在非 NVIDIA 硬件上跑。</p>
+<h2 id="我的看法">我的看法</h2>
+<ul>
+<li>ASIC 训练跑通是 2026 年最重要的一条产业信号，，它意味着算力供给的多元化开始具备工程可行性。</li>
+<li><strong>稀疏度 3% 是当前甜区的边缘</strong>，再往下要解决路由退化，需要新的训练技巧。</li>
+<li>1M 上下文的语料成本被低估，LongCat 专门用数百 B token 的长文数据训练，这部分数据工程比模型结构更难。</li>
+<li>对使用者：万亿开源模型的真实价值是“议价能力”和“私有化选项”，不是“自己部署”。</li>
+</ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>模型卡（ASIC 训练、稀疏度、长上下文数据）：<a href="https://huggingface.co/meituan-longcat/LongCat-2.0">LongCat-2.0</a></li>
+<li>稀疏注意力参考：<a href="https://arxiv.org/abs/2512.02556">DeepSeek Sparse Attention</a></li>
+<li>万亿级对比：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">DeepSeek-V4-Pro</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/美团/">美团</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/asic/">ASIC</a><a class="tag" href="/tags/训练系统/">训练系统</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

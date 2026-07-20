@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级 - farfood</title>
+<meta name="description" content="2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级", "description": "2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。", "datePublished": "2026-07-17T09:10:00+08:00", "dateModified": "2026-07-17T09:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Moonshot, 开源模型, 长上下文, 注意力, 多模态"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级 - farfood">
+<meta property="og:description" content="2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级 - farfood">
+<meta name="twitter:description" content="2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。">
+<meta property="article:published_time" content="2026-07-17T09:10:00+08:00">
+<meta name="keywords" content="Moonshot, 开源模型, 长上下文, 注意力, 多模态">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级</h1>
+    <p class="meta"><time datetime="2026-07-17T09:10:00">2026-07-17</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1786 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#kda把线性注意力做成可更新状态">KDA：把线性注意力做成&quot;可更新状态&quot;</a></li>
+<li class="h2"><a href="#attnres给层间加残差注意力">AttnRes：给层间加&quot;残差注意力&quot;</a></li>
+<li class="h2"><a href="#摊开算28t-是什么概念">摊开算：2.8T 是什么概念</a></li>
+<li class="h2"><a href="#许可证不是-mit">许可证：不是 MIT</a></li>
+<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav>
+  <div class="post-content">
+<p>7 月 16 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K3">Kimi K3</a>：<strong>2.8T 参数</strong>、<strong>1M 上下文</strong>、原生视觉（文本/图像/视频同一模型）。</p>
+<p>模型卡自称“世界首个开放的 3T 级模型”，两个技术名词值得拆开看：<strong>KDA（Kimi Delta Attention）</strong> 与 <strong>AttnRes（Attention Residuals）</strong>。</p>
+<h2 id="kda把线性注意力做成可更新状态">KDA：把线性注意力做成“可更新状态”</h2>
+<p>线性注意力的核心是一个固定大小的状态 <code>S</code>，每来一个 token 做一次更新。最朴素的累加形式记忆衰减很快（远的信息被不断覆盖），所以工程上要加“遗忘/写入”的旋钮。</p>
+<p>Delta 规则（delta rule）的思路是：<strong>不要只累加，而是显式地“纠正”状态</strong>——把新 key 投影到当下状态上，算出预测误差，再按误差更新。用伪代码表达：</p>
+<pre data-lang="text"><code class="language-text">for each token t:
+    pred  = S @ k_t                  # 用当前状态预测
+    delta = v_t - pred               # 误差
+    S     = S + beta_t * outer(delta, k_t)   # 按误差写入
+    o_t   = S @ q_t</code></pre>
+<p>好处是状态更新有“目标”（逼近 v），不会像纯累加那样漂移。代价是每步多一次矩阵-向量乘，算力略增，但<strong>显存仍是常数</strong>。</p>
+<p>对 1M 上下文的意义：KV 不随长度增长，decode 每 token 只读固定状态，带宽友好。</p>
+<h2 id="attnres给层间加残差注意力">AttnRes：给层间加“残差注意力”</h2>
+<p>Transformer 的残差是逐元素的加法；AttnRes 把“跨层信息混合”做成注意力形式——后层可以直接“读”前面若干层的表示，而不只是继承一个累加和。</p>
+<p>这对超深网络（2.8T 参数通常意味着很深的堆叠）有价值：<strong>缓解深层的信息稀释</strong>，让梯度路径更短。今年多个团队在残差连接上做文章（包括 Hy4 的 iHC），说明“残差是下一个可优化点”已经成为共识。</p>
+<h2 id="摊开算28t-是什么概念">摊开算：2.8T 是什么概念</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>现实含义</th>
+</tr></thead>
+<tbody>
+<tr><td>权重（FP8）</td><td><strong>2.8 TB</strong></td><td>≥20 张 H200 / 16 张 B200，跨节点</td></tr>
+<tr><td>每 token 激活</td><td>未公开（K2 家族为 32B 级）</td><td>若按 32B 估：6.7ms @4.8TB/s</td></tr>
+<tr><td>KV（1M，KDA）</td><td><strong>常数级</strong>（不随长度涨）</td><td>长上下文的核心优势</td></tr>
+<tr><td>视频/图像 token</td><td>每帧数百至数千</td><td>视觉编码开销另算</td></tr>
+</tbody>
+</table></div>
+<p>有三处值得记下来：</p>
+<ol>
+<li><strong>2.8TB 权重不可能单机</strong>，必须跨节点 + 专家并行；网络拓扑直接决定可用性。</li>
+<li><strong>KDA 让 1M 上下文的 KV 成本可预测</strong>，这是它敢标 1M 的底气（对比 GQA 的数百 GB）。</li>
+<li><strong>原生视频推理的 prefill 成本极高</strong>：一分钟视频可能几十万 token，实际产品必须做抽帧/摘要。</li>
+</ol>
+<h2 id="许可证不是-mit">许可证：不是 MIT</h2>
+<p>K3 用的是自定义的 <strong>Kimi K3 License</strong>（<code>license_name: &quot;kimi-k3&quot;</code>），不是 K2 的 Modified MIT。这在 2026 年是一个趋势：<strong>旗舰开源模型开始收紧条款</strong>（月活、商用规模、再分发）。</p>
+<p>对企业的影响很实际：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>条款类型</th>
+<th>影响</th>
+</tr></thead>
+<tbody>
+<tr><td>MIT / Apache 2.0</td><td>法务直接过，可闭源再分发</td></tr>
+<tr><td>Modified MIT（署名）</td><td>需要标注来源，通常可接受</td></tr>
+<tr><td>自定义许可（K3 类）</td><td>需逐条评估，可能限制托管服务</td></tr>
+</tbody>
+</table></div>
+<h2 id="最后说三句">最后说三句</h2>
+<ul>
+<li>“开放权重”和“开源”继续分化，权重能下载 ≠ 能商用，选型时先看许可证再看分数。</li>
+<li><strong>线性注意力 + 残差改造会成为 2026-2027 的主线</strong>，因为长上下文的成本结构逼着大家动结构，而不是只堆数据。</li>
+<li>3T 级模型的象征意义大于实用价值，能跑它的机构屈指可数，但它把“开源上限”的标尺又推了一格。</li>
+<li>如果你自己部署：这类模型的现实用法是<strong>评估 API 供应商的成本底线</strong>，而不是自己部署。</li>
+</ul>
+<h2 id="出处">出处</h2>
+<ul>
+<li>模型卡（KDA/AttnRes、1M 上下文、许可证）：<a href="https://huggingface.co/moonshotai/Kimi-K3">Kimi-K3</a></li>
+<li>前代与 agent swarm：<a href="https://huggingface.co/moonshotai/Kimi-K2.6">Kimi-K2.6</a></li>
+<li>线性注意力背景：<a href="https://arxiv.org/abs/2506.13585">MiniMax-M1 (arXiv:2506.13585)</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/moonshot/">Moonshot</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/注意力/">注意力</a><a class="tag" href="/tags/多模态/">多模态</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/qwen3.8-2.4t-preview/">← Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><a class="next" href="/post/longcat-2.0-asic-superpod/">LongCat-2.0：1.6T 模型，全程在 ASIC 上训完 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a><time>2026-03</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

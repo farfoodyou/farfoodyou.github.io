@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2026-06-30T22:40:00+08:00</updated>
+  <updated>2026-07-20T22:30:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</title>
+    <link href="https://farfoodyou.github.io/post/qwen3.8-2.4t-preview/"/>
+    <id>https://farfoodyou.github.io/post/qwen3.8-2.4t-preview/</id>
+    <updated>2026-07-20T22:30:00+08:00</updated>
+    <summary>7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。</summary>
+  </entry>
+  <entry>
+    <title>Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级</title>
+    <link href="https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/"/>
+    <id>https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/</id>
+    <updated>2026-07-17T09:10:00+08:00</updated>
+    <summary>2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。</summary>
+  </entry>
   <entry>
     <title>LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</title>
     <link href="https://farfoodyou.github.io/post/longcat-2.0-asic-superpod/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/post/claude-4-long-horizon-agents/</id>
     <updated>2025-05-23T08:30:00+08:00</updated>
     <summary>5 月 22 日 Opus 4 与 Sonnet 4 发布，主线不是分数而是「连续工作几小时」：SWE-bench 72.5%、Terminal-bench 43.2%，工具可以在思考中并行调用，Claude Code 转正。</summary>
-  </entry>
-  <entry>
-    <title>Qwen3：把 thinking 开关做进开源权重</title>
-    <link href="https://farfoodyou.github.io/post/qwen3-hybrid-thinking-open-weights/"/>
-    <id>https://farfoodyou.github.io/post/qwen3-hybrid-thinking-open-weights/</id>
-    <updated>2025-04-29T22:00:00+08:00</updated>
-    <summary>4 月 29 日 Qwen3 一次性放出 8 个模型，0.6B 到 235B-A22B，全部 Apache 2.0。最有意思的不是分数，而是把「思考/不思考」做成推理时的一个参数，开源侧第一次有了和闭源对齐的接口形态。</summary>
-  </entry>
-  <entry>
-    <title>o3 与 o4-mini：在思考过程里调用工具</title>
-    <link href="https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/"/>
-    <id>https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/</id>
-    <updated>2025-04-17T09:50:00+08:00</updated>
-    <summary>4 月 16 日 o3 和 o4-mini 一起上线。它们的关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」：模型可以在 CoT 里搜网页、跑 Python、放大图片。</summary>
   </entry>
 </feed>

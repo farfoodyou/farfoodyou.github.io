@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路 - farfood</title>
+<meta name="description" content="7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/qwen3.8-2.4t-preview/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路", "description": "7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。", "datePublished": "2026-07-20T22:30:00+08:00", "dateModified": "2026-07-20T22:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/qwen3.8-2.4t-preview/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Qwen, 阿里, 开源模型, MoE, 部署"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路 - farfood">
+<meta property="og:description" content="7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/qwen3.8-2.4t-preview/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路 - farfood">
+<meta name="twitter:description" content="7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。">
+<meta property="article:published_time" content="2026-07-20T22:30:00+08:00">
+<meta name="keywords" content="Qwen, 阿里, 开源模型, MoE, 部署">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</h1>
+    <p class="meta"><time datetime="2026-07-20T22:30:00">2026-07-20</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1673 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#24t95b稀疏度-4">2.4T/95B：稀疏度 4%</a></li>
+<li class="h2"><a href="#27b真正会被部署的那一档">27B：真正会被部署的那一档</a></li>
+<li class="h2"><a href="#在机房里看这件事">在机房里看这件事</a></li>
+<li class="h2"><a href="#开源旗舰的两段式发布">开源旗舰的&quot;两段式发布&quot;</a></li>
+<li class="h2"><a href="#写到这里的判断">写到这里的判断</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav>
+  <div class="post-content">
+<p>7 月 19 日，阿里放出 Qwen3.8-Max 的预览（<a href="https://qwen.ai/blog?id=qwen3.7">官方博客</a> 系列持续更新）。按公开记录，Qwen3.8 有 <strong>2.4T 总参数 / 95B 激活</strong>，并在 8 月放出 2.4T 与 <strong>27B</strong> 两档权重（<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">版本记录</a>）。</p>
+<p>一面 2.4T，一面 27B——这个组合本身就是策略。</p>
+<h2 id="24t95b稀疏度-4">2.4T/95B：稀疏度 4%</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>指标</th>
+<th>数值</th>
+<th>对比</th>
+</tr></thead>
+<tbody>
+<tr><td>总参数</td><td>2.4T</td><td>Kimi K3 2.8T、V4-Pro 1.6T</td></tr>
+<tr><td>激活</td><td>95B</td><td>约为总参数的 4%</td></tr>
+<tr><td>定位</td><td>旗舰（闭源 API + 后期开权重）</td><td>—</td></tr>
+</tbody>
+</table></div>
+<p>95B 激活意味着单 token 算力约等于一个 95B dense 模型：H200 上读 95GB ≈ <strong>20 ms/token</strong>，单流上限 <strong>50 token/s</strong>。这已经是“离线/异步”的量级，不是交互式聊天能接受的。</p>
+<p>对这类模型的工程期望应该是：</p>
+<ul>
+<li><strong>高价值离线任务</strong>（一次性长报告、复杂重构、大规模审阅）；</li>
+<li><strong>多机集群</strong>（≥16 卡），靠 batch 摊薄；</li>
+<li><strong>不指望单流低延迟</strong>。</li>
+</ul>
+<h2 id="27b真正会被部署的那一档">27B：真正会被部署的那一档</h2>
+<p>历史经验很一致：同一个家族里，<strong>能被广泛部署的永远是 7B～32B 那一档</strong>（Qwen 系列从 2.5 到 3.x 都是如此）。</p>
+<p>27B 的价值在于：</p>
+<ol>
+<li><strong>单机 2 卡（FP8 约 27GB）</strong>，甚至单卡可跑（INT4）；</li>
+<li>在“可接受”的质量上，覆盖 80% 的线上任务；</li>
+<li>与旗舰共享 tokenizer/chat template，<strong>迁移成本低</strong>——可以先小后大。</li>
+</ol>
+<p>2026 年的通用架构是“双模型路由”：27B 打底，难题升级到 2.4T（或直接用别家闭源）。这比“全用旗舰”省 10～30 倍成本。</p>
+<h2 id="在机房里看这件事">在机房里看这件事</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>2.4T / 95B</th>
+<th>27B dense</th>
+</tr></thead>
+<tbody>
+<tr><td>权重（FP8）</td><td>2.4 TB</td><td>27 GB</td></tr>
+<tr><td>集群规模</td><td>≥16 卡跨节点</td><td>1～2 卡</td></tr>
+<tr><td>单流上限</td><td>~50 tok/s</td><td>~600 tok/s（H200）</td></tr>
+<tr><td>KV/1M 上下文</td><td>数十 GB 级</td><td>数 GB 级</td></tr>
+<tr><td>每百万 token 自建成本</td><td>高（含网络/运维）</td><td>低</td></tr>
+<tr><td>适用</td><td>离线旗舰任务</td><td>线上主力</td></tr>
+</tbody>
+</table></div>
+<p>一个常见的误判：<strong>拿 2.4T 的榜单分数去给 27B 做预期</strong>。同一家族的差距通常有 10～20 分，能力是不可“按比例缩放”的。</p>
+<h2 id="开源旗舰的两段式发布">开源旗舰的“两段式发布”</h2>
+<p>Qwen3.8 的发布节奏值得记：<strong>先闭源 API 预览，再放权重</strong>。2026 年这几乎成了标配：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>阶段</th>
+<th>目的</th>
+</tr></thead>
+<tbody>
+<tr><td>API 预览</td><td>收集真实流量反馈、压推理成本</td></tr>
+<tr><td>权重发布</td><td>建立生态、影响私有化采购</td></tr>
+<tr><td>小尺寸跟进</td><td>让上下游用起来，形成事实标准</td></tr>
+</tbody>
+</table></div>
+<p>对使用者的启示：<strong>别在预览期就写死选型</strong>，等权重和小尺寸都到位再定架构。</p>
+<h2 id="写到这里的判断">写到这里的判断</h2>
+<ul>
+<li>2T 级旗舰 + 20～30B 主力，会成为开源阵营的标准双档结构。</li>
+<li><strong>稀疏度 4% 附近是最稳的工程点</strong>（再稀路由退化，再稠成本上升）。</li>
+<li>“可部署性”是 2026 年真正的竞争维度，能不能在 1～2 张卡上跑到“够用”，比榜单多 2 分更重要。</li>
+<li>如果你自己部署：<strong>先上 27B，用真实流量标出难题比例</strong>，再决定要不要接旗舰。</li>
+</ul>
+<h2 id="出处">出处</h2>
+<ul>
+<li>官方博客（Qwen 系列版本说明）：<a href="https://qwen.ai/blog?id=qwen3.7">qwen.ai/blog</a></li>
+<li>参数与发布时间记录：<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">Wikipedia: List of large language models</a></li>
+<li>小尺寸部署参考：<a href="https://huggingface.co/Qwen/Qwen3-235B-A22B">Qwen3-235B-A22B 模型卡</a></li>
+<li>引擎部署：<a href="https://github.com/vllm-project/vllm/releases">vLLM releases</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/qwen/">Qwen</a><a class="tag" href="/tags/阿里/">阿里</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/部署/">部署</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/kimi-k3-2.8t-kda/">Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a><time>2026-03</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

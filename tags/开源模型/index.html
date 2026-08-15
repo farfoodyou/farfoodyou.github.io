@@ -34,7 +34,7 @@
   </div>
 </header>
 <main class="wrap">
-<h1 class="page-title">标签：开源模型 <span class="count">24 篇</span></h1>
+<h1 class="page-title">标签：开源模型 <span class="count">26 篇</span></h1>
 <article class="card">
   <h2><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 1T 到 3T，从 128K 到 1M</a></h2>
   <p class="meta"><time datetime="2026-11-05T09:30:00">2026-11-05</time> <a class="cat" href="/categories/模型/">模型</a></p>
@@ -58,6 +58,12 @@
   <p class="meta"><time datetime="2026-08-28T22:20:00">2026-08-28</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。</p>
   <a class="more" href="/post/hy4-preview-gated-dsa/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a></h2>
+  <p class="meta"><time datetime="2026-08-15T09:30:00">2026-08-15</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。</p>
+  <a class="more" href="/post/qwen3.8-27b-vs-35b-a3b/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a></h2>
@@ -100,6 +106,12 @@
   <p class="meta"><time datetime="2026-04-21T22:20:00">2026-04-21</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">1T/32B、256K 上下文、原生多模态 agentic 模型，官方主打 agent swarm：300 个子 agent、4000 步协同，以及后台常驻的 24/7 agent。问题从「模型多强」变成「编排系统多能扛」。</p>
   <a class="more" href="/post/kimi-k2.6-agent-swarm/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/qwen3.6-35b-a3b-architecture/">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</a></h2>
+  <p class="meta"><time datetime="2026-04-16T22:40:00">2026-04-16</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">35B 总参数 / 3B 激活、40 层、256 个专家、3:1 的线性/全注意力混合、原生 262K 上下文。逐层拆它的 hidden layout，算清每次 decode 到底读多少字节。</p>
+  <a class="more" href="/post/qwen3.6-35b-a3b-architecture/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</a></h2>

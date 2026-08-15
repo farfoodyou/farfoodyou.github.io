@@ -34,7 +34,7 @@
   </div>
 </header>
 <main class="wrap">
-<h1 class="page-title">标签：MoE <span class="count">15 篇</span></h1>
+<h1 class="page-title">标签：MoE <span class="count">17 篇</span></h1>
 <article class="card">
   <h2><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</a></h2>
   <p class="meta"><time datetime="2026-10-08T09:20:00">2026-10-08</time> <a class="cat" href="/categories/模型/">模型</a></p>
@@ -46,6 +46,12 @@
   <p class="meta"><time datetime="2026-08-28T22:20:00">2026-08-28</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。</p>
   <a class="more" href="/post/hy4-preview-gated-dsa/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a></h2>
+  <p class="meta"><time datetime="2026-08-15T09:30:00">2026-08-15</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。</p>
+  <a class="more" href="/post/qwen3.8-27b-vs-35b-a3b/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a></h2>
@@ -70,6 +76,12 @@
   <p class="meta"><time datetime="2026-05-22T09:30:00">2026-05-22</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。</p>
   <a class="more" href="/post/step-3.7-flash-11b-active/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/qwen3.6-35b-a3b-architecture/">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</a></h2>
+  <p class="meta"><time datetime="2026-04-16T22:40:00">2026-04-16</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">35B 总参数 / 3B 激活、40 层、256 个专家、3:1 的线性/全注意力混合、原生 262K 上下文。逐层拆它的 hidden layout，算清每次 decode 到底读多少字节。</p>
+  <a class="more" href="/post/qwen3.6-35b-a3b-architecture/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a></h2>

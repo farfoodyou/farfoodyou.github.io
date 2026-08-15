@@ -56,6 +56,13 @@
     <summary>770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。</summary>
   </entry>
   <entry>
+    <title>Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</title>
+    <link href="https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/"/>
+    <id>https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/</id>
+    <updated>2026-08-15T09:30:00+08:00</updated>
+    <summary>27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。</summary>
+  </entry>
+  <entry>
     <title>DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</title>
     <link href="https://farfoodyou.github.io/post/deepseek-v4-hybrid-attention/"/>
     <id>https://farfoodyou.github.io/post/deepseek-v4-hybrid-attention/</id>
@@ -110,6 +117,13 @@
     <id>https://farfoodyou.github.io/post/kimi-k2.6-agent-swarm/</id>
     <updated>2026-04-21T22:20:00+08:00</updated>
     <summary>1T/32B、256K 上下文、原生多模态 agentic 模型，官方主打 agent swarm：300 个子 agent、4000 步协同，以及后台常驻的 24/7 agent。问题从「模型多强」变成「编排系统多能扛」。</summary>
+  </entry>
+  <entry>
+    <title>把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</title>
+    <link href="https://farfoodyou.github.io/post/qwen3.6-35b-a3b-architecture/"/>
+    <id>https://farfoodyou.github.io/post/qwen3.6-35b-a3b-architecture/</id>
+    <updated>2026-04-16T22:40:00+08:00</updated>
+    <summary>35B 总参数 / 3B 激活、40 层、256 个专家、3:1 的线性/全注意力混合、原生 262K 上下文。逐层拆它的 hidden layout，算清每次 decode 到底读多少字节。</summary>
   </entry>
   <entry>
     <title>GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</title>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/post/claude-haiku-4.5-small-model-economics/</id>
     <updated>2025-10-16T09:20:00+08:00</updated>
     <summary>10 月 15 日 Haiku 4.5 上线：$1/$5、SWE-bench 73.3%（128K 思考预算、50 次平均）。它把「前沿能力」的价格压到 1/3，也让 sub-agent 架构第一次算得过账。</summary>
-  </entry>
-  <entry>
-    <title>Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</title>
-    <link href="https://farfoodyou.github.io/post/claude-sonnet-4.5-swe-bench-77/"/>
-    <id>https://farfoodyou.github.io/post/claude-sonnet-4.5-swe-bench-77/</id>
-    <updated>2025-09-30T09:10:00+08:00</updated>
-    <summary>SWE-bench Verified 77.2%、OSWorld 61.4%、能连续工作 30 小时以上。比分数更值得读的是它的评测脚注：scaffold 用了什么工具、跑了几次、为什么不用 1M 配置。</summary>
-  </entry>
-  <entry>
-    <title>DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</title>
-    <link href="https://farfoodyou.github.io/post/deepseek-v3.2-exp-sparse-attention/"/>
-    <id>https://farfoodyou.github.io/post/deepseek-v3.2-exp-sparse-attention/</id>
-    <updated>2025-09-29T23:50:00+08:00</updated>
-    <summary>V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。</summary>
   </entry>
 </feed>

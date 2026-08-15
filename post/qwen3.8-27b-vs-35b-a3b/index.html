@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选 - farfood</title>
+<meta name="description" content="27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选", "description": "27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。", "datePublished": "2026-08-15T09:30:00+08:00", "dateModified": "2026-08-15T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Qwen, 开源模型, MoE, 部署, 对比, 多模态"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选 - farfood">
+<meta property="og:description" content="27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选 - farfood">
+<meta name="twitter:description" content="27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。">
+<meta property="article:published_time" content="2026-08-15T09:30:00+08:00">
+<meta name="keywords" content="Qwen, 开源模型, MoE, 部署, 对比, 多模态">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</h1>
+    <p class="meta"><time datetime="2026-08-15T09:30:00">2026-08-15</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2529 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一配置对照">一、配置对照</a></li>
+<li class="h2"><a href="#二显存谁都装得下但装法不同">二、显存：谁都装得下，但装法不同</a></li>
+<li class="h2"><a href="#三带宽差距最大的一项">三、带宽：差距最大的一项</a></li>
+<li class="h2"><a href="#四kv稀疏版略省但都不是瓶颈">四、KV：稀疏版略省，但都不是瓶颈</a></li>
+<li class="h2"><a href="#五能力模型卡的数字摆一起">五、能力：模型卡的数字摆一起</a></li>
+<li class="h2"><a href="#六怎么选三条判据">六、怎么选：三条判据</a></li>
+<li class="h2"><a href="#七两个容易踩的坑">七、两个容易踩的坑</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>Qwen 这一代有意思的地方是：<strong>同一套架构骨架，出了两种“身材”</strong>——稠密 27B（Qwen3.8-27B）和稀疏 35B-A3B（Qwen3.6-35B-A3B）。两者都在单机可部署区间，选型时绕不开。</p>
+<p>这篇不讲“哪个更强”，只算账。</p>
+<h2 id="一配置对照">一、配置对照</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>3.8-27B（稠密）</th>
+<th>3.6-35B-A3B（稀疏）</th>
+</tr></thead>
+<tbody>
+<tr><td>总参数 / 激活</td><td>27B / 27B</td><td>35B / <strong>3B</strong></td></tr>
+<tr><td>层数</td><td>64</td><td>40</td></tr>
+<tr><td>Hidden</td><td>5120</td><td>2048</td></tr>
+<tr><td>布局</td><td>16 × (3 × (DeltaNet→FFN) → 1 × (GatedAttn→FFN))</td><td>10 × (3 × (DeltaNet→MoE) → 1 × (GatedAttn→MoE))</td></tr>
+<tr><td>全注意力层</td><td>16</td><td>10</td></tr>
+<tr><td>Q / KV 头（全注意力）</td><td>24 / 4，head_dim 256</td><td>16 / 2，head_dim 256</td></tr>
+<tr><td>专家</td><td>无（FFN 17408）</td><td>256，激活 8+1，专家维 512</td></tr>
+<tr><td>上下文</td><td>262K（可扩到 1M）</td><td>262K（可扩到 1.01M）</td></tr>
+<tr><td>视觉</td><td>原生图像 + 视频</td><td>原生图像 + 视频</td></tr>
+<tr><td>MTP</td><td>有</td><td>有</td></tr>
+<tr><td>许可</td><td>Apache 2.0</td><td>Apache 2.0</td></tr>
+</tbody>
+</table></div>
+<p>两处结构细节值得注意：</p>
+<ol>
+<li><strong>稀疏版把 hidden 压到 2048</strong>（稠密版 5120）。hidden 小意味着每层更“薄”，但层数也少（40 vs 64）——稀疏版靠专家深度补容量，稠密版靠宽度和深度补。</li>
+<li><strong>全注意力层数 16 vs 10</strong>。稠密版的检索精度理论上更好，因为它有更多“精确回看”的机会。</li>
+</ol>
+<h2 id="二显存谁都装得下但装法不同">二、显存：谁都装得下，但装法不同</h2>
+<p>FP8 权重（1 字节/参数）：</p>
+<pre data-lang="text"><code class="language-text">27B 稠密     : 27 GB 权重 + KV
+35B 稀疏     : 35 GB 权重 + KV（激活只有 3GB，但权重必须全部驻留）</code></pre>
+<p>关键区别：<strong>稀疏模型的显存由总参数决定，不由激活参数决定</strong>。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>卡型</th>
+<th>27B 稠密</th>
+<th>35B-A3B</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr><td>24GB</td><td>INT4 可跑（13GB）</td><td>INT4 紧（18GB）+ KV 吃紧</td><td>都能试，都不舒服</td></tr>
+<tr><td>48GB（L40S / A6000）</td><td>FP8 宽裕</td><td>FP8 宽裕</td><td><strong>甜区</strong></td></tr>
+<tr><td>80GB（H100）</td><td>可跑大 batch</td><td>可跑大 batch</td><td>主要看 KV</td></tr>
+</tbody>
+</table></div>
+<h2 id="三带宽差距最大的一项">三、带宽：差距最大的一项</h2>
+<p>decode 每 token 要读一遍激活权重：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>每 token 读</th>
+<th>H200（4.8TB/s）</th>
+<th>理论上限</th>
+</tr></thead>
+<tbody>
+<tr><td>27B 稠密</td><td>27 GB</td><td>5.6 ms</td><td>~180 tok/s</td></tr>
+<tr><td>35B-A3B</td><td><strong>3 GB</strong></td><td>0.63 ms</td><td>~1600 tok/s</td></tr>
+</tbody>
+</table></div>
+<p><strong>8 倍以上的差距</strong>。这直接决定了两者的定位：</p>
+<ul>
+<li>27B：单流够快，但并发靠 batch；batch 增大后每 token 的权重读取被摊薄，吞吐才上来；</li>
+<li>35B-A3B：单流就很快，低并发场景（交互式编码、单用户 agent）优势明显。</li>
+</ul>
+<p>换算成“100 并发、512 token 输出”的粗略吞吐：</p>
+<pre data-lang="text"><code class="language-text">27B      : 权重读取成为瓶颈，需要更多卡堆吞吐
+35B-A3B  : 权重几乎免费，瓶颈转向 MoE 的 all-to-all 与 attention</code></pre>
+<p>对了，稀疏版还有一笔隐性成本：<strong>MoE 的专家 all-to-all</strong>。单机 8 卡 EP 下走 NVLink 没问题，一旦跨机，每 token 几 MB 的 hidden 搬运会立刻变成瓶颈。</p>
+<h2 id="四kv稀疏版略省但都不是瓶颈">四、KV：稀疏版略省，但都不是瓶颈</h2>
+<p>按全注意力层数估算（FP8，head_dim 256）：</p>
+<pre data-lang="text"><code class="language-text">27B      : 2 x 16 层 x 4 KV头 x 256 x 1B ≈ 32 KB/token
+35B-A3B  : 2 x 10 层 x 2 KV头 x 256 x 1B ≈ 10 KB/token</code></pre>
+<p>262K 上下文：</p>
+<ul>
+<li>27B：约 8.4 GB</li>
+<li>35B-A3B：约 2.6 GB</li>
+</ul>
+<p>两个都能接受（相对 27～35GB 的权重）。所以<strong>长上下文在这两个模型上都不是显存问题，而是 prefill 时间问题</strong>。</p>
+<h2 id="五能力模型卡的数字摆一起">五、能力：模型卡的数字摆一起</h2>
+<p>这里要小心口径——两张表用的对比模型不同，不能直接横比。但同代同源，趋势可读：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>基准</th>
+<th>3.8-27B</th>
+<th>3.6-35B-A3B</th>
+</tr></thead>
+<tbody>
+<tr><td>SWE-bench Pro</td><td>61.7</td><td>51.2</td></tr>
+<tr><td>LiveCodeBench v6</td><td>90.3</td><td>80.7</td></tr>
+<tr><td>GPQA Diamond</td><td>89.2</td><td>85.5</td></tr>
+<tr><td>HLE</td><td>30.8</td><td>—</td></tr>
+<tr><td>OSWorld-Verified</td><td>84.3</td><td>—</td></tr>
+<tr><td>NL2Repo-Bench</td><td>42.3</td><td>—</td></tr>
+</tbody>
+</table></div>
+<p>3.8 是更晚的一代（后训练更强），所以整体领先是预期的。真正值得注意的是 <strong>OSWorld 84.3 与 WebArena 64.8</strong>——这是“能操作电脑”的成绩，说明稠密版在 agent 环境里的视觉-动作闭环做得更稳。</p>
+<h2 id="六怎么选三条判据">六、怎么选：三条判据</h2>
+<p><strong>1）单位 token 成本谁低？</strong> → 稀疏（3GB vs 27GB 的读取量）。高并发、短输出场景差 3～5 倍。</p>
+<p><strong>2）长任务稳定性谁强？</strong> → 稠密。没有路由不确定性，同一输入的输出分布更集中；稀疏模型在“专家选错”时会成片崩。</p>
+<p><strong>3）要 1M 上下文 + 视频吗？</strong> → 两者都支持，但稠密的 16 层全注意力在长文检索上更稳；稀疏要靠“扩大全注意力层比例”或外挂检索。</p>
+<p>我的建议是：</p>
+<ul>
+<li><strong>做产品（多租户、成本敏感、流量大）</strong> → 35B-A3B，先保住单价；</li>
+<li><strong>做内部 agent / 代码库维护（稳定性优先）</strong> → 27B 稠密，少折腾；</li>
+<li><strong>两者都要</strong> → 稀疏做主力、稠密做“难题升级”，路由按任务分桶（这套结构见 <a href="/post/claude-haiku-4.5-small-model-economics/">分层 agent 的账</a>）。</li>
+</ul>
+<h2 id="七两个容易踩的坑">七、两个容易踩的坑</h2>
+<p><strong>坑一：拿激活参数估显存。</strong> “3B 激活”会让你以为 6GB 显存够用，实际要装 35GB 权重。买卡按总参数算。</p>
+<p><strong>坑二：拿稠密的 batch 经验套稀疏。</strong> 稀疏模型在低 batch 就接近带宽上限，加 batch 的收益主要来自 attention/KV 摊薄，不像稠密那样线性。压测要重做。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>Qwen3.8-27B 模型卡（配置、基准、thinking 控制）：&lt;https://huggingface.co/Qwen/Qwen3.8-27B&gt;</li>
+<li>Qwen3.6-35B-A3B 模型卡：&lt;https://huggingface.co/Qwen/Qwen3.6-35B-A3B&gt;</li>
+<li>Qwen3.6-35B-A3B 官方博客：&lt;https://qwen.ai/blog?id=qwen3.6-35b-a3b&gt;</li>
+<li>Gated DeltaNet（混合注意力的线性部分）：&lt;https://arxiv.org/abs/2412.06464&gt;</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/qwen/">Qwen</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/部署/">部署</a><a class="tag" href="/tags/对比/">对比</a><a class="tag" href="/tags/多模态/">多模态</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/hy4-preview-gated-dsa/">← Hy4 preview：770B/49B，把「抄作业」做成了体系</a><a class="next" href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a><time>2026-03</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的 - farfood</title>
+<meta name="description" content="35B 总参数 / 3B 激活、40 层、256 个专家、3:1 的线性/全注意力混合、原生 262K 上下文。逐层拆它的 hidden layout，算清每次 decode 到底读多少字节。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/qwen3.6-35b-a3b-architecture/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的", "description": "35B 总参数 / 3B 激活、40 层、256 个专家、3:1 的线性/全注意力混合、原生 262K 上下文。逐层拆它的 hidden layout，算清每次 decode 到底读多少字节。", "datePublished": "2026-04-16T22:40:00+08:00", "dateModified": "2026-04-16T22:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/qwen3.6-35b-a3b-architecture/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Qwen, 开源模型, MoE, 线性注意力, 架构"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的 - farfood">
+<meta property="og:description" content="35B 总参数 / 3B 激活、40 层、256 个专家、3:1 的线性/全注意力混合、原生 262K 上下文。逐层拆它的 hidden layout，算清每次 decode 到底读多少字节。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/qwen3.6-35b-a3b-architecture/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的 - farfood">
+<meta name="twitter:description" content="35B 总参数 / 3B 激活、40 层、256 个专家、3:1 的线性/全注意力混合、原生 262K 上下文。逐层拆它的 hidden layout，算清每次 decode 到底读多少字节。">
+<meta property="article:published_time" content="2026-04-16T22:40:00+08:00">
+<meta name="keywords" content="Qwen, 开源模型, MoE, 线性注意力, 架构">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</h1>
+    <p class="meta"><time datetime="2026-04-16T22:40:00">2026-04-16</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2748 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#层布局31-的混合注意力">层布局：3:1 的混合注意力</a></li>
+<li class="h2"><a href="#gated-deltanet-在算什么">Gated DeltaNet 在算什么</a></li>
+<li class="h2"><a href="#专家配置256-个每个很小">专家配置：256 个，每个很小</a></li>
+<li class="h2"><a href="#一次-decode-读多少字节">一次 decode 读多少字节</a></li>
+<li class="h2"><a href="#单卡能跑但要看量化方式">单卡能跑，但要看量化方式</a></li>
+<li class="h2"><a href="#能力小模型里少见的三项">能力：小模型里少见的三项</a></li>
+<li class="h2"><a href="#部署建议实测视角">部署建议（实测视角）</a></li>
+<li class="h2"><a href="#两点保留">两点保留</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>Qwen3.6-35B-A3B 是这一代最值得研究的“小激活”模型：<strong>35B 总参数，每 token 只激活 3B</strong>。单卡能跑，却带着 256 个专家和原生 262K 上下文。</p>
+<p>下面按模型卡的结构逐层拆。所有配置数字来自 <a href="https://huggingface.co/Qwen/Qwen3.6-35B-A3B">模型卡</a>。</p>
+<h2 id="层布局31-的混合注意力">层布局：3:1 的混合注意力</h2>
+<p>模型卡给的 layout 是一行很密的公式：</p>
+<pre data-lang="text"><code class="language-text">10 x ( 3 x (Gated DeltaNet -&gt; MoE) -&gt; 1 x (Gated Attention -&gt; MoE) )</code></pre>
+<p>翻译成白话：一共 40 层，每 4 层一组，前 3 层用线性注意力（Gated DeltaNet），第 4 层用带门控的全注意力（Gated Attention），每层后面都接 MoE。</p>
+<p>所以：</p>
+<ul>
+<li>线性注意力层：30 层</li>
+<li>全注意力层：10 层</li>
+<li>每层都有 MoE：40 层的 FFN 全部是专家</li>
+</ul>
+<p><strong>3:1 这个比例是这类架构的核心参数。</strong> 它决定了“KV 开销”和“检索精度”的平衡点：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>比例</th>
+<th>全注意力层数</th>
+<th>KV 开销</th>
+<th>长文检索</th>
+</tr></thead>
+<tbody>
+<tr><td>1:0（全稠密）</td><td>40</td><td>最大</td><td>最好</td></tr>
+<tr><td>1:1</td><td>20</td><td>减半</td><td>好</td></tr>
+<tr><td><strong>1:3（本模型）</strong></td><td>10</td><td>1/4</td><td>略降</td></tr>
+<tr><td>纯线性</td><td>0</td><td>常数</td><td>明显不足</td></tr>
+</tbody>
+</table></div>
+<p>10 个全注意力层是“精度保底”：所有需要精确回看的操作（数字比对、代码符号匹配）都靠它们。</p>
+<h2 id="gated-deltanet-在算什么">Gated DeltaNet 在算什么</h2>
+<p>线性注意力的状态更新可以写成 <code>S = S + outer(delta, k)</code> 的累加。纯累加的问题是：<strong>新信息不断覆盖旧信息，远的记忆衰减极快</strong>。</p>
+<p>DeltaNet 的改法是引入“预测误差”：先用当前状态预测 <code>v</code>，再按误差写入。</p>
+<pre data-lang="text"><code class="language-text">pred  = S @ k                  # predict value from state
+delta = v - pred               # residual
+S     = S + beta * outer(delta, k)   # write only the error</code></pre>
+<p>这比“直接写入 v”稳得多——相当于每步都在做一次“局部修正”，而不是推翻重来。Qwen 这一代又加了门控（Gated）：β 变成输入相关的量，模型自己决定“这一步写多少”。</p>
+<p>代价很实在：每步多一次矩阵-向量乘，<strong>算力换精度</strong>。但对 3B 激活的模型来说，算力不是瓶颈、带宽才是，所以这笔交易划算。</p>
+<h2 id="专家配置256-个每个很小">专家配置：256 个，每个很小</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>参数</th>
+<th>值</th>
+<th>含义</th>
+</tr></thead>
+<tbody>
+<tr><td>专家数</td><td>256</td><td>细粒度</td></tr>
+<tr><td>激活</td><td>8 routed + 1 shared</td><td>3.1% 的专家被用到</td></tr>
+<tr><td>专家中间维</td><td>512</td><td>非常窄</td></tr>
+<tr><td>Hidden</td><td>2048</td><td>相对小</td></tr>
+</tbody>
+</table></div>
+<p>256 × 512 的专家意味着<strong>每个专家只存一点点知识</strong>，路由必须在“选对专家”上做得很准。好处是：</p>
+<ul>
+<li>同样的总参数下，知识容量比“8 个大专家”高得多；</li>
+<li>单个 token 的计算量更小（3B 激活）；</li>
+<li>但负载均衡更难，训练时容易出现“专家塌缩”（少数专家被过度使用）。</li>
+</ul>
+<p>这也是为什么这代模型都强调 shared expert（共享专家）：它兜住“通用语言能力”，让 routed 专家专心做特化。</p>
+<h2 id="一次-decode-读多少字节">一次 decode 读多少字节</h2>
+<p>把配置代进账本（FP8 权重）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>计算</th>
+<th>结果</th>
+</tr></thead>
+<tbody>
+<tr><td>激活权重</td><td>3B × 1B</td><td><strong>3 GB</strong></td></tr>
+<tr><td>全注意力 KV</td><td>2 (K,V) × 10 层 × 2 KV头 × 256 dim × 1B</td><td>≈ 10 KB / token</td></tr>
+<tr><td>线性注意力状态</td><td>32 V头 × 128 × 128 × 1B × 30 层</td><td>常数，约 15 MB（全序列共享）</td></tr>
+</tbody>
+</table></div>
+<p>对 262K 上下文：</p>
+<pre data-lang="text"><code class="language-text">KV = 262144 × 10KB ≈ 2.6 GB</code></pre>
+<p>也就是说，<strong>一条 262K 的请求只要 2.6GB KV</strong>，比 35GB 的权重小一个数量级。这是 3:1 混合 + GQA(2 KV heads) 的直接结果。</p>
+<p>decode 的带宽账（H200，4.8 TB/s）：</p>
+<pre data-lang="text"><code class="language-text">3 GB / 4.8 TB/s ≈ 0.6 ms/token   -&gt; 理论上限 ~1600 tok/s</code></pre>
+<p>实际会低很多（kernel launch、MoE gather、attention），但<strong>量级决定了它的定位</strong>：这不是“慢推理模型”，而是能吃高并发的服务型模型。</p>
+<h2 id="单卡能跑但要看量化方式">单卡能跑，但要看量化方式</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>精度</th>
+<th>权重</th>
+<th>24GB 卡</th>
+<th>48GB 卡</th>
+<th>80GB 卡</th>
+</tr></thead>
+<tbody>
+<tr><td>BF16</td><td>~70 GB</td><td>✗</td><td>✗</td><td>✓</td></tr>
+<tr><td>FP8</td><td>~35 GB</td><td>✗</td><td>✓</td><td>✓</td></tr>
+<tr><td>INT4</td><td>~18 GB</td><td>✓（紧）</td><td>✓</td><td>✓</td></tr>
+</tbody>
+</table></div>
+<p>模型卡明确说兼容 vLLM / SGLang / KTransformers——最后这个是给“权重放内存、专家按需加载”的场景用的，也就是桌面级设备。</p>
+<h2 id="能力小模型里少见的三项">能力：小模型里少见的三项</h2>
+<p>模型卡给的几个数字（同表内对比，口径见原文）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>基准</th>
+<th>35B-A3B</th>
+</tr></thead>
+<tbody>
+<tr><td>SWE-bench Verified</td><td>75.0</td></tr>
+<tr><td>SWE-bench Multilingual</td><td>69.3</td></tr>
+<tr><td>Terminal-Bench 2.0</td><td>41.6</td></tr>
+<tr><td>Claw-Eval (Pass^3)</td><td>46.2</td></tr>
+<tr><td>GPQA</td><td>85.5</td></tr>
+<tr><td>AIME26</td><td>92.6</td></tr>
+<tr><td>LiveCodeBench v6</td><td>80.7</td></tr>
+</tbody>
+</table></div>
+<p>SWE-bench 75 分出现在一个 35B（3B 激活）的模型上，是这一代最刺眼的事实——两年前这是旗舰闭源模型的水平。</p>
+<p>另一个新特性是 <strong>Thinking Preservation</strong>：保留历史消息里的推理上下文，多轮开发时不用每次重建思路。工程上这相当于给 KV/思考加了一层持久化（见 <a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7 的同类做法</a>）。</p>
+<h2 id="部署建议实测视角">部署建议（实测视角）</h2>
+<ol>
+<li><strong>FP8 起步，INT4 兜底</strong>。FP8 在 48GB 卡上很舒服；只有 24GB 卡才考虑 INT4，且要重新跑评测（INT4 在小激活 MoE 上掉点更明显）。</li>
+<li><strong>长上下文按 128K 设计</strong>。原生 262K 可用，但注意全注意力层只有 10 层，超长上下文里“精确检索”会先退化。</li>
+<li><strong>MTP 一定要开</strong>。模型卡说 multi-step MTP 训练过，配合投机解码能吃 1.5～2 倍吞吐（代价见 <a href="/post/speculative-decoding-economics/">投机解码的账</a>）。</li>
+<li><strong>batch 优先于单流速度</strong>。3GB/token 的权重读取意味着 batch 摊薄收益很大，单流优化不如提高并发。</li>
+</ol>
+<h2 id="两点保留">两点保留</h2>
+<ul>
+<li><strong>3:1 的比例不是普适最优</strong>。它适合“agent 编码 + 长文档”这类混合负载；纯长文检索任务还是要更多全注意力层。</li>
+<li><strong>256 专家的路由质量没有公开评测</strong>。这类模型的真实差距往往在“专家选择错的时候有多崩”，而这只能靠自己的任务集测。</li>
+</ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>模型卡（层布局、专家配置、基准）：&lt;https://huggingface.co/Qwen/Qwen3.6-35B-A3B&gt;</li>
+<li>官方博客：&lt;https://qwen.ai/blog?id=qwen3.6-35b-a3b&gt;</li>
+<li>Gated DeltaNet 原始论文：&lt;https://arxiv.org/abs/2412.06464&gt;</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/qwen/">Qwen</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/线性注意力/">线性注意力</a><a class="tag" href="/tags/架构/">架构</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/kimi-k2.6-agent-swarm/">← Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</a><a class="next" href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a><time>2026-08</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

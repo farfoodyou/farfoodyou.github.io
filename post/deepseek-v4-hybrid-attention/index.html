@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的 - farfood</title>
+<meta name="description" content="V4-Pro 1.6T/49B、V4-Flash 284B/13B，都是 1M 上下文、MIT、32T token。关键数字：1M 上下文下单 token 推理 FLOPs 只有 V3.2 的 27%，KV cache 只有 10%。核心是 CSA + HCA 的混合注意力。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-v4-hybrid-attention/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的", "description": "V4-Pro 1.6T/49B、V4-Flash 284B/13B，都是 1M 上下文、MIT、32T token。关键数字：1M 上下文下单 token 推理 FLOPs 只有 V3.2 的 27%，KV cache 只有 10%。核心是 CSA + HCA 的混合注意力。", "datePublished": "2026-08-14T09:30:00+08:00", "dateModified": "2026-08-14T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v4-hybrid-attention/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 开源模型, 稀疏注意力, 长上下文, MoE"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的 - farfood">
+<meta property="og:description" content="V4-Pro 1.6T/49B、V4-Flash 284B/13B，都是 1M 上下文、MIT、32T token。关键数字：1M 上下文下单 token 推理 FLOPs 只有 V3.2 的 27%，KV cache 只有 10%。核心是 CSA + HCA 的混合注意力。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-v4-hybrid-attention/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的 - farfood">
+<meta name="twitter:description" content="V4-Pro 1.6T/49B、V4-Flash 284B/13B，都是 1M 上下文、MIT、32T token。关键数字：1M 上下文下单 token 推理 FLOPs 只有 V3.2 的 27%，KV cache 只有 10%。核心是 CSA + HCA 的混合注意力。">
+<meta property="article:published_time" content="2026-08-14T09:30:00+08:00">
+<meta name="keywords" content="DeepSeek, 开源模型, 稀疏注意力, 长上下文, MoE">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</h1>
+    <p class="meta"><time datetime="2026-08-14T09:30:00">2026-08-14</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2077 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#csa-hca两种压缩各管一段">CSA + HCA：两种压缩，各管一段</a></li>
+<li class="h2"><a href="#两段式后训练先分家再合并">两段式后训练：先分家，再合并</a></li>
+<li class="h2"><a href="#机器上的字节v4-pro-在机器上的样子">机器上的字节：V4-Pro 在机器上的样子</a></li>
+<li class="h2"><a href="#开源的1m-上下文俱乐部">开源的&quot;1M 上下文俱乐部&quot;</a></li>
+<li class="h2"><a href="#结论以及我还不敢说的">结论，以及我还不敢说的</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav>
+  <div class="post-content">
+<p>8 月 13 日，DeepSeek 发布 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">V4</a>（MIT）：<strong>V4-Pro 1.6T / 49B 激活</strong>、<strong>V4-Flash 284B / 13B 激活</strong>，两者都支持 <strong>1M 上下文</strong>，训练数据 <strong>32T token</strong>。</p>
+<p>模型卡里最值得抄的一句话是：</p>
+<blockquote><p>1M 上下文下，V4-Pro 只需 DeepSeek-V3.2 的 <strong>27% 单 token 推理 FLOPs</strong>，KV cache 只需 <strong>10%</strong>。</p></blockquote>
+<h2 id="csa-hca两种压缩各管一段">CSA + HCA：两种压缩，各管一段</h2>
+<p>V4 的注意力是混合的，两种机制分工明确：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>机制</th>
+<th>全称</th>
+<th>作用</th>
+<th>类比</th>
+</tr></thead>
+<tbody>
+<tr><td><strong>CSA</strong></td><td>Compressed Sparse Attention</td><td>把 KV 压到低维再稀疏选择</td><td>先做目录，再按目录取页</td></tr>
+<tr><td><strong>HCA</strong></td><td>Heavily Compressed Attention</td><td>极端压缩后的全局注意力</td><td>只看“摘要”，保证不丢主线</td></tr>
+</tbody>
+</table></div>
+<p>组合起来的效果：<strong>局部精确（CSA 选中的部分）+ 全局粗糙（HCA 的摘要）</strong>。这正是“1M 上下文”需要的结构——没有任何机制能在 1M 上做全精度注意力，只能分层。</p>
+<p>为什么能省到 10% KV：</p>
+<pre data-lang="text"><code class="language-text">稠密（V3.2）：61 层 × 576B/token ≈ 35 KB/token
+V4（压缩 + 稀疏）：约 3.5 KB/token 量级（官方口径 10%）
+→ 1M 上下文：35 GB → 3.5 GB（单请求）</code></pre>
+<h2 id="两段式后训练先分家再合并">两段式后训练：先分家，再合并</h2>
+<p>V4 的后训练流程和 2025 年的做法明显不同：</p>
+<ol>
+<li><strong>独立培养领域专家</strong>：各领域用 SFT + GRPO 分别训出“数学专家”“代码专家”“agent 专家”；</li>
+<li><strong>on-policy 蒸馏合并</strong>：把多个专家的能力合并回一个统一模型。</li>
+</ol>
+<p>这个思路的动机很实在：<strong>多目标 RL 会互相干扰</strong>（代码 RL 会拉偏数学的格式，agent RL 会让通用对话变啰嗦）。先分头训、再统一，等于用蒸馏代替“多任务平衡”。</p>
+<p>代价是工程复杂：要维护多套 RL 管线、多个教师模型，还要控制合并后的退化。</p>
+<h2 id="机器上的字节v4-pro-在机器上的样子">机器上的字节：V4-Pro 在机器上的样子</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>路径</th>
+<th>谁在搬</th>
+</tr></thead>
+<tbody>
+<tr><td>权重（FP8）</td><td><strong>1.6 TB</strong></td><td>HBM 常驻</td><td>加载一次</td></tr>
+<tr><td>每 token 激活权重</td><td>49 GB</td><td>HBM → SMEM</td><td>TMA / cp.async</td></tr>
+<tr><td>KV（1M，压缩后）</td><td><strong>约 3.5 GB</strong></td><td>HBM → SMEM</td><td>稀疏 gather</td></tr>
+<tr><td>索引/压缩器</td><td>每层低维投影</td><td>HBM → SMEM</td><td>专用 kernel</td></tr>
+<tr><td>MoE all-to-all</td><td>每层 top-8 × hidden × 2B</td><td>GPU ↔ GPU</td><td>NVSHMEM / NCCL</td></tr>
+</tbody>
+</table></div>
+<p>对比 V3.2（671B/37B，35KB/token KV）：</p>
+<ul>
+<li><strong>权重更大</strong>（1.6TB vs 0.7TB）→ 集群更大；</li>
+<li><strong>KV 更小</strong>（3.5GB vs 35GB @1M）→ 单请求显存压力骤降；</li>
+<li><strong>单 token FLOPs 更低</strong>（27%）→ 长上下文 decode 更快。</li>
+</ul>
+<p>这就是“用更大的模型 + 更省的结构”换“长上下文可用性”的典型交易。</p>
+<h2 id="开源的1m-上下文俱乐部">开源的“1M 上下文俱乐部”</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>规模</th>
+<th>1M 上下文的实现</th>
+<th>协议</th>
+</tr></thead>
+<tbody>
+<tr><td>DeepSeek-V4-Pro</td><td>1.6T / 49B</td><td>CSA + HCA</td><td>MIT</td></tr>
+<tr><td>GLM-5.2</td><td>744B / 40B</td><td>DSA + IndexShare</td><td>MIT</td></tr>
+<tr><td>Kimi K3</td><td>2.8T</td><td>KDA（线性状态）</td><td>自定义</td></tr>
+<tr><td>LongCat-2.0</td><td>1.6T / 48B</td><td>LongCat Sparse Attention</td><td>MIT</td></tr>
+<tr><td>MiniMax-M3</td><td>428B / 23B</td><td>MSA</td><td>社区许可</td></tr>
+</tbody>
+</table></div>
+<p>五家五种实现，但方向一致：<strong>把 O(L²) 打掉</strong>。2026 年下半年，“支持 1M”已经不是卖点，“1M 上下文的每 token 成本”才是。</p>
+<h2 id="结论以及我还不敢说的">结论，以及我还不敢说的</h2>
+<ul>
+<li>CSA/HCA 这类“分层压缩”会成为长上下文的标准答案，，纯线性注意力在精确检索上仍有短板。</li>
+<li><strong>“先训专家再蒸馏合并”会普及</strong>，多目标 RL 的相互干扰是目前最大的隐性损耗。</li>
+<li>MIT + 1.6T + 1M 上下文，是今年最强的组合，但它只对“有集群”的机构有意义。</li>
+<li>对工程团队：<strong>V4-Flash（284B/13B）才是多数人的落点</strong>，Pro 是标杆，不是日常。</li>
+</ul>
+<h2 id="出处">出处</h2>
+<ul>
+<li>模型卡（架构、27%/10% 口径、后训练流程）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">DeepSeek-V4-Pro</a></li>
+<li>稀疏注意力前代：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Exp">DeepSeek-V3.2-Exp</a></li>
+<li>索引器共享（同期对比）：<a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2</a></li>
+<li>稀疏注意力 kernel：<a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/moe/">MoE</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/hy4-preview-gated-dsa/">← Hy4 preview：770B/49B，把「抄作业」做成了体系</a><a class="next" href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><time>2025-09</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

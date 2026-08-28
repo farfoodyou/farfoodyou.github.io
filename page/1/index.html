@@ -36,6 +36,18 @@
 <main class="wrap">
 <h1 class="page-title">最新文章</h1>
 <article class="card">
+  <h2><a href="/post/hy4-preview-gated-dsa/">Hy4 preview：770B/49B，把「抄作业」做成了体系</a></h2>
+  <p class="meta"><time datetime="2026-08-28T22:20:00">2026-08-28</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。</p>
+  <a class="more" href="/post/hy4-preview-gated-dsa/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a></h2>
+  <p class="meta"><time datetime="2026-08-14T09:30:00">2026-08-14</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">V4-Pro 1.6T/49B、V4-Flash 284B/13B，都是 1M 上下文、MIT、32T token。关键数字：1M 上下文下单 token 推理 FLOPs 只有 V3.2 的 27%，KV cache 只有 10%。核心是 CSA + HCA 的混合注意力。</p>
+  <a class="more" href="/post/deepseek-v4-hybrid-attention/">阅读全文 →</a>
+</article>
+<article class="card">
   <h2><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a></h2>
   <p class="meta"><time datetime="2026-07-20T22:30:00">2026-07-20</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。</p>
@@ -82,18 +94,6 @@
   <p class="meta"><time datetime="2026-04-08T09:10:00">2026-04-08</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。</p>
   <a class="more" href="/post/glm-5.1-long-horizon-shift/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a></h2>
-  <p class="meta"><time datetime="2026-03-19T09:20:00">2026-03-19</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">小米的旗舰 agent 模型：总参数超 1T、激活 42B、1M 上下文，混合注意力比例从 5:1 提到 7:1，并加了轻量 MTP 层做快速生成。先以 Hunter Alpha 匿名出现在 OpenRouter 上，被误认成 DeepSeek。</p>
-  <a class="more" href="/post/mimo-v2-pro-hybrid-attention/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a></h2>
-  <p class="meta"><time datetime="2026-03-18T22:40:00">2026-03-18</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">119B 总参数 / 6B 激活、Apache 2.0、把指令跟随/推理/编码合进一个模型。6B 激活意味着单卡可跑，这是欧洲团队在算力受限下的现实主义选择。</p>
-  <a class="more" href="/post/mistral-small-4-6b-active/">阅读全文 →</a>
 </article>
 <nav class="pager"><a class="next" href="/page/2/">更早的文章 →</a></nav>
 </main>

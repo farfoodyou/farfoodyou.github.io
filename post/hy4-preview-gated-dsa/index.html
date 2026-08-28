@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hy4 preview：770B/49B，把「抄作业」做成了体系 - farfood</title>
+<meta name="description" content="770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/hy4-preview-gated-dsa/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Hy4 preview：770B/49B，把「抄作业」做成了体系", "description": "770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。", "datePublished": "2026-08-28T22:20:00+08:00", "dateModified": "2026-08-28T22:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/hy4-preview-gated-dsa/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "腾讯, 开源模型, MoE, 稀疏注意力, MTP"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Hy4 preview：770B/49B，把「抄作业」做成了体系 - farfood">
+<meta property="og:description" content="770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/hy4-preview-gated-dsa/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hy4 preview：770B/49B，把「抄作业」做成了体系 - farfood">
+<meta name="twitter:description" content="770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。">
+<meta property="article:published_time" content="2026-08-28T22:20:00+08:00">
+<meta name="keywords" content="腾讯, 开源模型, MoE, 稀疏注意力, MTP">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Hy4 preview：770B/49B，把「抄作业」做成了体系</h1>
+    <p class="meta"><time datetime="2026-08-28T22:20:00">2026-08-28</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1696 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#结构清单">结构清单</a></li>
+<li class="h2"><a href="#indexcache-与-ihc两个小改动的价值">IndexCache 与 iHC：两个&quot;小改动&quot;的价值</a></li>
+<li class="h2"><a href="#在机房里看这件事">在机房里看这件事</a></li>
+<li class="h2"><a href="#apache-20-的分量">Apache 2.0 的分量</a></li>
+<li class="h2"><a href="#写到这里的判断">写到这里的判断</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
+  <div class="post-content">
+<p>8 月 28 日，腾讯混元开源 <a href="https://huggingface.co/tencent/Hy4-preview">Hy4 preview</a>（Apache 2.0）：<strong>770B 总参数 / 49B 激活</strong>。</p>
+<p>它的结构说明里几乎点名了一半同行——“inspired by DeepSeek and GLM&quot;——这在 2026 年是坦诚而高效的工程态度：<strong>结构上的最佳实践已经收敛，没必要重新发明。</strong></p>
+<h2 id="结构清单">结构清单</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>组件</th>
+<th>配置</th>
+<th>来源/动机</th>
+</tr></thead>
+<tbody>
+<tr><td>主干</td><td>78 层：第 1 层 dense FFN + 77 层 MoE</td><td>首层 dense 保稳定</td></tr>
+<tr><td>专家</td><td>每层 256 路由 + 1 共享，top-8 激活</td><td>细粒度专家（DeepSeek 路线）</td></tr>
+<tr><td>注意力</td><td><strong>Gated DSA</strong>（门控稀疏注意力）</td><td>DeepSeek 稀疏注意力 + 门控</td></tr>
+<tr><td>索引复用</td><td><strong>IndexCache</strong>（跨层复用索引）</td><td>同 GLM IndexShare</td></tr>
+<tr><td>残差</td><td><strong>iHC</strong>（identity Hyper-Connections）</td><td>加强跨层信息流</td></tr>
+<tr><td>投机解码</td><td>内置 1 个 MTP 层（10B 总 / 0.7B 激活）</td><td>省掉外挂 draft</td></tr>
+</tbody>
+</table></div>
+<p><strong>每层 256 个专家、只激活 8 个</strong>，是“细粒度 MoE”的典型配置：专家越多、越专，路由的区分度越高，但负载均衡越难。</p>
+<h2 id="indexcache-与-ihc两个小改动的价值">IndexCache 与 iHC：两个“小改动”的价值</h2>
+<ul>
+<li><strong>IndexCache</strong>：每 4 层复用同一个索引器（与 GLM 的 IndexShare 同源），减少长上下文下重复的索引扫描。参考实现是 <a href="https://arxiv.org/abs/2603.12201">arXiv:2603.12201</a>。</li>
+<li><strong>iHC（identity Hyper-Connections）</strong>：改写残差通路，让后层能更直接地访问前层表示，缓解深层信息稀释。</li>
+</ul>
+<p>两个都不改变“模型能做什么”，只改变“做到的成本”。2026 年的模型进步，很大一部分就来自这种“效率件”的堆叠。</p>
+<h2 id="在机房里看这件事">在机房里看这件事</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr><td>权重（FP8）</td><td><strong>770 GB</strong></td><td>6 张 H200 起，8 卡舒适</td></tr>
+<tr><td>每 token 激活</td><td>49 GB</td><td>10ms @4.8TB/s → 100 tok/s</td></tr>
+<tr><td>MTP 层</td><td>10B（激活 0.7B）</td><td>几乎免费的加速器</td></tr>
+<tr><td>all-to-all</td><td>每层 top-8 × hidden × 2B</td><td>跨节点时是瓶颈</td></tr>
+<tr><td>KV（1M，门控 DSA）</td><td>十 GB 级</td><td>依赖索引复用</td></tr>
+</tbody>
+</table></div>
+<p>要点：<strong>MTP 内置</strong>意味着部署时不需要再挂一个 draft 模型，省一次权重加载和一套 KV 管理——这是“工程友好”的具体体现。</p>
+<h2 id="apache-20-的分量">Apache 2.0 的分量</h2>
+<p>在“旗舰模型开始收紧许可证”的 2026 年（例如 Kimi K3 的自定义许可），Hy4 选择 Apache 2.0，对企业的意义是：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>需求</th>
+<th>Apache 2.0 是否满足</th>
+</tr></thead>
+<tbody>
+<tr><td>私有化部署</td><td>✅</td></tr>
+<tr><td>闭源再分发</td><td>✅</td></tr>
+<tr><td>托管服务对外售卖</td><td>✅（无需授权）</td></tr>
+<tr><td>专利授权</td><td>✅（明示）</td></tr>
+</tbody>
+</table></div>
+<p>这种“不设卡”的姿态，通常换来的是更快的生态扩散。</p>
+<h2 id="写到这里的判断">写到这里的判断</h2>
+<ul>
+<li>结构收敛已经完成，细粒度 MoE + 稀疏注意力 + 索引复用 + 内置 MTP，这四件套会成为 2026-2027 的默认配置。</li>
+<li><strong>差异化会转向数据与后训练</strong>：结构抄得越快，数据管线和 RL 配方就越关键。</li>
+<li>Apache 2.0 + 770B/49B， 是很实用的组合：单机 8 卡能跑，法务没负担。</li>
+<li>如果你自己部署：<strong>先看“有没有内置 MTP 和索引复用”</strong>，这两个决定了同硬件下的吞吐差 1.5～2 倍。</li>
+</ul>
+<h2 id="参考与数据">参考与数据</h2>
+<ul>
+<li>模型卡（结构、MTP、许可）：<a href="https://huggingface.co/tencent/Hy4-preview">Hy4-preview</a></li>
+<li>门控稀疏注意力来源：<a href="https://arxiv.org/abs/2512.02556">DeepSeek Sparse Attention</a></li>
+<li>索引复用论文：<a href="https://arxiv.org/abs/2603.12201">arXiv:2603.12201</a></li>
+<li>同期旗舰对比：<a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/腾讯/">腾讯</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/mtp/">MTP</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

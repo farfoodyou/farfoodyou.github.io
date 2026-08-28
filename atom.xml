@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2026-07-20T22:30:00+08:00</updated>
+  <updated>2026-08-28T22:20:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>Hy4 preview：770B/49B，把「抄作业」做成了体系</title>
+    <link href="https://farfoodyou.github.io/post/hy4-preview-gated-dsa/"/>
+    <id>https://farfoodyou.github.io/post/hy4-preview-gated-dsa/</id>
+    <updated>2026-08-28T22:20:00+08:00</updated>
+    <summary>770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。</summary>
+  </entry>
+  <entry>
+    <title>DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</title>
+    <link href="https://farfoodyou.github.io/post/deepseek-v4-hybrid-attention/"/>
+    <id>https://farfoodyou.github.io/post/deepseek-v4-hybrid-attention/</id>
+    <updated>2026-08-14T09:30:00+08:00</updated>
+    <summary>V4-Pro 1.6T/49B、V4-Flash 284B/13B，都是 1M 上下文、MIT、32T token。关键数字：1M 上下文下单 token 推理 FLOPs 只有 V3.2 的 27%，KV cache 只有 10%。核心是 CSA + HCA 的混合注意力。</summary>
+  </entry>
   <entry>
     <title>Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</title>
     <link href="https://farfoodyou.github.io/post/qwen3.8-2.4t-preview/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/post/o3-pro-minute-scale-reasoning/</id>
     <updated>2025-06-11T09:15:00+08:00</updated>
     <summary>6 月 10 日 o3-pro 上线，官方定位就一句话：可靠性优先于速度，等几分钟是值得的。这类模型把「同步请求」逼到了尽头，异步任务队列、事件流、结果交付成了必需。</summary>
-  </entry>
-  <entry>
-    <title>DeepSeek-R1-0528：多想 11K token，涨 17 分</title>
-    <link href="https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/"/>
-    <id>https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/</id>
-    <updated>2025-05-29T22:40:00+08:00</updated>
-    <summary>小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。</summary>
-  </entry>
-  <entry>
-    <title>Claude 4：长时间自主任务，和被重新定义的「上下文」</title>
-    <link href="https://farfoodyou.github.io/post/claude-4-long-horizon-agents/"/>
-    <id>https://farfoodyou.github.io/post/claude-4-long-horizon-agents/</id>
-    <updated>2025-05-23T08:30:00+08:00</updated>
-    <summary>5 月 22 日 Opus 4 与 Sonnet 4 发布，主线不是分数而是「连续工作几小时」：SWE-bench 72.5%、Terminal-bench 43.2%，工具可以在思考中并行调用，Claude Code 转正。</summary>
   </entry>
 </feed>

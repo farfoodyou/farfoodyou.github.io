@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2026-08-28T22:20:00+08:00</updated>
+  <updated>2026-09-25T09:40:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</title>
+    <link href="https://farfoodyou.github.io/post/sparse-attention-shootout/"/>
+    <id>https://farfoodyou.github.io/post/sparse-attention-shootout/</id>
+    <updated>2026-09-25T09:40:00+08:00</updated>
+    <summary>2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。</summary>
+  </entry>
+  <entry>
+    <title>V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</title>
+    <link href="https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/"/>
+    <id>https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/</id>
+    <updated>2026-09-10T22:10:00+08:00</updated>
+    <summary>552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。</summary>
+  </entry>
   <entry>
     <title>Hy4 preview：770B/49B，把「抄作业」做成了体系</title>
     <link href="https://farfoodyou.github.io/post/hy4-preview-gated-dsa/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/post/kimi-k2-1t-moe-muonclip/</id>
     <updated>2025-07-12T23:10:00+08:00</updated>
     <summary>32B 激活 / 1T 总参数、15.5T token、Modified MIT。K2 最有价值的信息不是分数，而是它在 1T 规模上把 Muon 优化器跑通了，还顺手解决了 attention logits 爆炸。</summary>
-  </entry>
-  <entry>
-    <title>MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</title>
-    <link href="https://farfoodyou.github.io/post/minimax-m1-lightning-attention/"/>
-    <id>https://farfoodyou.github.io/post/minimax-m1-lightning-attention/</id>
-    <updated>2025-06-17T23:20:00+08:00</updated>
-    <summary>456B 总参数 / 45.9B 激活、原生 1M 上下文、Apache 2.0，还带一个改过的 RL 算法 CISPO。官方给的对比数字很关键：生成 100K token 时，算力只有 R1 的 25%。</summary>
-  </entry>
-  <entry>
-    <title>o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</title>
-    <link href="https://farfoodyou.github.io/post/o3-pro-minute-scale-reasoning/"/>
-    <id>https://farfoodyou.github.io/post/o3-pro-minute-scale-reasoning/</id>
-    <updated>2025-06-11T09:15:00+08:00</updated>
-    <summary>6 月 10 日 o3-pro 上线，官方定位就一句话：可靠性优先于速度，等几分钟是值得的。这类模型把「同步请求」逼到了尽头，异步任务队列、事件流、结果交付成了必需。</summary>
   </entry>
 </feed>

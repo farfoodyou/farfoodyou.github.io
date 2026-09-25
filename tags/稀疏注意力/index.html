@@ -34,7 +34,19 @@
   </div>
 </header>
 <main class="wrap">
-<h1 class="page-title">标签：稀疏注意力 <span class="count">6 篇</span></h1>
+<h1 class="page-title">标签：稀疏注意力 <span class="count">8 篇</span></h1>
+<article class="card">
+  <h2><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a></h2>
+  <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  <p class="excerpt">2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。</p>
+  <a class="more" href="/post/sparse-attention-shootout/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</a></h2>
+  <p class="meta"><time datetime="2026-09-10T22:10:00">2026-09-10</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。</p>
+  <a class="more" href="/post/deepseek-v4.1-flash-kv-compression/">阅读全文 →</a>
+</article>
 <article class="card">
   <h2><a href="/post/hy4-preview-gated-dsa/">Hy4 preview：770B/49B，把「抄作业」做成了体系</a></h2>
   <p class="meta"><time datetime="2026-08-28T22:20:00">2026-08-28</time> <a class="cat" href="/categories/模型/">模型</a></p>

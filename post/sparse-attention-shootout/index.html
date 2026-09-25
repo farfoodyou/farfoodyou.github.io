@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA - farfood</title>
+<meta name="description" content="2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/sparse-attention-shootout/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA", "description": "2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。", "datePublished": "2026-09-25T09:40:00+08:00", "dateModified": "2026-09-25T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/sparse-attention-shootout/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "稀疏注意力, 长上下文, 推理优化, 系统, 对比"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA - farfood">
+<meta property="og:description" content="2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/sparse-attention-shootout/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA - farfood">
+<meta name="twitter:description" content="2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
+<meta property="article:published_time" content="2026-09-25T09:40:00+08:00">
+<meta name="keywords" content="稀疏注意力, 长上下文, 推理优化, 系统, 对比">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</h1>
+    <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2311 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#索引成本才是分水岭">索引成本才是分水岭</a></li>
+<li class="h2"><a href="#kv-压缩比的真实差距">KV 压缩比的真实差距</a></li>
+<li class="h2"><a href="#gather-模式gpu-最讨厌的东西">Gather 模式：GPU 最讨厌的东西</a></li>
+<li class="h2"><a href="#带宽视角一张对照表">带宽视角：一张对照表</a></li>
+<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>1M 上下文在 2026 年变成了入场券，但没人用同一种方法实现。把主流方案摆在一起：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>方案</th>
+<th>代表</th>
+<th>选谁</th>
+<th>KV 压缩</th>
+<th>索引成本</th>
+</tr></thead>
+<tbody>
+<tr><td>DSA</td><td>DeepSeek V3.2</td><td>每 query 选 top-k token</td><td>中</td><td>O(L) 每层</td></tr>
+<tr><td><strong>IndexShare/IndexCache</strong></td><td>GLM-5.2、Hy4</td><td>每 4 层共享索引器</td><td>中</td><td>O(L)/4</td></tr>
+<tr><td><strong>CSA + HCA</strong></td><td>DeepSeek V4</td><td>稀疏精读 + 极端压缩全局</td><td>高</td><td>分层</td></tr>
+<tr><td><strong>CSA2</strong></td><td>V4.1-Flash</td><td>跨层共享主 KV + 分层候选池</td><td>极高（890 B/token）</td><td>与长度解耦</td></tr>
+<tr><td><strong>MSA</strong></td><td>MiniMax M3</td><td>稀疏算子（替代 GQA）</td><td>高</td><td>算子内</td></tr>
+<tr><td><strong>KDA</strong></td><td>Kimi K3</td><td>线性状态（delta 规则）</td><td>常数</td><td>无索引</td></tr>
+</tbody>
+</table></div>
+<h2 id="索引成本才是分水岭">索引成本才是分水岭</h2>
+<p>所有“稀疏”方案都要先回答“选哪些 token”。这个选择过程本身就是 O(L) 的：</p>
+<pre data-lang="text"><code class="language-text">每 token 的索引开销 ≈ 层数 × 索引投影 × 历史长度
+1M 上下文、61 层 → 索引可能吃掉稀疏省下的一半</code></pre>
+<p>2026 年的三种解法：</p>
+<ol>
+<li><strong>共享索引器</strong>（IndexShare / IndexCache）：承认相邻层注意力模式相似，每 4 层算一次 → 官方口径 1M 下 FLOPs 降 2.9×；</li>
+<li><strong>分层候选池</strong>（CSA2）：只在第一层做全量索引，深层在候选池里选 → 索引成本与长度解耦；</li>
+<li><strong>无索引</strong>（KDA）：线性状态更新，不需要“选”，代价是精确检索能力。</li>
+</ol>
+<h2 id="kv-压缩比的真实差距">KV 压缩比的真实差距</h2>
+<p>同样 1M 上下文，KV 体积能差两个数量级：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>方案</th>
+<th>KV/token</th>
+<th>1M 单请求</th>
+<th>100 并发</th>
+</tr></thead>
+<tbody>
+<tr><td>GQA(8) 稠密</td><td>327 KB</td><td>327 GB</td><td>不可行</td></tr>
+<tr><td>MLA</td><td>35 KB</td><td>35 GB</td><td>3.5 TB</td></tr>
+<tr><td>DSA</td><td>~35 KB（只读 top-k）</td><td>35 GB（存储）</td><td>3.5 TB</td></tr>
+<tr><td>CSA+HCA</td><td>~3.5 KB</td><td>3.5 GB</td><td>350 GB</td></tr>
+<tr><td><strong>CSA2 + FP4</strong></td><td><strong>890 B</strong></td><td>0.89 GB</td><td>89 GB</td></tr>
+</tbody>
+</table></div>
+<p>注意 DSA 的“存储”和“读取”是两件事：<strong>KV 还是要存全量</strong>，只是每次只读 top-k。真正的显存节省来自“压缩存储”（CSA/HCA/FP4），不是“稀疏读取”。这是最常被混淆的一点。</p>
+<h2 id="gather-模式gpu-最讨厌的东西">Gather 模式：GPU 最讨厌的东西</h2>
+<p>稀疏注意力的读取是<strong>不规则的</strong>：</p>
+<pre data-lang="text"><code class="language-text">稠密：读 [0..L) 连续块      → coalesced，带宽利用率 90%+
+稀疏：读 {17, 302, 4901, ...} → 随机 gather，利用率常掉到 40%～60%</code></pre>
+<p>所以各家都要写专用 kernel：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项目</th>
+<th>kernel</th>
+<th>作用</th>
+</tr></thead>
+<tbody>
+<tr><td>DeepSeek</td><td><a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a> / <a href="https://github.com/deepseek-ai/FlashMLA">FlashMLA</a></td><td>索引 logits、稀疏注意力</td></tr>
+<tr><td>MiniMax</td><td><a href="https://github.com/MiniMax-AI/MSA">MSA</a></td><td>百万上下文稀疏算子</td></tr>
+<tr><td>通用引擎</td><td>vLLM / SGLang 对应后端</td><td>集成各家 kernel</td></tr>
+</tbody>
+</table></div>
+<p><strong>结论：稀疏注意力的性能≈kernel 质量，而不是论文里的 FLOPs。</strong></p>
+<h2 id="带宽视角一张对照表">带宽视角：一张对照表</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>维度</th>
+<th>DSA</th>
+<th>CSA2</th>
+<th>KDA</th>
+</tr></thead>
+<tbody>
+<tr><td>是否存全量 KV</td><td>是</td><td>否（压缩）</td><td>否（状态）</td></tr>
+<tr><td>decode 每 token 读取</td><td>top-k KV + 权重</td><td>压缩 KV + 权重</td><td>常数状态 + 权重</td></tr>
+<tr><td>精度敏感点</td><td>top-k 选择</td><td>FP4 量化</td><td>状态漂移</td></tr>
+<tr><td>长文检索能力</td><td>强</td><td>中</td><td>弱（需外挂检索）</td></tr>
+<tr><td>训练难度</td><td>中（需训 indexer）</td><td>高（三模式路由）</td><td>中</td></tr>
+</tbody>
+</table></div>
+<p>选型建议：</p>
+<ul>
+<li><strong>要精确检索（长文档问答、代码库）</strong> → DSA / CSA 类；</li>
+<li><strong>要极长上下文 + 高并发（agent 记忆、日志分析）</strong> → CSA2 / HCA 类；</li>
+<li><strong>要极致吞吐（流式、端侧）</strong> → KDA 类线性注意力。</li>
+</ul>
+<h2 id="不确定的部分">不确定的部分</h2>
+<ul>
+<li>“稀疏”这个词已经不够用了，，2026 年要区分“稀疏读取”和“压缩存储”，两者收益差一个数量级。</li>
+<li><strong>索引复用是必抄项</strong>（2.9× 不是小数），不做就等于白付索引税。</li>
+<li>FP4 KV 是下一步的确定性收益，，但需要 per-block scale 与校准，长文场景要单独验。</li>
+<li>评测时务必报告 <strong>KV/token</strong> 和 <strong>每 token 读取字节数</strong>，否则不同实现的“1M”根本不可比。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>DSA（DeepSeek 稀疏注意力）：<a href="https://arxiv.org/abs/2512.02556">arXiv:2512.02556</a></li>
+<li>索引复用：<a href="https://arxiv.org/abs/2603.12201">arXiv:2603.12201</a></li>
+<li>MiniMax 稀疏算子：<a href="https://github.com/MiniMax-AI/MSA">github.com/MiniMax-AI/MSA</a></li>
+<li>实现与 kernel：<a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a>、<a href="https://github.com/deepseek-ai/FlashMLA">FlashMLA</a></li>
+<li>结构对照：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">DeepSeek-V4-Pro</a>、<a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/推理优化/">推理优化</a><a class="tag" href="/tags/系统/">系统</a><a class="tag" href="/tags/对比/">对比</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><time>2025-09</time></li><li><a href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡</a><time>2026-01</time></li><li><a href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a><time>2026-06</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

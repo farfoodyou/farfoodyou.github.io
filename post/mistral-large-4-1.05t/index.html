@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线 - farfood</title>
+<meta name="description" content="1.05T 参数、预览版发布。在欧洲算力受限的现实下，Mistral 选择「万亿级但压到可部署」——和北美动辄 1.6T/2.8T 的路线形成对照。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/mistral-large-4-1.05t/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线", "description": "1.05T 参数、预览版发布。在欧洲算力受限的现实下，Mistral 选择「万亿级但压到可部署」——和北美动辄 1.6T/2.8T 的路线形成对照。", "datePublished": "2026-10-08T09:20:00+08:00", "dateModified": "2026-10-08T09:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/mistral-large-4-1.05t/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Mistral, 开源模型, MoE, 部署, 欧洲"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线 - farfood">
+<meta property="og:description" content="1.05T 参数、预览版发布。在欧洲算力受限的现实下，Mistral 选择「万亿级但压到可部署」——和北美动辄 1.6T/2.8T 的路线形成对照。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/mistral-large-4-1.05t/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线 - farfood">
+<meta name="twitter:description" content="1.05T 参数、预览版发布。在欧洲算力受限的现实下，Mistral 选择「万亿级但压到可部署」——和北美动辄 1.6T/2.8T 的路线形成对照。">
+<meta property="article:published_time" content="2026-10-08T09:20:00+08:00">
+<meta name="keywords" content="Mistral, 开源模型, MoE, 部署, 欧洲">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</h1>
+    <p class="meta"><time datetime="2026-10-08T09:20:00">2026-10-08</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1589 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#105t-的位置">1.05T 的位置</a></li>
+<li class="h2"><a href="#欧洲的算力现实">欧洲的算力现实</a></li>
+<li class="h2"><a href="#带宽视角105t-的账">带宽视角：1.05T 的账</a></li>
+<li class="h2"><a href="#预览版的意义">预览版的意义</a></li>
+<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <div class="post-content">
+<p>10 月 7 日，Mistral 放出 <a href="https://mistral.ai/news/mistral-small-4">Large 4 的预览</a>（<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">参数记录</a>：<strong>1.05T</strong>）。</p>
+<p>在这个月，1T 已经不算“最大”了（Kimi K3 2.8T、DeepSeek-V4 1.6T、LongCat-2.0 1.6T）。但 Mistral 的选择有它自己的逻辑。</p>
+<h2 id="105t-的位置">1.05T 的位置</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>模型</th>
+<th>参数</th>
+<th>激活</th>
+<th>协议</th>
+<th>集群门槛</th>
+</tr></thead>
+<tbody>
+<tr><td>Kimi K3</td><td>2.8T</td><td>未公开</td><td>自定义</td><td>20+ 卡</td></tr>
+<tr><td>DeepSeek-V4-Pro</td><td>1.6T</td><td>49B</td><td>MIT</td><td>12+ 卡</td></tr>
+<tr><td>LongCat-2.0</td><td>1.6T</td><td>48B</td><td>MIT</td><td>12+ 卡</td></tr>
+<tr><td><strong>Mistral Large 4</strong></td><td><strong>1.05T</strong></td><td>未公开</td><td>预览</td><td>8～10 卡</td></tr>
+<tr><td>GLM-5.2</td><td>744B</td><td>40B</td><td>MIT</td><td>8 卡</td></tr>
+</tbody>
+</table></div>
+<p>1.05T 刚好落在“需要的卡数等于一个标准 8 卡节点 × 1.25”的位置——<strong>它不是要争最大，而是要落在欧洲客户的采购容量内</strong>。</p>
+<h2 id="欧洲的算力现实">欧洲的算力现实</h2>
+<p>2026 年欧洲做前沿模型受三重约束：</p>
+<ol>
+<li><strong>电力与机房</strong>：单体超大规模集群审批慢、成本高；</li>
+<li><strong>加速器供给</strong>：高端 GPU 供应受出口管制与本地配额影响；</li>
+<li><strong>合规</strong>：数据驻留、可解释性、审计要求更严。</li>
+</ol>
+<p>在这样的约束下，“2.8T 参数”的模型即便训得出来，客户也部署不了。<strong>能做 ≠ 能交付</strong>，这是欧洲厂商和北美厂商最本质的分歧。</p>
+<h2 id="带宽视角105t-的账">带宽视角：1.05T 的账</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>数据</th>
+<th>体积</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr><td>权重（FP8）</td><td>1.05 TB</td><td>8 张 H200 满载；FP4 可降到 ~525GB</td></tr>
+<tr><td>每 token 激活</td><td>按 40B 估 ≈ 40 GB</td><td>8.3ms @4.8TB/s → 120 tok/s</td></tr>
+<tr><td>KV（长上下文）</td><td>十 GB 级</td><td>需压缩/稀疏</td></tr>
+<tr><td>并行策略</td><td>EP 为主，TP 为辅</td><td>单节点内完成，避免跨机 all-to-all</td></tr>
+</tbody>
+</table></div>
+<p><strong>单节点能装下</strong>是设计目标：一旦跨节点，网络成本和运维复杂度都会跳一个台阶。这也是为什么 1.05T 而不是 1.6T——刚好卡在“一节点 FP8 装得下”的边缘。</p>
+<h2 id="预览版的意义">预览版的意义</h2>
+<p>Mistral 用“Preview”发布，通常意味着：</p>
+<ul>
+<li>权重/API 已可用，但后训练还在迭代；</li>
+<li>评测口径会变，不宜写进长期架构；</li>
+<li>早期反馈会直接影响 GA 版本的规模与许可证。</li>
+</ul>
+<p>对使用者的建议：<strong>预览版只做技术验证，不做容量规划</strong>。真正定架构要等 GA 的许可证和价格。</p>
+<h2 id="不确定的部分">不确定的部分</h2>
+<ul>
+<li>“能部署”会成为欧洲/区域厂商的核心卖点，，参数竞赛在那边不是主要矛盾。</li>
+<li><strong>单节点上限（约 8 卡）是很多企业真正的边界</strong>，模型设计会围着这个数字做取舍。</li>
+<li>万亿级 + 单节点 + 好的稀疏注意力，是 2026-2027 的甜区，2.8T 更多是“技术宣言”。</li>
+<li>如果你自己部署：<strong>先算一个节点能装多少</strong>，再去看榜单。装不下的模型，分数再高也与你无关。</li>
+</ul>
+<h2 id="原文在这">原文在这</h2>
+<ul>
+<li>官方发布与路线（Small/Large 系列）：<a href="https://mistral.ai/news/mistral-small-4">mistral.ai/news</a></li>
+<li>参数与许可记录：<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">Wikipedia: List of large language models</a></li>
+<li>万亿级对照：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">DeepSeek-V4-Pro</a></li>
+<li>部署与并行：<a href="https://github.com/vllm-project/vllm/releases">vLLM releases</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/mistral/">Mistral</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/部署/">部署</a><a class="tag" href="/tags/欧洲/">欧洲</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/on-device-inference-designs/">← 端侧推理的几种设计：从 30B 本地模型到手机上的 1B</a><a class="next" href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a><time>2026-03</time></li><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

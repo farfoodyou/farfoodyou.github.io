@@ -36,6 +36,18 @@
 <main class="wrap">
 <h1 class="page-title">全部文章</h1>
 <article class="card">
+  <h2><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B</a></h2>
+  <p class="meta"><time datetime="2026-10-28T22:30:00">2026-10-28</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  <p class="excerpt">端侧不是「小一号的云端」：内存墙、功耗墙、带宽墙三重约束下，量化、KV 管理、算子后端的选择完全不同。把 llama.cpp / MLX / MNN / Core ML 几条路线摆在一起看。</p>
+  <a class="more" href="/post/on-device-inference-designs/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</a></h2>
+  <p class="meta"><time datetime="2026-10-08T09:20:00">2026-10-08</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">1.05T 参数、预览版发布。在欧洲算力受限的现实下，Mistral 选择「万亿级但压到可部署」——和北美动辄 1.6T/2.8T 的路线形成对照。</p>
+  <a class="more" href="/post/mistral-large-4-1.05t/">阅读全文 →</a>
+</article>
+<article class="card">
   <h2><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a></h2>
   <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   <p class="excerpt">2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。</p>
@@ -82,18 +94,6 @@
   <p class="meta"><time datetime="2026-06-17T09:20:00">2026-06-17</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">744B/40B 不变，两个改动：IndexShare 让每四层稀疏注意力复用同一个索引器（1M 上下文下每 token FLOPs 降 2.9×），MTP 接受长度 +20%。SWE-bench Pro 62.1，MIT。</p>
   <a class="more" href="/post/glm-5.2-indexshare-1m-context/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/speculative-decoding-economics/">投机解码账本：接受率每掉 10 个点，收益就归零</a></h2>
-  <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
-  <p class="excerpt">2026 年不开投机解码的部署基本等于浪费 GPU。但收益完全取决于接受率：算清 draft 成本、验证成本、接受长度三者的关系，才知道该开几档、什么时候该关。</p>
-  <a class="more" href="/post/speculative-decoding-economics/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/step-3.7-flash-11b-active/">Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</a></h2>
-  <p class="meta"><time datetime="2026-05-22T09:30:00">2026-05-22</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。</p>
-  <a class="more" href="/post/step-3.7-flash-11b-active/">阅读全文 →</a>
 </article>
 <nav class="pager"><a class="next" href="/post/page/2/">更早的文章 →</a></nav>
 </main>

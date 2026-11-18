@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026 推理栈答卷：缓存、稀疏、并行、量化 - farfood</title>
+<meta name="description" content="把这一年推理栈的四条主线结账：前缀缓存从「优化项」变成「准入项」，稀疏注意力吃掉长上下文，PD/EP 把集群拆成异构两层，FP4 从实验走到默认。附一张代价表。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/inference-stack-2026-review/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "2026 推理栈答卷：缓存、稀疏、并行、量化", "description": "把这一年推理栈的四条主线结账：前缀缓存从「优化项」变成「准入项」，稀疏注意力吃掉长上下文，PD/EP 把集群拆成异构两层，FP4 从实验走到默认。附一张代价表。", "datePublished": "2026-11-18T22:20:00+08:00", "dateModified": "2026-11-18T22:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/inference-stack-2026-review/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "推理系统, 缓存, 稀疏注意力, 并行, 量化, 回顾"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="2026 推理栈答卷：缓存、稀疏、并行、量化 - farfood">
+<meta property="og:description" content="把这一年推理栈的四条主线结账：前缀缓存从「优化项」变成「准入项」，稀疏注意力吃掉长上下文，PD/EP 把集群拆成异构两层，FP4 从实验走到默认。附一张代价表。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/inference-stack-2026-review/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="2026 推理栈答卷：缓存、稀疏、并行、量化 - farfood">
+<meta name="twitter:description" content="把这一年推理栈的四条主线结账：前缀缓存从「优化项」变成「准入项」，稀疏注意力吃掉长上下文，PD/EP 把集群拆成异构两层，FP4 从实验走到默认。附一张代价表。">
+<meta property="article:published_time" content="2026-11-18T22:20:00+08:00">
+<meta name="keywords" content="推理系统, 缓存, 稀疏注意力, 并行, 量化, 回顾">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">2026 推理栈答卷：缓存、稀疏、并行、量化</h1>
+    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2101 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#前缀缓存从优化项变成准入项">前缀缓存：从优化项变成准入项</a></li>
+<li class="h2"><a href="#稀疏注意力吃掉长上下文">稀疏注意力：吃掉长上下文</a></li>
+<li class="h2"><a href="#并行集群被拆成两层">并行：集群被拆成两层</a></li>
+<li class="h2"><a href="#量化fp4-落地">量化：FP4 落地</a></li>
+<li class="h2"><a href="#代价表四条主线的取舍">代价表：四条主线的取舍</a></li>
+<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
+  <div class="post-content">
+<p>年初的 <a href="/post/inference-engines-2025-review/">引擎复盘</a> 里，我把推理优化归成四条主线。一年过去，四条都走完了各自的一段路。</p>
+<h2 id="前缀缓存从优化项变成准入项">前缀缓存：从优化项变成准入项</h2>
+<p>2025 年，前缀缓存还是“开了更好”；2026 年，长程 agent 的账单把它变成“不开就破产”。</p>
+<p>算一笔：</p>
+<pre data-lang="text"><code class="language-text">一次 200 步的 agent 任务，上下文 100K token：
+未命中缓存：200 × 100K = 20M 输入 token
+命中 90%：  20M × 0.1 + 首次 100K ≈ 2.1M 输入 token</code></pre>
+<p>差 <strong>10 倍</strong>。这就是为什么引擎把 KV-aware 路由、RadixAttention、IndexCache 一层层往栈里塞。</p>
+<p>配套变化：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>组件</th>
+<th>2025</th>
+<th>2026</th>
+</tr></thead>
+<tbody>
+<tr><td>路由</td><td>轮询/QPS</td><td><strong>KV 感知</strong>（哪个副本有这段前缀）</td></tr>
+<tr><td>缓存粒度</td><td>前缀块</td><td>前缀块 + 跨层索引复用</td></tr>
+<tr><td>落盘</td><td>可选</td><td>分层（HBM→CPU→NVMe），按命中率动态调整</td></tr>
+<tr><td>观测</td><td>无</td><td>命中率、复用 token 数成为核心指标</td></tr>
+</tbody>
+</table></div>
+<h2 id="稀疏注意力吃掉长上下文">稀疏注意力：吃掉长上下文</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>指标</th>
+<th>2025</th>
+<th>2026</th>
+</tr></thead>
+<tbody>
+<tr><td>1M 上下文的 KV</td><td>35 GB（MLA）</td><td><strong>0.89 GB</strong>（CSA2 + FP4）</td></tr>
+<tr><td>索引开销</td><td>每层 O(L)</td><td>每 4 层一次 / 分层候选池</td></tr>
+<tr><td>单 token FLOPs @1M</td><td>基线</td><td><strong>27%</strong>（V4 vs V3.2）</td></tr>
+</tbody>
+</table></div>
+<p>结论：<strong>“长上下文”从“能不能”变成“多少钱”</strong>。100 万 token 的请求在 2026 年可以做到不到 1GB 的 KV、几秒的 prefill（配缓存）。</p>
+<h2 id="并行集群被拆成两层">并行：集群被拆成两层</h2>
+<p>2026 年的标准部署形态：</p>
+<pre data-lang="text"><code class="language-text">prefill 池（compute-bound）  →   KV 传输（RDMA）  →   decode 池（memory-bound，大 batch）
+        ↑                                              ↑
+   高算力、低显存                                  高带宽、低算力</code></pre>
+<p>配套的是 <strong>EP（专家并行）+ PD 分离</strong>：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>技术</th>
+<th>解决什么</th>
+<th>代价</th>
+</tr></thead>
+<tbody>
+<tr><td>TP</td><td>单机内分摊权重</td><td>通信密集，跨机不可行</td></tr>
+<tr><td>EP</td><td>万亿 MoE 的专家分布</td><td>all-to-all，网络敏感</td></tr>
+<tr><td>PD 分离</td><td>两种负载的资源错配</td><td>KV 传输（GB 级/请求）</td></tr>
+</tbody>
+</table></div>
+<p>KV 传输的量级：100K token × 890B ≈ <strong>89 MB/请求</strong>。按 400G（50GB/s）算约 1.8 ms——<strong>在 CSA2 这种压缩比下，PD 分离才真正划算</strong>；在 35KB/token 的时代，100K 上下文要传 3.5GB，需要 70ms。</p>
+<h2 id="量化fp4-落地">量化：FP4 落地</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>对象</th>
+<th>2025</th>
+<th>2026</th>
+</tr></thead>
+<tbody>
+<tr><td>权重</td><td>FP8 主流</td><td>FP8 + <strong>FP4</strong>（B200/新 ASIC）</td></tr>
+<tr><td>KV</td><td>FP16/FP8</td><td><strong>FP4</strong>（E2M1 + per-block scale）</td></tr>
+<tr><td>激活</td><td>FP8</td><td>FP8（FP4 激活仍少见）</td></tr>
+</tbody>
+</table></div>
+<p>FP4 KV 是今年最实用的单项：<strong>显存减半、带宽减半</strong>，代价是长文场景要做校准。</p>
+<h2 id="代价表四条主线的取舍">代价表：四条主线的取舍</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>优化</th>
+<th>收益</th>
+<th>风险</th>
+<th>什么时候别做</th>
+</tr></thead>
+<tbody>
+<tr><td>前缀缓存</td><td>输入成本 10× ↓</td><td>命中率低时白占显存</td><td>请求前缀几乎不重复</td></tr>
+<tr><td>稀疏注意力</td><td>长上下文 2～10× ↓</td><td>gather 效率低、精度损失</td><td>短上下文（&lt;8K）纯浪费</td></tr>
+<tr><td>PD 分离</td><td>吞吐 2～5× ↑</td><td>KV 传输、运维复杂</td><td>单机就能满足吞吐</td></tr>
+<tr><td>FP4 量化</td><td>显存/带宽 2× ↓</td><td>精度、kernel 支持</td><td>任务对数值极敏感</td></tr>
+</tbody>
+</table></div>
+<h2 id="最后说三句">最后说三句</h2>
+<ul>
+<li>2026 年的性能提升，一半来自结构（稀疏/压缩），一半来自系统（缓存/并行），，纯粹靠硬件的比例在下降。</li>
+<li><strong>“每 token 读取字节数”会成为最重要的部署指标</strong>，比参数量、比榜单都更能预测成本和延迟。</li>
+<li>PD 分离会在 KV 压缩普及后变得普遍，（传输成本从 GB 级降到 MB 级）。</li>
+<li>给团队的一张顺序表：<strong>先缓存 → 再量化 → 再稀疏结构 → 最后才 PD/EP</strong>。前两步几乎无风险，后两步要重训或重部署。</li>
+</ul>
+<h2 id="参考与数据">参考与数据</h2>
+<ul>
+<li>引擎版本与特性：<a href="https://github.com/vllm-project/vllm/releases">vLLM releases</a>、<a href="https://github.com/sgl-project/sglang/releases">SGLang releases</a></li>
+<li>分离式服务与 KV 分层：<a href="https://arxiv.org/abs/2407.00079">Mooncake (arXiv:2407.00079)</a></li>
+<li>稀疏注意力与 KV 压缩：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">DeepSeek-V4.1-Flash</a>、<a href="https://arxiv.org/abs/2512.02556">DeepSeek Sparse Attention</a></li>
+<li>索引复用：<a href="https://arxiv.org/abs/2603.12201">arXiv:2603.12201</a></li>
+<li>分页 KV：<a href="https://arxiv.org/abs/2309.06180">PagedAttention (arXiv:2309.06180)</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/推理系统/">推理系统</a><a class="tag" href="/tags/缓存/">缓存</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/并行/">并行</a><a class="tag" href="/tags/量化/">量化</a><a class="tag" href="/tags/回顾/">回顾</a></p>
+  <nav class="post-nav"><span></span><a class="next" href="/post/open-source-2026-yearbook/">2026 开源年表：从 1T 到 3T，从 128K 到 1M →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</a><time>2026-09</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B</a><time>2026-10</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

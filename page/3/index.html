@@ -36,6 +36,18 @@
 <main class="wrap">
 <h1 class="page-title">最新文章 · 第 3 页</h1>
 <article class="card">
+  <h2><a href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡</a></h2>
+  <p class="meta"><time datetime="2026-01-20T22:10:00">2026-01-20</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  <p class="excerpt">把「长上下文」换算成显存和带宽：MHA/GQA/MLA 每 token 各占多少、128K 与 1M 分别需要多少卡、分页与量化能省多少、以及这些字节在机器上由谁搬。</p>
+  <a class="more" href="/post/kv-cache-ledger-128k/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a></h2>
+  <p class="meta"><time datetime="2026-01-08T09:30:00">2026-01-08</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  <p class="excerpt">把 2025 年推理引擎的版本记录翻一遍：vLLM 从 V1 重写、V0 下线到 CUDA Graph 默认；SGLang 从 RadixAttention 走向 PD 分离和网关；NVIDIA Dynamo / llm-d 把「分布式推理」做成独立一层。</p>
+  <a class="more" href="/post/inference-engines-2025-review/">阅读全文 →</a>
+</article>
+<article class="card">
   <h2><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a></h2>
   <p class="meta"><time datetime="2025-12-23T21:30:00">2025-12-23</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">355B/32B、MIT、SWE-bench 73.8%（+5.8）、Terminal-Bench 2.0 41%（+16.5）。GLM-4.7 的进步主要来自 agent 行为：每次动作前先想，跨轮保持思考一致。</p>
@@ -82,18 +94,6 @@
   <p class="meta"><time datetime="2025-09-29T23:50:00">2025-09-29</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。</p>
   <a class="more" href="/post/deepseek-v3.2-exp-sparse-attention/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a></h2>
-  <p class="meta"><time datetime="2025-08-22T22:15:00">2025-08-22</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">8 月 21 日 V3.1 发布：671B/37B 不变，把 thinking 与 non-thinking 合进一个权重，靠 chat template 切换；长上下文扩到 128K；权重与激活统一用 UE8M0 FP8 scale。</p>
-  <a class="more" href="/post/deepseek-v3.1-hybrid-fp8/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/gpt-5-router-system/">GPT-5 是个路由器，那评测到底在测谁？</a></h2>
-  <p class="meta"><time datetime="2025-08-08T09:40:00">2025-08-08</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">和做模型的、做网关的、做 SRE 的三种视角聊完 GPT-5 之后，把问题整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。</p>
-  <a class="more" href="/post/gpt-5-router-system/">阅读全文 →</a>
 </article>
 <nav class="pager"><a class="prev" href="/page/2/">← 更新的文章</a><a class="next" href="/page/4/">更早的文章 →</a></nav>
 </main>

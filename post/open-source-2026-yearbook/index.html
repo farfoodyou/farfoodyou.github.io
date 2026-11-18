@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026 开源年表：从 1T 到 3T，从 128K 到 1M - farfood</title>
+<meta name="description" content="把 2026 年 1—10 月的开源旗舰排成一张表：参数从 744B 走到 2.8T，上下文从 128K 走到 1M，协议从 MIT 开始分化，稀疏注意力成为标配，内置 MTP 成为默认。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/open-source-2026-yearbook/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "2026 开源年表：从 1T 到 3T，从 128K 到 1M", "description": "把 2026 年 1—10 月的开源旗舰排成一张表：参数从 744B 走到 2.8T，上下文从 128K 走到 1M，协议从 MIT 开始分化，稀疏注意力成为标配，内置 MTP 成为默认。", "datePublished": "2026-11-05T09:30:00+08:00", "dateModified": "2026-11-05T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/open-source-2026-yearbook/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "开源模型, 年表, 回顾, 架构, 综述"}</script>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+</section>
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="2026 开源年表：从 1T 到 3T，从 128K 到 1M - farfood">
+<meta property="og:description" content="把 2026 年 1—10 月的开源旗舰排成一张表：参数从 744B 走到 2.8T，上下文从 128K 走到 1M，协议从 MIT 开始分化，稀疏注意力成为标配，内置 MTP 成为默认。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/open-source-2026-yearbook/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="2026 开源年表：从 1T 到 3T，从 128K 到 1M - farfood">
+<meta name="twitter:description" content="把 2026 年 1—10 月的开源旗舰排成一张表：参数从 744B 走到 2.8T，上下文从 128K 走到 1M，协议从 MIT 开始分化，稀疏注意力成为标配，内置 MTP 成为默认。">
+<meta property="article:published_time" content="2026-11-05T09:30:00+08:00">
+<meta name="keywords" content="开源模型, 年表, 回顾, 架构, 综述">
+</head>
+<body class="post-page">
+<div id="progress"></div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">2026 开源年表：从 1T 到 3T，从 128K 到 1M</h1>
+    <p class="meta"><time datetime="2026-11-05T09:30:00">2026-11-05</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1971 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#规模一年涨了-38-倍">规模：一年涨了 3.8 倍</a></li>
+<li class="h2"><a href="#上下文1m-从卖点变成入场券">上下文：1M 从卖点变成入场券</a></li>
+<li class="h2"><a href="#协议从统一的-mit-开始分化">协议：从统一的 MIT 开始分化</a></li>
+<li class="h2"><a href="#结构四件套收敛">结构：四件套收敛</a></li>
+<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
+  <div class="post-content">
+<p>把今年的开源旗舰按时间摆开，趋势比任何单篇评测都清楚。</p>
+<h2 id="规模一年涨了-38-倍">规模：一年涨了 3.8 倍</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>时间</th>
+<th>模型</th>
+<th>总参数</th>
+<th>激活</th>
+<th>协议</th>
+</tr></thead>
+<tbody>
+<tr><td>2025-12</td><td>GLM-4.7</td><td>355B</td><td>32B</td><td>MIT</td></tr>
+<tr><td>2026-02</td><td>GLM-5</td><td>744B</td><td>40B</td><td>MIT</td></tr>
+<tr><td>2026-03</td><td>MiMo-V2-Pro</td><td>&gt;1T</td><td>42B</td><td>—</td></tr>
+<tr><td>2026-06</td><td>LongCat-2.0</td><td>1.6T</td><td>48B</td><td>MIT</td></tr>
+<tr><td>2026-07</td><td>Kimi K3</td><td><strong>2.8T</strong></td><td>未公开</td><td>自定义</td></tr>
+<tr><td>2026-07</td><td>Qwen3.8</td><td>2.4T</td><td>95B</td><td>分档</td></tr>
+<tr><td>2026-08</td><td>DeepSeek-V4-Pro</td><td>1.6T</td><td>49B</td><td>MIT</td></tr>
+<tr><td>2026-08</td><td>Hy4 preview</td><td>770B</td><td>49B</td><td>Apache 2.0</td></tr>
+<tr><td>2026-10</td><td>Mistral Large 4</td><td>1.05T</td><td>—</td><td>预览</td></tr>
+</tbody>
+</table></div>
+<p>参数涨了 3.8～8 倍，但<strong>激活参数几乎没动</strong>（32B → 42～49B，Qwen3.8 是例外）。这说明：</p>
+<blockquote><p>2026 年的规模增长几乎全部用于“知识容量”，而不是“每 token 算力”。</p></blockquote>
+<p>工程含义：显存需求暴涨（1.6TB 权重），算力需求基本持平（每 token 仍约 40GB 权重读取）。<strong>这是对内存容量厂商的利好，对算力厂商的中性。</strong></p>
+<h2 id="上下文1m-从卖点变成入场券">上下文：1M 从卖点变成入场券</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>时间</th>
+<th>模型</th>
+<th>上下文</th>
+<th>实现</th>
+</tr></thead>
+<tbody>
+<tr><td>2025-08</td><td>V3.1</td><td>128K</td><td>两阶段扩训</td></tr>
+<tr><td>2025-09</td><td>V3.2-Exp</td><td>128K+</td><td>DSA</td></tr>
+<tr><td>2026-06</td><td>GLM-5.2</td><td>1M</td><td>DSA + IndexShare</td></tr>
+<tr><td>2026-08</td><td>DeepSeek-V4</td><td>1M</td><td>CSA + HCA（27% FLOPs / 10% KV）</td></tr>
+<tr><td>2026-08</td><td>Hy4</td><td>1M</td><td>Gated DSA + IndexCache</td></tr>
+<tr><td>2026-09</td><td>V4.1-Flash</td><td>1M</td><td>CSA2 + FP4 KV（890 B/token）</td></tr>
+<tr><td>2026-07</td><td>Kimi K3</td><td>1M</td><td>KDA 线性状态</td></tr>
+</tbody>
+</table></div>
+<p>一年之内，“1M”从“能塞”进化到“能算得起”：KV 从 35KB/token 压到 890B/token，<strong>约 40 倍</strong>。</p>
+<h2 id="协议从统一的-mit-开始分化">协议：从统一的 MIT 开始分化</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>类型</th>
+<th>模型</th>
+<th>企业影响</th>
+</tr></thead>
+<tbody>
+<tr><td>MIT / Apache 2.0</td><td>DeepSeek V4、GLM-5.2、LongCat-2.0、Hy4、Mistral</td><td>可商用、可再分发</td></tr>
+<tr><td>Modified MIT</td><td>Kimi K2.6</td><td>需署名，通常可接受</td></tr>
+<tr><td>自定义（K3、MiniMax Community）</td><td>Kimi K3、MiniMax-M3</td><td>需逐条评估</td></tr>
+</tbody>
+</table></div>
+<p><strong>开源不等于免费商用</strong>，这一年在旗舰模型上表现得尤其明显。</p>
+<h2 id="结构四件套收敛">结构：四件套收敛</h2>
+<p>2026 年所有开源旗舰的结构几乎一样：</p>
+<ol>
+<li><strong>细粒度 MoE</strong>（256 专家、top-8、1 个共享专家）；</li>
+<li><strong>稀疏/混合注意力</strong>（DSA / CSA / MSA / KDA 任选）；</li>
+<li><strong>索引复用</strong>（IndexShare / IndexCache / 分层候选池）；</li>
+<li><strong>内置 MTP</strong>（投机解码，接受长度提升 10%～20%）。</li>
+</ol>
+<p>差异已经不在结构，而在<strong>数据管线、RL 配方、以及 kernel 质量</strong>。</p>
+<h2 id="不确定的部分">不确定的部分</h2>
+<ul>
+<li>参数竞赛会在 3T 附近停一停，，因为再大就没人部署得起了；接下来的竞争在“每 token 成本”。</li>
+<li><strong>1M 上下文的成本还会继续降</strong>（KV 已经从 KB 级到百字节级），2027 年可能出现“10M 上下文 + 百 MB KV”。</li>
+<li>许可证分化会加剧，，开源阵营会分成“真开源（MIT/Apache）”和“开放权重（自定义）”两派。</li>
+<li>对工程团队：今年的合理架构是 <strong>1 个 30B 级主力 + 1 个旗舰做难题升级 + 强路由/缓存</strong>，而不是追最大的那个。</li>
+</ul>
+<h2 id="来源">来源</h2>
+<ul>
+<li>参数与发布时间记录：<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">Wikipedia: List of large language models</a></li>
+<li>长上下文实现：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">DeepSeek-V4-Pro</a>、<a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2</a></li>
+<li>结构对照：<a href="https://huggingface.co/tencent/Hy4-preview">Hy4-preview</a>、<a href="https://huggingface.co/moonshotai/Kimi-K3">Kimi-K3</a></li>
+<li>KV 压缩：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">DeepSeek-V4.1-Flash</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/年表/">年表</a><a class="tag" href="/tags/回顾/">回顾</a><a class="tag" href="/tags/架构/">架构</a><a class="tag" href="/tags/综述/">综述</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/inference-stack-2026-review/">← 2026 推理栈答卷：缓存、稀疏、并行、量化</a><a class="next" href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><time>2025-06</time></li></ul></aside>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

@@ -3,9 +3,23 @@
   <title>farfood</title>
   <link href="https://farfoodyou.github.io/atom.xml" rel="self"/>
   <link href="https://farfoodyou.github.io/"/>
-  <updated>2026-10-28T22:30:00+08:00</updated>
+  <updated>2026-11-18T22:20:00+08:00</updated>
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
+  <entry>
+    <title>2026 推理栈答卷：缓存、稀疏、并行、量化</title>
+    <link href="https://farfoodyou.github.io/post/inference-stack-2026-review/"/>
+    <id>https://farfoodyou.github.io/post/inference-stack-2026-review/</id>
+    <updated>2026-11-18T22:20:00+08:00</updated>
+    <summary>把这一年推理栈的四条主线结账：前缀缓存从「优化项」变成「准入项」，稀疏注意力吃掉长上下文，PD/EP 把集群拆成异构两层，FP4 从实验走到默认。附一张代价表。</summary>
+  </entry>
+  <entry>
+    <title>2026 开源年表：从 1T 到 3T，从 128K 到 1M</title>
+    <link href="https://farfoodyou.github.io/post/open-source-2026-yearbook/"/>
+    <id>https://farfoodyou.github.io/post/open-source-2026-yearbook/</id>
+    <updated>2026-11-05T09:30:00+08:00</updated>
+    <summary>把 2026 年 1—10 月的开源旗舰排成一张表：参数从 744B 走到 2.8T，上下文从 128K 走到 1M，协议从 MIT 开始分化，稀疏注意力成为标配，内置 MTP 成为默认。</summary>
+  </entry>
   <entry>
     <title>端侧推理的几种设计：从 30B 本地模型到手机上的 1B</title>
     <link href="https://farfoodyou.github.io/post/on-device-inference-designs/"/>
@@ -201,19 +215,5 @@
     <id>https://farfoodyou.github.io/post/deepseek-v3.2-exp-sparse-attention/</id>
     <updated>2025-09-29T23:50:00+08:00</updated>
     <summary>V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。</summary>
-  </entry>
-  <entry>
-    <title>DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</title>
-    <link href="https://farfoodyou.github.io/post/deepseek-v3.1-hybrid-fp8/"/>
-    <id>https://farfoodyou.github.io/post/deepseek-v3.1-hybrid-fp8/</id>
-    <updated>2025-08-22T22:15:00+08:00</updated>
-    <summary>8 月 21 日 V3.1 发布：671B/37B 不变，把 thinking 与 non-thinking 合进一个权重，靠 chat template 切换；长上下文扩到 128K；权重与激活统一用 UE8M0 FP8 scale。</summary>
-  </entry>
-  <entry>
-    <title>GPT-5 是个路由器，那评测到底在测谁？</title>
-    <link href="https://farfoodyou.github.io/post/gpt-5-router-system/"/>
-    <id>https://farfoodyou.github.io/post/gpt-5-router-system/</id>
-    <updated>2025-08-08T09:40:00+08:00</updated>
-    <summary>和做模型的、做网关的、做 SRE 的三种视角聊完 GPT-5 之后，把问题整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。</summary>
   </entry>
 </feed>

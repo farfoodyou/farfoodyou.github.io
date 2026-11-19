@@ -97,6 +97,7 @@ body::before {
 .site-header .wrap {
   display: flex; align-items: center; justify-content: space-between;
   gap: 1rem; padding: .85rem 0; flex-wrap: wrap;
+  width: min(1340px, calc(100% - 2.5rem));
 }
 
 .site-title {
@@ -734,8 +735,14 @@ body { font-size: calc(16px * var(--fs-scale, 1)); }
 .rail-right .related li { border-top: 1px dashed var(--line); padding: .3rem 0; }
 .rail-right .related time { color: var(--muted); font-size: .68rem; }
 
+/* 顶部导航：桌面保持一行 */
+@media (min-width: 900px) {
+  .site-header .wrap { flex-wrap: nowrap; }
+}
+
 /* 宽屏：三栏 */
 @media (min-width: 1180px) {
+  .site-header .wrap { width: min(1340px, calc(100% - 3rem)); }
   main.wrap.layout {
     width: min(1340px, calc(100% - 3rem));
     display: grid;

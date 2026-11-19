@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-R1-0528：多想 11K token，涨 17 分</h1>
-    <p class="meta"><time datetime="2025-05-29T22:40:00">2025-05-29</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2213 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-05-29T22:40:00">2025-05-29</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2244 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#多想本身就是一种缩放">&quot;多想&quot;本身就是一种缩放</a></li>
 <li class="h2"><a href="#后训练配方变了什么">后训练配方变了什么</a></li>
@@ -105,7 +105,7 @@ AIME 2025 70.0 → 87.5 （+17.5）</code></pre>
 <li>说明<strong>推理能力的载体是数据，不是参数量</strong>——至少在有标准答案的领域是这样。</li>
 </ul>
 <p>代价也很清楚：8B 模型的常识、长文、多语言、指令跟随会全面弱于 235B。它是“专项选手”，不能当通用推理底座。</p>
-<pre data-lang="bash"><code class="language-bash"># 单卡跑蒸馏版做批量数学/代码评审
+<pre data-lang="bash"><code class="language-bash"># single-GPU distilled model for batch math / code review
 vllm serve deepseek-ai/DeepSeek-R1-0528-Qwen3-8B \
   --max-model-len 65536 --gpu-memory-utilization 0.92</code></pre>
 <h2 id="推理模型的选型矩阵">推理模型的选型矩阵</h2>

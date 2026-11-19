@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</h1>
-    <p class="meta"><time datetime="2026-03-19T09:20:00">2026-03-19</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2277 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-03-19T09:20:00">2026-03-19</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2311 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合注意力-71-是什么意思">混合注意力 7:1 是什么意思</a></li>
 <li class="h2"><a href="#mtp一次前向出多个-token">MTP：一次前向出多个 token</a></li>
@@ -95,8 +95,8 @@
 <p>7:1 的选择说明一件事：<strong>在 1M 上下文这个量级，精度损失可以接受，显存和带宽不能妥协。</strong></p>
 <h2 id="mtp一次前向出多个-token">MTP：一次前向出多个 token</h2>
 <p>MTP（Multi-Token Prediction）不是新概念（DeepSeek-V3 训练时就用过），但把它做成<strong>轻量推理层</strong>是 2026 年的工程趋势：</p>
-<pre data-lang="text"><code class="language-text">标准 decode：  前向一次 → 1 个 token
-MTP decode：   前向一次 → 主干 token + 投机草案 → 验证 → 一次接受多个</code></pre>
+<pre data-lang="text"><code class="language-text">plain decode : 1 forward -&gt; 1 token
+MTP decode   : 1 forward -&gt; main token + draft tokens -&gt; verify -&gt; accept several</code></pre>
 <p>本质上它是<strong>投机解码的内置版本</strong>：模型自己猜后面几个 token，再用主干并行验证。收益取决于接受率，通常 1.5～2.5× 吞吐。</p>
 <p>代价：</p>
 <ul>

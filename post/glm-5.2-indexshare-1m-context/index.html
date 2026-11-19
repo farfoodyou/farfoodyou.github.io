@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</h1>
-    <p class="meta"><time datetime="2026-06-17T09:20:00">2026-06-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1882 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-06-17T09:20:00">2026-06-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1955 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#稀疏注意力的隐藏账单索引器">稀疏注意力的隐藏账单：索引器</a></li>
 <li class="h2"><a href="#为什么solid-1m值得单列">为什么&quot;solid 1M&quot;值得单列</a></li>
@@ -75,9 +75,9 @@
 <h2 id="稀疏注意力的隐藏账单索引器">稀疏注意力的隐藏账单：索引器</h2>
 <p>DSA 类稀疏注意力的流程是“先用一个 indexer 给历史打分，再取 top-k 做完整注意力”。问题在于：<strong>每个注意力层都要算一次索引</strong>，而索引本身要对全部历史做扫描。</p>
 <p>于是出现一个反直觉的成本结构：</p>
-<pre data-lang="text"><code class="language-text">1M 上下文、61 层、每层独立索引：
-  索引开销 ≈ 61 × O(L) 的投影 + 打分
-  → 稀疏注意力省下的二次项，被线性的索引开销部分吐回去</code></pre>
+<pre data-lang="text"><code class="language-text">1M context, 61 layers, one indexer per layer:
+  index cost ~ 61 x O(L) projection + scoring
+  -&gt; the quadratic term saved by sparsity is partly returned as linear cost</code></pre>
 <p>IndexShare 的思路很直接：<strong>索引器本身也是冗余的</strong>。相邻几层的注意力模式高度相关，没必要每层都算一遍——每 4 层共享一次索引，其余层直接复用。</p>
 <p>省下来的量级：官方说 1M 上下文下每 token FLOPs 降到 <strong>1/2.9</strong>。这不是小优化，它把“稀疏注意力的索引税”从 60% 量级压到 20% 量级。</p>
 <h2 id="为什么solid-1m值得单列">为什么“solid 1M”值得单列</h2>

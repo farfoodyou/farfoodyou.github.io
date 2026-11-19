@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</h1>
-    <p class="meta"><time datetime="2025-02-03T10:05:00">2025-02-03</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1472 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-02-03T10:05:00">2025-02-03</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1482 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#周一先按默认接">周一：先按默认接</a></li>
 <li class="h2"><a href="#周二加路由第一次降本">周二：加路由，第一次降本</a></li>
@@ -92,9 +92,9 @@
 </table></div>
 <p>表格读起来很干脆：<strong>分类任务 low 就够（差 0.9 分，成本 1/4），抽取和筛选必须 medium 起</strong>。而 high 相对 medium 的提升只有 0.5～0.6 分，价格却是 2～3 倍。</p>
 <p>那周最后定的规则：</p>
-<pre data-lang="text"><code class="language-text">classify / extract_simple  → low
-extract_compound / filter  → medium
-debug / math / code_review → high（约 8% 流量）</code></pre>
+<pre data-lang="text"><code class="language-text">classify / extract_simple  -&gt; low
+extract_compound / filter  -&gt; medium
+debug / math / code_review -&gt; high   (~8% of traffic)</code></pre>
 <p>月底账单：成本回到基线的 <strong>1.29 倍</strong>，比第一版省了 71%，而人工抽检的通过率只降了 0.7 个百分点。</p>
 <h2 id="数字之外的两件事">数字之外的两件事</h2>
 <p><strong>一、延迟分布变了，重试策略得跟着改。</strong> 高 effort 的 P99 从 4 秒跳到 34 秒。我们原来“超时 10 秒就重试”的策略直接导致两次计费，改成“超时只上报不重试 + 前端显示进度”之后，成本才稳定。</p>

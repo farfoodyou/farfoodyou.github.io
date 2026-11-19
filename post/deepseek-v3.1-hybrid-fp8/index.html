@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</h1>
-    <p class="meta"><time datetime="2025-08-22T22:15:00">2025-08-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1985 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-08-22T22:15:00">2025-08-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2022 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一个权重两种模式的实现">一个权重，两种模式的实现</a></li>
 <li class="h2"><a href="#128k-是续训出来的">128K 是&quot;续训&quot;出来的</a></li>
@@ -64,12 +64,12 @@
 <p>到 8 月底，“混合推理”已经是行业共识，V3.1 的看点变成了三件更硬的事：上下文扩展方式、FP8 数据格式、以及工具调用到底修好了没有。</p>
 <h2 id="一个权重两种模式的实现">一个权重，两种模式的实现</h2>
 <p>V3.1 的切换不是靠参数，而是靠 chat template 里的一个 token：</p>
-<pre data-lang="text"><code class="language-text"># thinking 模式
-&lt;｜begin▁of▁sentence｜&gt;{system}&lt;｜User｜&gt;{query}&lt;｜Assistant｜&gt;
-# → 模型先生成思考内容，再给答案
+<pre data-lang="text"><code class="language-text"># thinking mode
+&lt;|begin_of_sentence|&gt;{system}&lt;|User|&gt;{query}&lt;|Assistant|&gt;
+# -&gt; model emits reasoning first, then the answer
 
-# non-thinking 模式（注意这里的 &lt;/think&gt;）
-&lt;｜begin▁of▁sentence｜&gt;{system}&lt;｜User｜&gt;{query}&lt;｜Assistant｜&gt;&lt;/think&gt;</code></pre>
+# non-thinking mode (note the &lt;/think&gt; prefix)
+&lt;|begin_of_sentence|&gt;{system}&lt;|User|&gt;{query}&lt;|Assistant|&gt;&lt;/think&gt;</code></pre>
 <p>官方说明很直白：non-thinking 模式下，只要在 assistant 前缀补上 <code>&lt;/think&gt;</code>，模型就直接输出答案，跳过思考段。这比“传一个布尔参数”更底层，也更省事——<strong>切换成本为零，不需要两套权重、两套 KV 布局</strong>。</p>
 <p>代价是<strong>prompt 里多了一个需要维护的约定</strong>。自建服务时如果在 chat template 里写错，模型会按错误模式回答，而且不会报错——这类静默失败最难查。</p>
 <h2 id="128k-是续训出来的">128K 是“续训”出来的</h2>

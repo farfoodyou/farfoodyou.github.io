@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</h1>
-    <p class="meta"><time datetime="2025-07-12T23:10:00">2025-07-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2274 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-07-12T23:10:00">2025-07-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2308 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#muon-优化器的规模化">Muon 优化器的规模化</a></li>
 <li class="h2"><a href="#155t-token-与-agentic-数据">15.5T token 与 agentic 数据</a></li>
@@ -79,10 +79,10 @@
 <p>K2 的技术重点写在模型卡的第一条：<strong>在 1T 参数规模上用 Muon 优化器，并且零训练不稳定</strong>（<a href="https://arxiv.org/abs/2507.20534">报告</a> 与 <a href="https://huggingface.co/moonshotai/Kimi-K2-Instruct">模型卡</a>）。</p>
 <p>Muon 和 AdamW 的差别在对梯度矩阵的处理：AdamW 逐元素做二阶矩归一化，Muon 对矩阵做近似正交化（Newton–Schulz 迭代），让更新方向更“均匀”。它在小模型上早有好结果，但大规模上的问题是<strong>数值爆炸</strong>——1T 参数、15.5T token 的训练里，只要有一个 head 的 attention logits 翘起来，整个 run 就废了。</p>
 <p>他们的解法是 MuonClip：</p>
-<pre data-lang="text"><code class="language-text">每个 step:
-  if max(attention_logits) &gt; τ:            # τ 是阈值
-      q_proj *= τ / max_logit              # 对 QK 投影做缩放
-      k_proj *= τ / max_logit
+<pre data-lang="text"><code class="language-text">every step:
+  if max(attention_logits) &gt; tau:          # tau = clip threshold
+      q_proj *= tau / max_logit            # rescale QK projections
+      k_proj *= tau / max_logit
   update with Muon(orthogonalized gradient)</code></pre>
 <p>思路很工程：不去改 loss，也不加辅助正则，而是在<strong>检测到越界时直接把权重缩回来</strong>。代价是每次 forward 多一次 max 归约（可融合进 flash attention 的 log-sum-exp 路径），收益是整个训练过程不需要为稳定性调参。</p>
 <p>这条经验值得抄的地方在于：<strong>大模型训练的大部分事故不是“学不会”，而是“发散”</strong>。任何能在不改变优化目标的前提下把数值钉住的技巧，都比换算法更实用。</p>

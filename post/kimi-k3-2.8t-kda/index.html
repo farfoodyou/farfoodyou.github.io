@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级</h1>
-    <p class="meta"><time datetime="2026-07-17T09:10:00">2026-07-17</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1771 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-07-17T09:10:00">2026-07-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1801 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#kda把线性注意力做成可更新状态">KDA：把线性注意力做成&quot;可更新状态&quot;</a></li>
 <li class="h2"><a href="#attnres给层间加残差注意力">AttnRes：给层间加&quot;残差注意力&quot;</a></li>
@@ -66,9 +66,9 @@
 <p>线性注意力的核心是一个固定大小的状态 <code>S</code>，每来一个 token 做一次更新。最朴素的累加形式记忆衰减很快（远的信息被不断覆盖），所以工程上要加“遗忘/写入”的旋钮。</p>
 <p>Delta 规则（delta rule）的思路是：<strong>不要只累加，而是显式地“纠正”状态</strong>——把新 key 投影到当下状态上，算出预测误差，再按误差更新。用伪代码表达：</p>
 <pre data-lang="text"><code class="language-text">for each token t:
-    pred  = S @ k_t                  # 用当前状态预测
-    delta = v_t - pred               # 误差
-    S     = S + beta_t * outer(delta, k_t)   # 按误差写入
+    pred  = S @ k_t                          # predict from current state
+    delta = v_t - pred                       # error term
+    S     = S + beta_t * outer(delta, k_t)   # write by error
     o_t   = S @ q_t</code></pre>
 <p>好处是状态更新有“目标”（逼近 v），不会像纯累加那样漂移。代价是每步多一次矩阵-向量乘，算力略增，但<strong>显存仍是常数</strong>。</p>
 <p>对 1M 上下文的意义：KV 不随长度增长，decode 每 token 只读固定状态，带宽友好。</p>

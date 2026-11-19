@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</h1>
-    <p class="meta"><time datetime="2025-03-26T21:15:00">2025-03-26</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2292 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-03-26T21:15:00">2025-03-26</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2303 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#这次更新改了什么">这次更新改了什么</a></li>
 <li class="h2"><a href="#为什么点版本能涨这么多">为什么&quot;点版本&quot;能涨这么多</a></li>
@@ -113,14 +113,14 @@
 </tbody>
 </table></div>
 <p>实际部署里这两个不是二选一，而是<strong>路由</strong>：简单请求走 V3-0324，命中难题（多步数学、复杂代码）才升级到 R1。这种“双模型路由”在 2025 年上半年成了开源侧的常见架构。</p>
-<pre data-lang="python"><code class="language-python"># 一个朴素的路由：先用小成本判断难度，再决定走谁
-DEEPSEEK_V3_0324 = dict(model=&quot;deepseek-v3-0324&quot;, max_tokens=4096)
-DEEPSEEK_R1      = dict(model=&quot;deepseek-r1&quot;,      max_tokens=32768)
+<pre data-lang="python"><code class="language-python"># cheap difficulty probe first, then pick the model
+V3_0324 = dict(model=&quot;deepseek-v3-0324&quot;, max_tokens=4096)
+R1      = dict(model=&quot;deepseek-r1&quot;,      max_tokens=32768)
 
 def route(prompt: str) -&gt; dict:
-    if hard_signals(prompt):        # 代码报错栈、数学符号、多约束问题
-        return DEEPSEEK_R1
-    return DEEPSEEK_V3_0324</code></pre>
+    if hard_signals(prompt):     # stack traces, math symbols, multi-constraint asks
+        return R1
+    return V3_0324</code></pre>
 <h2 id="写到这里的判断">写到这里的判断</h2>
 <ul>
 <li>后训练是 2025 年的主战场。从零训练的代价（数据 + 万卡）把大多数团队挡在门外，但后训练的收益正在变得可复制。</li>

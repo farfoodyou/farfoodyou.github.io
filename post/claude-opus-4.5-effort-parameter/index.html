@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</h1>
-    <p class="meta"><time datetime="2025-11-25T08:50:00">2025-11-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2245 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-11-25T08:50:00">2025-11-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2290 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#旗舰降价背后的三个原因">旗舰降价背后的三个原因</a></li>
 <li class="h2"><a href="#effort-参数为什么重要">effort 参数为什么重要</a></li>
@@ -94,8 +94,8 @@
     model=&quot;claude-opus-4-5-20251101&quot;,
     max_tokens=16000,
     thinking={&quot;type&quot;: &quot;enabled&quot;, &quot;budget_tokens&quot;: 64000},
-    # effort 由服务端按任务复杂度决定，默认 high
-    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;重构这个模块并跑通测试&quot;}],
+    # effort defaults to high; the server decides per task
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;refactor this module and make the tests pass&quot;}],
 )</code></pre>
 <p>再往下看，Opus 4.5 强在哪：不是单点，是多语言编码：</p>
 <p>官方强调的领先项是 <strong>SWE-bench Multilingual</strong>——“在 8 种编程语言里 7 种领先”，以及 Aider Polyglot、BrowseComp-Plus、Vending-Bench 等偏 agent 的基准。</p>

@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</h1>
-    <p class="meta"><time datetime="2026-08-14T09:30:00">2026-08-14</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2077 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-08-14T09:30:00">2026-08-14</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2115 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#csa-hca两种压缩各管一段">CSA + HCA：两种压缩，各管一段</a></li>
 <li class="h2"><a href="#两段式后训练先分家再合并">两段式后训练：先分家，再合并</a></li>
@@ -79,9 +79,9 @@
 </table></div>
 <p>组合起来的效果：<strong>局部精确（CSA 选中的部分）+ 全局粗糙（HCA 的摘要）</strong>。这正是“1M 上下文”需要的结构——没有任何机制能在 1M 上做全精度注意力，只能分层。</p>
 <p>为什么能省到 10% KV：</p>
-<pre data-lang="text"><code class="language-text">稠密（V3.2）：61 层 × 576B/token ≈ 35 KB/token
-V4（压缩 + 稀疏）：约 3.5 KB/token 量级（官方口径 10%）
-→ 1M 上下文：35 GB → 3.5 GB（单请求）</code></pre>
+<pre data-lang="text"><code class="language-text">dense (V3.2)      : 61 layers x 576B/token ~ 35 KB/token
+V4 (compress+sparse): ~3.5 KB/token (10% per the model card)
+-&gt; 1M context: 35 GB -&gt; 3.5 GB per request</code></pre>
 <h2 id="两段式后训练先分家再合并">两段式后训练：先分家，再合并</h2>
 <p>V4 的后训练流程和 2025 年的做法明显不同：</p>
 <ol>

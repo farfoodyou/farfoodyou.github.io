@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">投机解码踩坑记：开了之后反而慢了 30%</h1>
-    <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time><span class="sep">·</span>3 分钟<span class="sep">·</span>1165 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time><span class="sep">·</span>3 分钟<span class="sep">·</span>1215 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#第一版直接照文档开">第一版：直接照文档开</a></li>
 <li class="h2"><a href="#为什么高并发会退化">为什么高并发会退化</a></li>
@@ -86,8 +86,8 @@
 <h2 id="第二个坑长上下文把它彻底干废">第二个坑：长上下文把它彻底干废</h2>
 <p>我们的请求里有约 15% 是长文档（&gt;64K token）。开投机后，这部分请求的 P99 从 18 秒变成 30 秒。</p>
 <p>原因在带宽账上：</p>
-<pre data-lang="text"><code class="language-text">普通 decode：每 token 读一次 KV（64K × 320B ≈ 20MB）
-投机解码：   验证 k=3 要读 3 个位置的 KV → 60MB，只换来约 2 个 token</code></pre>
+<pre data-lang="text"><code class="language-text">plain decode  : read KV once per token        (64K x 320B ~ 20MB)
+speculative   : verify k=3 reads 3 positions  (60MB) for ~2 tokens</code></pre>
 <p>当 KV 读取已经超过权重读取时（长上下文），<strong>投机解码是用更贵的那部分资源换更便宜的那部分</strong>——完全反了。</p>
 <h2 id="第三个坑接受率没人看">第三个坑：接受率没人看</h2>
 <p>上线一周后我们才加上接受率监控，发现：</p>
@@ -106,14 +106,14 @@
 <p><code>a &lt; 1.5</code> 的那些流量，开投机就是纯亏——draft 的成本没被摊掉。而这类流量占了 40%。</p>
 <h2 id="最后的配置">最后的配置</h2>
 <p>改了三件事之后，整体吞吐 1.35 倍、P99 反而降了：</p>
-<pre data-lang="text"><code class="language-text">1) 按请求分档：prompt 命中&quot;代码/结构化&quot;标签才开投机
-2) 长上下文（&gt;32K）强制关闭
-3) 并发 &gt; 24 时降低 k（3 → 2），把显存让给 batch</code></pre>
+<pre data-lang="text"><code class="language-text">1) enable only for prompts tagged code / structured output
+2) force off above 32K context
+3) drop k from 3 to 2 when concurrency &gt; 24, give VRAM back to batch</code></pre>
 <p>配置大概是这样的（示意，不是完整配置）：</p>
 <pre data-lang="yaml"><code class="language-yaml">speculative:
   method: mtp
-  num_speculative_tokens: 2      # 高并发时下调
-  max_context_for_spec: 32768    # 长上下文直接关
+  num_speculative_tokens: 2      # lowered under high concurrency
+  max_context_for_spec: 32768    # disabled for long context
   enable_when: [code, structured]</code></pre>
 <h2 id="数字复盘">数字复盘</h2>
 <div class="table-wrap"><table>

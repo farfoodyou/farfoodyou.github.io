@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">2026 推理栈答卷：缓存、稀疏、并行、量化</h1>
-    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2100 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2136 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#前缀缓存从优化项变成准入项">前缀缓存：从优化项变成准入项</a></li>
 <li class="h2"><a href="#稀疏注意力吃掉长上下文">稀疏注意力：吃掉长上下文</a></li>
@@ -100,9 +100,9 @@
 <p>结论：<strong>“长上下文”从“能不能”变成“多少钱”</strong>。100 万 token 的请求在 2026 年可以做到不到 1GB 的 KV、几秒的 prefill（配缓存）。</p>
 <h2 id="并行集群被拆成两层">并行：集群被拆成两层</h2>
 <p>2026 年的标准部署形态：</p>
-<pre data-lang="text"><code class="language-text">prefill 池（compute-bound）  →   KV 传输（RDMA）  →   decode 池（memory-bound，大 batch）
-        ↑                                              ↑
-   高算力、低显存                                  高带宽、低算力</code></pre>
+<pre data-lang="text"><code class="language-text">prefill pool (compute-bound) --KV over RDMA--&gt; decode pool (memory-bound, big batch)
+       ^                                              ^
+  high FLOPs, low VRAM                          high bandwidth, low FLOPs</code></pre>
 <p>配套的是 <strong>EP（专家并行）+ PD 分离</strong>：</p>
 <div class="table-wrap"><table>
 <thead><tr>

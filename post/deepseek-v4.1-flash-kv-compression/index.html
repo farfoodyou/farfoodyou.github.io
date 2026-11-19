@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</h1>
-    <p class="meta"><time datetime="2026-09-10T22:10:00">2026-09-10</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2103 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-09-10T22:10:00">2026-09-10</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2191 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#ced把-decode-的-kv-从编码器投影出来">CED：把 decode 的 KV 从编码器&quot;投影&quot;出来</a></li>
 <li class="h2"><a href="#swa-bounded-replay不落盘也能重建-kv">SWA Bounded Replay：不落盘也能重建 KV</a></li>
@@ -64,8 +64,8 @@
 <p>这篇的每个设计都是冲着“字节数”去的，值得逐条拆。</p>
 <h2 id="ced把-decode-的-kv-从编码器投影出来">CED：把 decode 的 KV 从编码器“投影”出来</h2>
 <p>传统 decoder-only 模型里，每一层都有自己的 KV。CED（Causal Encoder-Decoder）把它拆成：</p>
-<pre data-lang="text"><code class="language-text">20 层 causal encoder  →  全局 KV（一份）
-20 层 decoder          →  KV 由 encoder 最终隐状态投影得到（不再各层自建）</code></pre>
+<pre data-lang="text"><code class="language-text">20-layer causal encoder -&gt; one global KV
+20-layer decoder        -&gt; KV projected from encoder hidden states (no per-layer KV)</code></pre>
 <p>效果：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -82,8 +82,8 @@
 <h2 id="swa-bounded-replay不落盘也能重建-kv">SWA Bounded Replay：不落盘也能重建 KV</h2>
 <p>滑动窗口注意力（SWA）只保留最近 <code>n_win</code> 个 token 的 KV。问题是：多轮对话回退时，旧窗口的 KV 已经没了。</p>
 <p>常见解法是把 SWA KV 持久化到 SSD——IO 成本高、延迟大。V4.1-Flash 的做法是 <strong>Bounded Replay</strong>：需要时用最近 <code>n_win</code> 个 token 重放，重建缺失状态。</p>
-<pre data-lang="text"><code class="language-text">需要第 k 轮的历史 → 重放最近 n_win token → 重建 SWA 状态
-（重放成本 ≈ n_win 的 prefill，远低于读 SSD）</code></pre>
+<pre data-lang="text"><code class="language-text">need history from turn k -&gt; replay last n_win tokens -&gt; rebuild SWA state
+(replay cost ~ prefill of n_win, far below reading from SSD)</code></pre>
 <p>官方说这让<strong>持久化 KV 的体积降到 V4-Flash 的 1/8</strong>。</p>
 <h2 id="kv-压到-890-字节token">KV 压到 890 字节/token</h2>
 <p>三个手段叠加：</p>

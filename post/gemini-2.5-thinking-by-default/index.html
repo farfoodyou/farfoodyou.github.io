@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Gemini 2.5 Pro：把「思考」设成默认行为</h1>
-    <p class="meta"><time datetime="2025-03-25T23:30:00">2025-03-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2290 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-03-25T23:30:00">2025-03-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2342 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#默认思考意味着什么">默认思考意味着什么</a></li>
 <li class="h2"><a href="#1m-上下文是另一种工程题">1M 上下文是另一种工程题</a></li>
@@ -71,11 +71,11 @@
 <p>对用户：不用再选模型/档位，问什么都先想一遍。体验上确实更“聪明”，但延迟变得不可预期——同一个 prompt，简单问题 2 秒，复杂问题可能 40 秒。</p>
 <p>对工程：<strong>延迟和成本从“确定性参数”退化成“分布”</strong>。做一个搜索类产品，用户能容忍 800ms；接了默认思考的模型，就得重新设计交互（流式输出进度、后台任务化、结果轮询）。</p>
 <p>对供应商：默认思考等于把算力成本吃进定价里。Google 敢这么做，是因为 TPU 自有、边际成本可控；对靠租卡的玩家，这是一个很重的决定。</p>
-<pre data-lang="text"><code class="language-text">三种&quot;思考&quot;控制方式的对比（2025 年 3 月）
+<pre data-lang="text"><code class="language-text">three ways to control thinking (March 2025)
 
-o3-mini      : reasoning_effort = low | medium | high       （离散档位）
-Claude 3.7   : thinking.budget_tokens = N (≤128K)            （连续预算）
-Gemini 2.5   : 默认思考，思考长度由模型自己决定               （自适应）</code></pre>
+o3-mini     : reasoning_effort = low | medium | high   (discrete)
+Claude 3.7  : thinking.budget_tokens = N (&lt;=128K)      (continuous)
+Gemini 2.5  : thinking on by default, length self-chosen (adaptive)</code></pre>
 <p>自适应是最“懒”的接口，也最考验模型自己的元认知：它得判断“这题值不值得多想”。做得好，平均成本低于固定高档位；做得差，简单问题也要想半天。</p>
 <h2 id="1m-上下文是另一种工程题">1M 上下文是另一种工程题</h2>
 <p>Gemini 系列一直在堆上下文（1.5 时代就是 1M）。但到了 2.5 这个量级，“能塞进去”和“能用好”是两回事：</p>

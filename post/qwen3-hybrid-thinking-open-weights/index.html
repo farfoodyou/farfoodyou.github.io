@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Qwen3：把 thinking 开关做进开源权重</h1>
-    <p class="meta"><time datetime="2025-04-29T22:00:00">2025-04-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2172 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-04-29T22:00:00">2025-04-29</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2269 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合思考一个权重两种行为">混合思考：一个权重，两种行为</a></li>
 <li class="h2"><a href="#训练上怎么做出两种模式">训练上怎么做出&quot;两种模式&quot;</a></li>
@@ -64,15 +64,15 @@
 <p>但真正值得写的是接口设计。</p>
 <h2 id="混合思考一个权重两种行为">混合思考：一个权重，两种行为</h2>
 <p>Qwen3 的卖点是 “seamless switching between thinking mode and non-thinking mode within a single model”（<a href="https://huggingface.co/Qwen/Qwen3-235B-A22B">模型卡</a>）。落地形态有三种：</p>
-<pre data-lang="python"><code class="language-python"># 1) 推理时用参数切换（transformers / vLLM）
+<pre data-lang="python"><code class="language-python"># 1) switch at inference time (transformers / vLLM)
 text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False)
-#                                                     ^^^^^^^^^^^^^ 默认 True
+#                                                     ^^^^^^^^^^^^^ default True
 
-# 2) 对话里用软开关
-&quot;/think    解释一下这个死锁为什么发生&quot;
-&quot;/no_think  把上面这段翻译成英文&quot;
+# 2) soft switch inside the prompt
+&quot;/think     explain why this deadlock happens&quot;
+&quot;/no_think  translate the paragraph above&quot;
 
-# 3) 用思考预算限制长度（后续版本补齐）</code></pre>
+# 3) cap the thinking length with a budget (later releases)</code></pre>
 <p>对使用者来说，这是<strong>同一个模型、同一份权重</strong>，只换一个开关。和 Claude 3.7 的 budget_tokens、o3-mini 的 reasoning_effort 是同一思路——但 Qwen3 是第一个把这套接口开进权重里的。</p>
 <p>这带来的实际好处很直接：</p>
 <div class="table-wrap"><table>

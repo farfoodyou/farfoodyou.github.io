@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">o3 与 o4-mini：在思考过程里调用工具</h1>
-    <p class="meta"><time datetime="2025-04-17T09:50:00">2025-04-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2149 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-04-17T09:50:00">2025-04-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2290 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#从串行到思考内工具">从&quot;串行&quot;到&quot;思考内工具&quot;</a></li>
 <li class="h2"><a href="#视觉进了推理链">视觉进了推理链</a></li>
@@ -64,12 +64,12 @@
 <p>这一步跨得比看起来大。</p>
 <h2 id="从串行到思考内工具">从“串行”到“思考内工具”</h2>
 <p>上一代推理模型的流程是线性的：</p>
-<pre data-lang="text"><code class="language-text">prompt → 长 CoT → 结论 → (可选) 调工具 → 再组织答案</code></pre>
+<pre data-lang="text"><code class="language-text">prompt -&gt; long CoT -&gt; answer -&gt; (optional) tool call -&gt; rewrite answer</code></pre>
 <p>o3/o4-mini 的流程允许分叉：</p>
-<pre data-lang="text"><code class="language-text">prompt → CoT ─┬─ 需要事实 → 搜索 → 结果回到 CoT
-              ├─ 需要计算 → 执行 Python → 结果回到 CoT
-              └─ 需要细节 → 裁剪/放大图像 → 结果回到 CoT
-        → 继续推理 → 答案</code></pre>
+<pre data-lang="text"><code class="language-text">prompt -&gt; CoT --+-- needs facts ---&gt; web search --&gt; back to CoT
+                +-- needs math ----&gt; run Python --&gt; back to CoT
+                +-- needs detail --&gt; crop/zoom ---&gt; back to CoT
+        -&gt; keep reasoning -&gt; answer</code></pre>
 <p>差别在于<strong>中间结论可以被外部事实纠正</strong>。纯 CoT 的失败模式是“一路自信地推错”，工具插入后，模型有机会在中途发现“我记的数字不对”。</p>
 <p>代价也很清楚：一次请求可能触发多次工具调用，延迟从“一次生成”变成“多轮生成 + IO”。<strong>成本模型彻底变了</strong>——不再按 token 线性估算，而是按“工具调用次数 × 每轮上下文”估算，且上下文会随着工具结果不断增长。</p>
 <h2 id="视觉进了推理链">视觉进了推理链</h2>
@@ -95,12 +95,12 @@
 <li><strong>沙箱是必需品</strong>。模型自己生成并执行代码，必须有资源限制、网络隔离、超时中断。这是安全边界，不是优化项。</li>
 <li><strong>缓存策略要改</strong>。思考过程中的工具结果不能命中前缀缓存，长对话里缓存收益被稀释。</li>
 </ol>
-<pre data-lang="python"><code class="language-python"># 伪代码：带工具预算的推理请求（控制成本上界）
+<pre data-lang="python"><code class="language-python"># pseudo-code: reasoning request with a hard tool budget
 resp = client.responses.create(
     model=&quot;o4-mini&quot;,
     reasoning={&quot;effort&quot;: &quot;medium&quot;},
     tools=[{&quot;type&quot;: &quot;web_search&quot;}, {&quot;type&quot;: &quot;code_interpreter&quot;}],
-    max_tool_calls=8,          # 关键：给工具调用次数设上限
+    max_tool_calls=8,          # hard cap: no unbounded agent loops
     input=messages,
 )</code></pre>
 <p><code>max_tool_calls</code> 这类参数在 2025 年会成为标配——<strong>没有硬上限的 agent 就是一个会自己烧钱的进程</strong>。</p>

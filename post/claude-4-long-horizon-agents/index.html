@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude 4：长时间自主任务，和被重新定义的「上下文」</h1>
-    <p class="meta"><time datetime="2025-05-23T08:30:00">2025-05-23</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2101 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-05-23T08:30:00">2025-05-23</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2142 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#swe-bench-与-terminal-bench-的区别">SWE-bench 与 Terminal-bench 的区别</a></li>
 <li class="h2"><a href="#官方说的三个新能力">官方说的三个新能力</a></li>
@@ -87,9 +87,9 @@
 <pre data-lang="text"><code class="language-text">一次长任务的上下文管理（示意）
 
 memory/
-  conventions.md   # 模型自己写的：命名规范、构建方式
-  tried.md         # 失败过的方案，避免重复踩坑
-  todo.md          # 未完成项</code></pre>
+  conventions.md   # written by the model: naming, build steps
+  tried.md         # dead ends, so it stops retrying them
+  todo.md          # open items</code></pre>
 <p>这比“塞满 200K 上下文”便宜得多，也更可控：上下文会溢出，磁盘不会。</p>
 <h2 id="定价没涨是这一轮最狠的地方">定价没涨，是这一轮最狠的地方</h2>
 <ul>

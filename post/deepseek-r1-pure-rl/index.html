@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-R1：纯 RL 把推理能力「逼」出来</h1>
-    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4726 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4762 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#两条路线zero-和-r1">两条路线：Zero 和 R1</a></li>
 <li class="h2"><a href="#grpo把-critic-省掉">GRPO：把 critic 省掉</a></li>
@@ -92,9 +92,9 @@
 <h2 id="grpo把-critic-省掉">GRPO：把 critic 省掉</h2>
 <p>PPO 需要 value network（critic），在 LLM 上它和 policy 同量级，RL 阶段显存几乎翻倍。GRPO 的做法很朴素：<strong>同一个 prompt 采一组回答，用组内 reward 的均值方差做归一化，直接当 advantage。</strong></p>
 <pre data-lang="text"><code class="language-text">for each prompt q:
-    sample G outputs {o_1 ... o_G} ~ π_old(·|q)
-    r_i = reward(q, o_i)                  # 规则奖励，标量
-    A_i = (r_i - mean(r)) / std(r)        # 组内归一化，替代 critic
+    sample G outputs {o_1 ... o_G} ~ pi_old(.|q)
+    r_i = reward(q, o_i)                  # rule-based scalar reward
+    A_i = (r_i - mean(r)) / std(r)        # group-normalized advantage, no critic
     maximize  Σ_i min( ratio_i * A_i , clip(ratio_i, 1-ε, 1+ε) * A_i )
               - β * KL(π || π_ref)</code></pre>
 <p>顺手记下几处：</p>

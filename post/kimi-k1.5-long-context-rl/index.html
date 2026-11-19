@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</h1>
-    <p class="meta"><time datetime="2025-01-23T22:10:00">2025-01-23</time><span class="sep">·</span>8 分钟<span class="sep">·</span>3201 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-01-23T22:10:00">2025-01-23</time><span class="sep">·</span>8 分钟<span class="sep">·</span>3327 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#故意不做的那三件事">故意不做的那三件事</a></li>
 <li class="h2"><a href="#长上下文-rl-的两个硬骨头">长上下文 RL 的两个硬骨头</a></li>
@@ -85,13 +85,13 @@
 <p>把 RL 的 rollout 长度从 4K 拉到 128K，会同时遇到两个工程问题。</p>
 <p><strong>第一，长度膨胀。</strong> CoT 越长，reward 的归因越难，策略容易学会“无脑多写”。报告的处理是给 rollout 设 token 预算、加长度惩罚，并课程式地逐步放长。</p>
 <p><strong>第二，长尾请求。</strong> 一个 batch 里既有 128K 样本，也有 2K 样本，同步等待就是灾难。他们用 <strong>partial rollout</strong>：某个样本超预算就先截断、放回队列，下一轮从截断处继续采样。长样本不阻塞整个 batch，已生成的 token 也不浪费。</p>
-<pre data-lang="text"><code class="language-text">while 还有未完成的轨迹:
-    batch = 取当前可运行的轨迹（按 token 预算切分）
-    out   = 推理引擎生成(batch, max_new_tokens=chunk)
-    对每条轨迹:
-        if 生成到终止符:    收进 RL batch，算 reward
-        elif 到预算上限:    落盘状态，等下一轮继续
-        else:              继续生成</code></pre>
+<pre data-lang="text"><code class="language-text">while unfinished_trajectories:
+    batch = runnable_trajectories(token_budget)     # pack by budget
+    out   = infer_engine.generate(batch, max_new_tokens=chunk)
+    for traj in out:
+        if traj.hit_eos:      rl_batch.add(traj); score(traj)
+        elif traj.hit_budget: persist(traj); requeue(traj)
+        else:                 keep_generating(traj)</code></pre>
 <p>论文里有专门一节讲 rollout 基础设施（<a href="https://arxiv.org/abs/2501.12599">§3 Infra</a>）。配套的是<strong>训练与推理同源</strong>：rollout 走 vLLM 这类推理引擎（continuous batching、PagedAttention），训练走 Megatron 类框架，中间靠权重同步衔接。同步开销、精度对齐（训练 bf16 / 推理 fp8）、chunked prefill，全是脏活。</p>
 <p>这些东西在论文里只占一小节，但<strong>它是“能不能跑起来”的分界线</strong>。</p>
 <h2 id="策略优化镜像下降而不是-ppo">策略优化：镜像下降，而不是 PPO</h2>

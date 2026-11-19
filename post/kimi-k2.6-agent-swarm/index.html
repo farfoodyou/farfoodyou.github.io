@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</h1>
-    <p class="meta"><time datetime="2026-04-21T22:20:00">2026-04-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2053 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-04-21T22:20:00">2026-04-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1950 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#swarm-是横向-scaling">swarm 是&quot;横向 scaling&quot;</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#swarm-是横向-scaling">swarm 是&quot;横向 scaling&quot;</a></li>
 <li class="h2"><a href="#300-个子-agent-意味着什么">300 个子 agent 意味着什么</a></li>
-<li class="h2"><a href="#数据怎么搬谁在搬搬到哪">数据怎么搬：谁在搬、搬到哪</a></li>
+<li class="h2"><a href="#300-个-agent-同时开口时钱花在哪">300 个 agent 同时开口时，钱花在哪</a></li>
 <li class="h2"><a href="#247-后台-agent产品形态的变化">24/7 后台 agent：产品形态的变化</a></li>
+<li class="h2"><a href="#一条不等式">一条不等式</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>4 月 20 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K2.6">Kimi K2.6</a>（Modified MIT）。规格延续 K2 家族：<strong>1T 总参数 / 32B 激活、256K 上下文、原生多模态</strong>。</p>
@@ -85,27 +88,10 @@
 </tbody>
 </table></div>
 <p>结论很直接：<strong>swarm 不是“免费并行”，它把显存和网络变成主要成本</strong>。要在 256K 上下文下跑 300 并发，至少需要多节点 + KV 分层（HBM→CPU→NVMe），并且要能把“共享前缀”的 KV 复用掉，否则一遍上下文就能把集群撑满。</p>
-<h2 id="数据怎么搬谁在搬搬到哪">数据怎么搬：谁在搬、搬到哪</h2>
-<div class="table-wrap"><table>
-<thead><tr>
-<th>数据</th>
-<th>路径</th>
-<th>谁在搬</th>
-</tr></thead>
-<tbody>
-<tr><td>权重（1T, FP8 ≈ 1TB）</td><td>HBM 常驻</td><td>加载一次</td></tr>
-<tr><td>共享上下文 KV</td><td>HBM，跨 agent 复用</td><td>前缀缓存 / KV 复用路由</td></tr>
-<tr><td>子 agent 间消息</td><td>节点内 NVLink、节点间 RDMA</td><td>编排层序列化 + 传输</td></tr>
-<tr><td>工具结果</td><td>外部服务 → 上下文</td><td>由 harness 拼进 prompt</td></tr>
-<tr><td>汇总阶段</td><td>多个子结果 → 主 agent 上下文</td><td>压缩/摘要后重新 prefill</td></tr>
-</tbody>
-</table></div>
-<p>三个工程要点：</p>
-<ol>
-<li><strong>共享前缀是 swarm 的生命线</strong>。300 个子任务通常共享同一份代码库/文档，如果每个子 agent 都重新 prefill 一次，成本是单 agent 的 300 倍；命中缓存能降到 3～10 倍。</li>
-<li><strong>消息序列化格式决定带宽</strong>。子 agent 之间传 JSON 比传结构化二进制贵 2～4 倍，而 token 才是最终计费单位。</li>
-<li><strong>汇总阶段是一次巨大的 prefill</strong>。把 300 份结果塞进主 agent 的上下文，等于重新跑一次长文档 prefill——这也是“上下文压缩”在 swarm 里比在单 agent 里更关键的原因。</li>
-</ol>
+<h2 id="300-个-agent-同时开口时钱花在哪">300 个 agent 同时开口时，钱花在哪</h2>
+<p>swarm 的成本不在参数，在三处复制：每个子 agent 都有自己的对话上下文、自己的一次 prefill、自己的一份 KV 页。1T 权重只读一次，共享前缀的 KV 也能复用，但“每个子任务独有的那段历史”没法共享，它随子 agent 数线性增长。100 个子 agent 各带 8K 独特历史，就是 8×10⁵ 个 token 的 KV 在网络里存着，与主模型多大无关。</p>
+<p>通信是第二笔。子 agent 之间传的是结构化结果（任务图、diff、测试输出），4K token 的一条结果走 NVLink 是微秒级，跨机走 RDMA 就变成毫秒级；它还会在汇总阶段被重新 prefill 一遍，所以消息长度直接翻倍成了算力开销。</p>
+<p>第三笔是重试。子 agent 崩掉重跑要重放它的上下文，又得重新 prefill 一次；如果编排层没做检查点，一次重试的成本等于一次冷启动，而 300 并发下重试是常态。</p>
 <h2 id="247-后台-agent产品形态的变化">24/7 后台 agent：产品形态的变化</h2>
 <p>官方提到的另一个用法是“常驻后台 agent”：自己管理日程、执行代码、跨平台操作，不需要人盯着。</p>
 <p>这带来两个新问题：</p>
@@ -114,13 +100,8 @@
 <li><strong>审计与权限</strong>：无人值守的 agent 需要最小权限、操作日志、可撤销。</li>
 </ul>
 <p>这两件事在 2026 年还没有标准答案，各家都在自己造。</p>
-<p>落到工程上，我的判断是这样：</p>
-<ul>
-<li>横向 scaling 会成为和长 CoT 并列的一条主线，但它优化的是延迟而不是单位 token 成本。</li>
-<li><strong>“agent 编排”会变成独立的基础设施层</strong>：任务图、共享缓存、冲突解决、结果验证，这些和模型无关。</li>
-<li>开源 1T 模型的实际用途是“私有化编排集群”，不是单机部署；选型时要按“集群吞吐/成本”算，不是按单卡 tok/s。</li>
-<li>对工程团队的提醒：<strong>先把“共享前缀 + 结果压缩”做对，再谈 300 并发</strong>。否则并行度越高，账单越失控。</li>
-</ul>
+<h2 id="一条不等式">一条不等式</h2>
+<p>把上面的账收成一条：可用显存 &gt; 300 × 单 agent 的 KV。按 32K 上下文、35KB/token 的 MLA 口径，单 agent 约 1.1GB，300 并发就是 330GB；一个 8×141GB 的节点（1.13TB）扣掉碎片只剩 790GB 左右，够跑两轮，4 条 swarm 并行就要两个节点。这个不等式里没有模型能力的位置，只有上下文长度和并发数两个变量；先把 128K 降成 32K，同样的集群能多装三倍的子 agent。</p>
 <h2 id="来源">来源</h2>
 <ul>
 <li>模型卡（swarm 规格、上下文、许可）：<a href="https://huggingface.co/moonshotai/Kimi-K2.6">Kimi-K2.6</a></li>
@@ -132,7 +113,6 @@
   <p class="tag-list"><a class="tag" href="/tags/moonshot/">Moonshot</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/多智能体/">多智能体</a><a class="tag" href="/tags/系统/">系统</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Kimi+K2.6%EF%BC%9A300+%E4%B8%AA%E5%AD%90+agent%E3%80%814000+%E6%AD%A5%EF%BC%8C%E6%A8%AA%E5%90%91%E6%89%A9%E5%B1%95%E7%9A%84%E5%8F%A6%E4%B8%80%E7%A7%8D+scaling" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/step-3.7-flash-11b-active/">← Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</a><a class="next" href="/post/qwen3.6-35b-a3b-architecture/">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a><time>2025-08</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -174,6 +154,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#swarm-是横向-scaling">swarm 是&quot;横向 scaling&quot;</a></li>
+<li class="h2"><a href="#300-个子-agent-意味着什么">300 个子 agent 意味着什么</a></li>
+<li class="h2"><a href="#300-个-agent-同时开口时钱花在哪">300 个 agent 同时开口时，钱花在哪</a></li>
+<li class="h2"><a href="#247-后台-agent产品形态的变化">24/7 后台 agent：产品形态的变化</a></li>
+<li class="h2"><a href="#一条不等式">一条不等式</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a><time>2025-08</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

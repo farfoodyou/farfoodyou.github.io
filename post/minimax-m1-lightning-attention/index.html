@@ -37,18 +37,20 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</h1>
-    <p class="meta"><time datetime="2025-06-17T23:20:00">2025-06-17</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2722 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-06-17T23:20:00">2025-06-17</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2679 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#长-cot-的成本结构">长 CoT 的成本结构</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#长-cot-的成本结构">长 CoT 的成本结构</a></li>
 <li class="h2"><a href="#cispo只裁重要性权重不裁-token">CISPO：只裁重要性权重，不裁 token</a></li>
 <li class="h2"><a href="#规格表的现实检查">规格表的现实检查</a></li>
 <li class="h2"><a href="#长上下文的评测陷阱">长上下文的评测陷阱</a></li>
 <li class="h2"><a href="#摊开算1m-上下文为什么没把显存撑爆">摊开算：1M 上下文为什么没把显存撑爆</a></li>
-<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#25-是-flops不是墙钟">25% 是 FLOPs，不是墙钟</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>6 月 16 日，MiniMax 开源 <a href="https://huggingface.co/MiniMaxAI/MiniMax-M1-80k">M1</a>。规格先摆出来：</p>
@@ -58,18 +60,13 @@
 <li><strong>Apache 2.0</strong>，两个版本分别对应 40K / 80K 的思考预算；</li>
 <li>附带一个自研 RL 算法 <strong>CISPO</strong>。</li>
 </ul>
-<p>这篇的重点不是它多强，而是它<strong>怎么把长思考变便宜</strong>——这是 2025 年下半年开源推理模型的主战场。</p>
+<p>这篇的重点不是它多强，而是它<strong>怎么把长思考变便宜</strong>，这也是 2025 年下半年开源推理模型的主战场。</p>
 <h2 id="长-cot-的成本结构">长 CoT 的成本结构</h2>
 <p>一个 80K 思考预算的请求，成本几乎全在 decode：</p>
 <pre data-lang="text"><code class="language-text">成本 ≈ prefill(输入长度) + decode(输出长度) × 每 token 算力</code></pre>
-<p>标准 softmax 注意力下，每生成一个 token 都要和全部历史 token 算注意力，<strong>每 token 成本随长度线性增长</strong>，总成本随长度平方增长。80K 思考意味着最后几个 token 的注意力开销是最初的几十倍。这就是“想得越久越贵”的数学根源。</p>
-<p>lightning attention（线性注意力的一种工程实现）把这个关系改成：</p>
-<ul>
-<li>标准注意力：每 token 成本 ∝ 当前长度 → 总成本 ∝ L²</li>
-<li>线性注意力：每 token 成本 ∝ 固定状态大小 → 总成本 ∝ L</li>
-</ul>
-<p>官方的对比数字是：<strong>生成到 100K token 时，M1 的 FLOPs 约为 DeepSeek-R1 的 25%</strong>（<a href="https://huggingface.co/MiniMaxAI/MiniMax-M1-80k">模型卡</a>）。这个量级和理论预期吻合（二次项在长序列上占主导）。</p>
-<p>混合结构（部分层用线性注意力、部分层保留 softmax）是为了不掉质量：纯线性注意力在精确检索上弱，混一点全注意力层能把“大海捞针”类任务拉回来。</p>
+<p>标准 softmax 注意力下，每生成一个 token 都要和全部历史 token 算注意力，<strong>每 token 成本随长度线性增长</strong>，总成本随长度平方增长。80K 思考意味着最后几个 token 的注意力开销是最初的几十倍。</p>
+<p>lightning attention（线性注意力的一种工程实现）把二次项打掉：每 token 只和一个固定大小的状态交互，总成本随长度线性增长。混合结构（部分层用线性、部分层保留 softmax）是为了不掉质量：纯线性注意力在精确检索上弱，混一点全注意力层能把“大海捞针”类任务拉回来。</p>
+<p>官方的对比数字是：<strong>生成到 100K token 时，M1 的 FLOPs 约为 DeepSeek-R1 的 25%</strong>（<a href="https://huggingface.co/MiniMaxAI/MiniMax-M1-80k">模型卡</a>）。这是混合结构的加权结果，纯线性会更多。</p>
 <h2 id="cispo只裁重要性权重不裁-token">CISPO：只裁重要性权重，不裁 token</h2>
 <p>M1 的 RL 部分换掉了常见的 PPO/GRPO 变体，用的是 CISPO（clipped importance sampling policy optimization）。差别在一句话里：</p>
 <blockquote><p>裁剪的是 importance sampling 的权重，而不是每个 token 的更新量。</p></blockquote>
@@ -85,12 +82,12 @@
 <tbody>
 <tr><td>总参数</td><td>456B</td><td>fp8 权重约 456GB，至少 8 卡 H100/H200</td></tr>
 <tr><td>激活参数</td><td>45.9B</td><td>单 token 计算量相当于一个 46B dense 模型</td></tr>
-<tr><td>原生上下文</td><td>1M</td><td>需配合 80K 思考预算，否则显存吃紧</td></tr>
+<tr><td>原生上下文</td><td>1M</td><td>线性层状态固定，但 prefill 要分块喂</td></tr>
 <tr><td>许可证</td><td>Apache 2.0</td><td>可商用，无月活限制</td></tr>
 </tbody>
 </table></div>
 <p><strong>自部署门槛不低</strong>：8 卡起步，且 1M 上下文需要分块 prefill + KV 分层存储。对大多数团队，实际用法还是调 API 或用更小的模型。</p>
-<p>它的真正价值在于<strong>证明长上下文 + 长思考可以便宜地做</strong>，给小模型团队一个可抄的架构方向。</p>
+<p>它的价值在于<strong>证明长上下文 + 长思考可以便宜地做</strong>，给小模型团队一个可抄的架构方向。</p>
 <h2 id="长上下文的评测陷阱">长上下文的评测陷阱</h2>
 <p>模型卡给了 OpenAI-MRCR（1M）等长文基准。看这类数字要注意三点：</p>
 <ol>
@@ -113,20 +110,23 @@
 <tr><td>decode 读 KV 的带宽</td><td>O(L) 每层</td><td><strong>O(1)</strong> 每层</td></tr>
 </tbody>
 </table></div>
-<p>这直接改变了“谁在搬”：</p>
-<ul>
-<li>decode 阶段的数据搬运主要是<strong>权重</strong>（45.9B × 1B ≈ 46 GB / token，H200 的 4.8 TB/s 下约 9.6 ms，单流上限 ~100 token/s）；</li>
-<li>KV 不再是带宽黑洞，长上下文请求的显存预算可以提前算准；</li>
-<li>代价是 <strong>prefill 仍然是顺序状态更新</strong>，1M token 的长文档要分块喂进去（chunked prefill），每块都要把 hidden state 从 HBM 搬进 SMEM 再写回。</li>
-</ul>
-<p>混合结构（部分层保留 softmax）就是为了补线性注意力在“精确检索”上的弱项——那些层仍然持有真正的 KV，只是层数少，显存可控。</p>
-<h2 id="最后说三句">最后说三句</h2>
-<ul>
-<li>线性/混合注意力会成为长上下文模型的标配。softmax 的二次项在 100K 以上无法承受，这不是优化问题，是数学问题。</li>
-<li><strong>“1M 上下文”是营销指标，“100K 可用”才是工程指标</strong>。别按标称值设计产品。</li>
-<li>RL 算法的微创新在长序列上很有价值，CISPO 这类改动单看很小，但在 80K 轨迹上的稳定性差异会被放大。</li>
-<li><strong>开源推理模型的竞争维度已经变成“每百万思考 token 的成本”</strong>，而不是榜单分数。M1、R1-0528、Qwen3 的差异更多在账单上，不在 AIME 上。</li>
-</ul>
+<p>这直接改变了“谁在搬”：decode 的成本大头是<strong>权重</strong>（45.9B × 1B ≈ 46 GB/token，4.8 TB/s 下约 9.6 ms，单流上限 ~100 token/s），KV 不再是带宽黑洞，长上下文请求的显存预算可以提前算准；代价是 <strong>prefill 仍是顺序状态更新</strong>，1M 文档要分块喂（chunked prefill），每块都要把 hidden state 从 HBM 搬进 SMEM 再写回。</p>
+<p>混合结构（部分层保留 softmax）就是为了补线性注意力在“精确检索”上的弱项：那些层仍持有完整的 KV，只是层数少，显存可控。</p>
+<h2 id="25-是-flops不是墙钟">25% 是 FLOPs，不是墙钟</h2>
+<p>同为 100K 生成，两个口径的账差很远：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>口径</th>
+<th>100K 生成的账</th>
+<th>被什么卡住</th>
+</tr></thead>
+<tbody>
+<tr><td>注意力 FLOPs</td><td>二次项随 L 增长，官方口径降到 R1 的 25%</td><td>保留 softmax 的层数</td></tr>
+<tr><td>权重读取</td><td>45.9B × 1B ≈ 46 GB/token，累计 4.6 PB</td><td>激活参数，与上下文长短无关</td></tr>
+<tr><td>KV 读取</td><td>线性层常数；全 softmax 折 175 TB</td><td>混合比例</td></tr>
+</tbody>
+</table></div>
+<p>权重读取是大头，所以注意力 FLOPs 只剩四分之一，单流墙钟也降不到 1/4：它被 46 GB/token 卡在百 token/s 量级。长思考省下的是算力预算，不是延迟。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>模型卡（架构、CISPO、基准表）：<a href="https://huggingface.co/MiniMaxAI/MiniMax-M1-80k">MiniMax-M1-80k</a></li>
@@ -137,7 +137,6 @@
   <p class="tag-list"><a class="tag" href="/tags/minimax/">MiniMax</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/强化学习/">强化学习</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=MiniMax-M1%EF%BC%9A1M+%E4%B8%8A%E4%B8%8B%E6%96%87+%2B+%E7%BA%BF%E6%80%A7%E6%B3%A8%E6%84%8F%E5%8A%9B%EF%BC%8C%E6%8A%8A%E9%95%BF%E6%80%9D%E8%80%83%E7%9A%84%E8%B4%A6%E5%8D%95%E6%89%93%E4%B8%8B%E6%9D%A5" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kimi-k2-1t-moe-muonclip/">← Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><a class="next" href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><time>2025-10</time></li><li><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a><time>2026-03</time></li><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -179,6 +178,14 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#长-cot-的成本结构">长 CoT 的成本结构</a></li>
+<li class="h2"><a href="#cispo只裁重要性权重不裁-token">CISPO：只裁重要性权重，不裁 token</a></li>
+<li class="h2"><a href="#规格表的现实检查">规格表的现实检查</a></li>
+<li class="h2"><a href="#长上下文的评测陷阱">长上下文的评测陷阱</a></li>
+<li class="h2"><a href="#摊开算1m-上下文为什么没把显存撑爆">摊开算：1M 上下文为什么没把显存撑爆</a></li>
+<li class="h2"><a href="#25-是-flops不是墙钟">25% 是 FLOPs，不是墙钟</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><time>2025-10</time></li><li><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a><time>2026-03</time></li><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

@@ -37,26 +37,28 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-R1：纯 RL 把推理能力「逼」出来</h1>
-    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4762 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4758 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#两条路线zero-和-r1">两条路线：Zero 和 R1</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#两条路线zero-和-r1">两条路线：Zero 和 R1</a></li>
 <li class="h2"><a href="#grpo把-critic-省掉">GRPO：把 critic 省掉</a></li>
 <li class="h2"><a href="#数字追平在哪落后在哪">数字：追平在哪，落后在哪</a></li>
 <li class="h2"><a href="#价格才是真正的冲击">价格才是真正的冲击</a></li>
 <li class="h2"><a href="#蒸馏小模型上做-rl-不如抄作业">蒸馏：小模型上做 RL 不如抄作业</a></li>
 <li class="h2"><a href="#落地时踩到的几个坑">落地时踩到的几个坑</a></li>
-<li class="h2"><a href="#几句判断">几句判断</a></li>
+<li class="h2"><a href="#复现比公式难得多">复现比公式难得多</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>1 月 20 日，DeepSeek 放出 R1：MIT 协议、<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1">权重全开</a>、<a href="https://arxiv.org/abs/2501.12948">技术报告</a>同步公开。当天的讨论几乎都集中在“开源追平 o1”，但报告里真正反常识的是另一件事——</p>
+<p>1 月 20 日，DeepSeek 放出 R1：MIT 协议、<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1">权重全开</a>、<a href="https://arxiv.org/abs/2501.12948">技术报告</a>同步公开。当天的讨论几乎都集中在“开源追平 o1”，但报告里反常识的是另一件事：</p>
 <p><strong>R1-Zero 完全没有 SFT，只做强化学习。</strong></p>
 <p>o1 把 CoT 藏起来、把训练细节锁死；R1 给出的结论是：只要奖励可验证，长链推理是能被 RL 自己“长”出来的（<a href="https://arxiv.org/abs/2501.12948">报告摘要</a>原话是 “incentivized through pure reinforcement learning”）。</p>
 <h2 id="两条路线zero-和-r1">两条路线：Zero 和 R1</h2>
-<p>R1-Zero 的配方干净得离谱：拿 V3-Base，直接上大规模 RL，奖励只有两种——答案对不对（accuracy）、格式对不对（format，把思考过程放进 <code>thinking</code> 标签）。没有 cold start，没有偏好数据，没有过程奖励模型。这套管线写在 <a href="https://github.com/deepseek-ai/DeepSeek-R1#2-model-summary">GitHub README 的 Model Summary</a> 里。</p>
+<p>R1-Zero 的配方干净得离谱：拿 V3-Base，直接上大规模 RL，奖励只有两种：答案对不对（accuracy）、格式对不对（format，把思考过程放进 <code>thinking</code> 标签）。没有 cold start，没有偏好数据，没有过程奖励模型。这套管线写在 <a href="https://github.com/deepseek-ai/DeepSeek-R1#2-model-summary">GitHub README 的 Model Summary</a> 里。</p>
 <p>跑出来的东西很符合“涌现”这个词的定义：</p>
 <ul>
 <li>输出长度自发增长，模型自己学会“多想一会儿”；</li>
@@ -77,7 +79,7 @@
 <tr><td>4</td><td>全场景 RL</td><td>对齐人类偏好，修有用性/无害性</td></tr>
 </tbody>
 </table></div>
-<p>第 2 阶段和第 4 阶段的奖励不同：前者是规则奖励（可验证），后者混入偏好奖励。这也解释了为什么 R1 能一边做 AIME，一边正常聊天——通用能力是第四阶段补回来的。</p>
+<p>第 2 阶段和第 4 阶段的奖励不同：前者是规则奖励（可验证），后者混入偏好奖励。这也解释了为什么 R1 能一边做 AIME，一边正常聊天，通用能力是第四阶段补回来的。</p>
 <h2 id="grpo把-critic-省掉">GRPO：把 critic 省掉</h2>
 <p>PPO 需要 value network（critic），在 LLM 上它和 policy 同量级，RL 阶段显存几乎翻倍。GRPO 的做法很朴素：<strong>同一个 prompt 采一组回答，用组内 reward 的均值方差做归一化，直接当 advantage。</strong></p>
 <pre data-lang="text"><code class="language-text">for each prompt q:
@@ -115,7 +117,7 @@
 <p>读法很清楚：<strong>在“可验证”的维度上打平甚至反超，在“知识密集”的维度（GPQA、MMLU）落后。</strong> 这个 gap 不是 RL 能补的，得靠底座本身的知识量。换句话说，R1 提升的是“用已有知识推理”的效率，不是“知道得更多”。</p>
 <h2 id="价格才是真正的冲击">价格才是真正的冲击</h2>
 <p><a href="https://api-docs.deepseek.com/quick_start/pricing">官方 API 定价</a>：输入 $0.55 / 输出 $2.19 每百万 token，缓存命中 $0.14。o1 同期是 $15 / $60。</p>
-<p>长 CoT 把输出 token 数放大 3～10 倍。在 o1 的价格下，“让模型多想一会儿”是奢侈行为；在 R1 的价格下，思考成本可以忽略。<strong>这可能比榜单更能改变大家的使用方式</strong>——一旦思考变便宜，agent 式的多轮自检才划算。</p>
+<p>长 CoT 把输出 token 数放大 3～10 倍。在 o1 的价格下，“让模型多想一会儿”是奢侈行为；在 R1 的价格下，思考成本可以忽略。<strong>这可能比榜单更能改变大家的使用方式</strong>：一旦思考变便宜，agent 式的多轮自检才划算。</p>
 <p>顺带提一句口径问题：R1 是在 V3-Base 上做后训练得到的，流传的“约 29.4 万美元”只覆盖 RL 阶段，别把它当成训练一个 o1 级模型的总成本。</p>
 <h2 id="蒸馏小模型上做-rl-不如抄作业">蒸馏：小模型上做 RL 不如抄作业</h2>
 <p>R1 放出 6 个蒸馏模型，基于 Qwen2.5 和 Llama-3：</p>
@@ -158,23 +160,18 @@
 <tr><td>MoE all-to-all</td><td>8 专家 × 7168 × 2B × 58 层 ≈ <strong>6.6 MB</strong></td><td>GPU ↔ GPU / 节点间</td><td>NVSHMEM / NCCL / RDMA</td></tr>
 </tbody>
 </table></div>
-<p>算一下就明白瓶颈在哪：H100 的 HBM 带宽 3.35 TB/s，光把 37GB 权重读一遍就要 <strong>11 ms</strong>，对应单流上限约 <strong>90 token/s</strong>。而同一张卡的 FP8 算力是 1979 TFLOPS——按 roofline，decode 的算术强度只有 2 FLOP/byte 量级，<strong>比机器平衡点低两三百倍</strong>。</p>
+<p>算一下就明白瓶颈在哪：H100 的 HBM 带宽 3.35 TB/s，光把 37GB 权重读一遍就要 <strong>11 ms</strong>，对应单流上限约 <strong>90 token/s</strong>。而同一张卡的 FP8 算力是 1979 TFLOPS。按 roofline，decode 的算术强度只有 2 FLOP/byte 量级，<strong>比机器平衡点低两三百倍</strong>。</p>
 <p>所以 decode 阶段：</p>
 <ul>
 <li>算力几乎闲置，<strong>HBM 带宽先打满</strong>（这就是“memory-bound”）；</li>
 <li>增大 batch 能摊薄权重读取（一次读权重服务 N 条请求），吞吐线性上升，直到 KV cache 占满显存；</li>
-<li>128K 上下文的 KV 是 35KB × 128K ≈ <strong>4.4 GB</strong>，一条请求就吃掉半张 H100 的显存——<strong>长上下文的真实成本是显存，不是算力</strong>。</li>
+<li>128K 上下文的 KV 是 35KB × 128K ≈ <strong>4.6 GB</strong>，只占 80GB 卡的 6%；可扣掉 37GB 常驻权重后只剩 43GB，这张卡并排挂 9 条 128K 请求就见底了——<strong>长上下文的成本落在“能同时挂几条”上，不在单条的算力</strong>。</li>
 </ul>
 <p>prefill 则相反：每 token 约 2 × 37G = 74 GFLOP，算力先满，是 compute-bound。这就是为什么所有推理框架都把 prefill 和 decode 分开调度，甚至拆到不同机器上（PD 分离）——两者的资源画像完全相反。</p>
 <p>跨节点专家并行时，那 6.6 MB/token 的 all-to-all 要走 RDMA。按 400 Gbps（50 GB/s）算，一个 token 的专家通信就要 130 μs，比本地算一遍还慢——<strong>MoE 的扩展瓶颈是网络，不是 FLOPs</strong>。</p>
-<h2 id="几句判断">几句判断</h2>
-<ol>
-<li><strong>“纯 RL 涌现推理”仍然是黑箱。</strong> 报告没给 RL 预算曲线，也没解释长度为什么自发增长；复现依赖数据和 infra，而这两样都没公开。</li>
-<li><strong>规则奖励的边界就是这条路的边界。</strong> 数学、代码、有标准答案的 STEM 能吃满；写作、法律、产品决策吃不到。可验证数据管线的建设成本，是这波被低估最严重的东西。</li>
-<li><strong>门槛从算法挪到了工程。</strong> GRPO 的公式半小时看完，把 128K rollout 的训练-推理流水线跑稳要几个月。</li>
-<li><strong>它把 test-time compute 的叙事拆开了</strong>：底座打底 + RL 拉长 CoT + 蒸馏普及。三个环节各自可优化，也各自可被超越。</li>
-</ol>
-<p>值得盯的两个问题：32B 以下能不能做到 R1 水平；RL 有没有自己的 scaling law。</p>
+<h2 id="复现比公式难得多">复现比公式难得多</h2>
+<p>GRPO 的公式半小时能抄完，难的是两头：可验证数据的管线，和 128K rollout 的训练-推理集群。报告没给 token 预算曲线，长度为什么自发增长也没解释，这两处只能靠内部数据补；规则奖励能覆盖的只有数学、代码和有标准答案的 STEM，写作、法律、产品决策没有判分器，也就没有这条路。蒸馏那段给出的结论反过来印证了这一点：在 1.5B～70B 上抄 R1 的 CoT，比在小模型上重跑一遍 RL 便宜得多，因为 RL 的成本几乎全压在 rollout 的基础设施上，小模型的收益曲线撑不起这份开销。</p>
+<p>所以这一轮的差距是“两周内能不能跑完一轮 128K 实验”，不是公式记得住记不住。</p>
 <h2 id="来源">来源</h2>
 <ul>
 <li>论文：<a href="https://arxiv.org/abs/2501.12948">arXiv:2501.12948</a>（DeepSeek-AI, <em>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</em>）</li>
@@ -186,7 +183,6 @@
   <p class="tag-list"><a class="tag" href="/tags/llm/">LLM</a><a class="tag" href="/tags/强化学习/">强化学习</a><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/推理模型/">推理模型</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-R1%EF%BC%9A%E7%BA%AF+RL+%E6%8A%8A%E6%8E%A8%E7%90%86%E8%83%BD%E5%8A%9B%E3%80%8C%E9%80%BC%E3%80%8D%E5%87%BA%E6%9D%A5" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kimi-k1.5-long-context-rl/">← Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><a class="next" href="/post/kv-cache-basics/">KV cache：推理为什么吃显存 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/deepseek-r1-0528-more-thinking/">DeepSeek-R1-0528：多想 11K token，涨 17 分</a><time>2025-05</time></li><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -228,6 +224,15 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#两条路线zero-和-r1">两条路线：Zero 和 R1</a></li>
+<li class="h2"><a href="#grpo把-critic-省掉">GRPO：把 critic 省掉</a></li>
+<li class="h2"><a href="#数字追平在哪落后在哪">数字：追平在哪，落后在哪</a></li>
+<li class="h2"><a href="#价格才是真正的冲击">价格才是真正的冲击</a></li>
+<li class="h2"><a href="#蒸馏小模型上做-rl-不如抄作业">蒸馏：小模型上做 RL 不如抄作业</a></li>
+<li class="h2"><a href="#落地时踩到的几个坑">落地时踩到的几个坑</a></li>
+<li class="h2"><a href="#复现比公式难得多">复现比公式难得多</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/deepseek-r1-0528-more-thinking/">DeepSeek-R1-0528：多想 11K token，涨 17 分</a><time>2025-05</time></li><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

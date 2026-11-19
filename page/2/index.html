@@ -33,24 +33,26 @@
     <nav class="site-nav"><a href="/" class="active">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <h1 class="page-title">最新文章 · 第 2 页</h1>
 <article class="card">
   <h2><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a></h2>
   <p class="meta"><time datetime="2026-07-20T22:30:00">2026-07-20</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。</p>
+  <p class="excerpt">7 月 19 日 Qwen3.8-Max 预览上线：2.4T/95B，另有 27B 一档的预告。看点是单机部署那档留下多少能力。</p>
   <a class="more" href="/post/qwen3.8-2.4t-preview/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/kimi-k3-2.8t-kda/">Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级</a></h2>
   <p class="meta"><time datetime="2026-07-17T09:10:00">2026-07-17</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。</p>
+  <p class="excerpt">2.8T、1M 上下文、原生视觉、KDA + AttnRes。许可证换成自定义的 K3 License。</p>
   <a class="more" href="/post/kimi-k3-2.8t-kda/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/longcat-2.0-asic-superpod/">LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</a></h2>
   <p class="meta"><time datetime="2026-06-30T22:40:00">2026-06-30</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。</p>
+  <p class="excerpt">1.6T 总参数 / 48B 激活、35T token、MIT。预训练与大规模部署全程跑在自研 ASIC 超节点上，数百万加速器·天没有一次回滚，loss 曲线全程无不可恢复尖峰。</p>
   <a class="more" href="/post/longcat-2.0-asic-superpod/">阅读全文 →</a>
 </article>
 <article class="card">
@@ -62,13 +64,13 @@
 <article class="card">
   <h2><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a></h2>
   <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
-  <p class="excerpt">一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。</p>
+  <p class="excerpt">一次上线记录：默认开投机解码，单流涨 1.8 倍，高并发和长上下文下掉回 0.7 倍，靠分档开关救回来。</p>
   <a class="more" href="/post/speculative-decoding-economics/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/step-3.7-flash-11b-active/">Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</a></h2>
-  <p class="meta"><time datetime="2026-05-22T09:30:00">2026-05-22</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。</p>
+  <p class="meta"><time datetime="2026-05-29T09:30:00">2026-05-29</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">196B 语言主干 + 1.8B 视觉，激活 11B，256K 上下文，三档 reasoning，Apache 2.0。</p>
   <a class="more" href="/post/step-3.7-flash-11b-active/">阅读全文 →</a>
 </article>
 <article class="card">
@@ -86,16 +88,18 @@
 <article class="card">
   <h2><a href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</a></h2>
   <p class="meta"><time datetime="2026-04-08T09:10:00">2026-04-08</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。</p>
+  <p class="excerpt">相比 GLM-5 参数不变，进步在长程耐久：Terminal-Bench 2.0 从 56.2 到 63.5，定位是 8 小时班次。</p>
   <a class="more" href="/post/glm-5.1-long-horizon-shift/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a></h2>
   <p class="meta"><time datetime="2026-03-19T09:20:00">2026-03-19</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">小米的旗舰 agent 模型：总参数超 1T、激活 42B、1M 上下文，混合注意力比例从 5:1 提到 7:1，并加了轻量 MTP 层做快速生成。先以 Hunter Alpha 匿名出现在 OpenRouter 上，被误认成 DeepSeek。</p>
+  <p class="excerpt">1T/42B、1M 上下文、混合注意力 7:1、轻量 MTP：先匿名上线，被误认成别家的模型。</p>
   <a class="more" href="/post/mimo-v2-pro-hybrid-attention/">阅读全文 →</a>
 </article>
 <nav class="pager"><a class="prev" href="/">← 更新的文章</a><a class="next" href="/page/3/">更早的文章 →</a></nav>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

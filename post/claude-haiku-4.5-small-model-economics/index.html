@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Claude Haiku 4.5：小模型第一次让人认真考虑「够用」 - farfood</title>
-<meta name="description" content="10 月 15 日 Haiku 4.5 上线：$1/$5、SWE-bench 73.3%（128K 思考预算、50 次平均）。它把「前沿能力」的价格压到 1/3，也让 sub-agent 架构第一次算得过账。">
+<meta name="description" content="10 月 15 日 Haiku 4.5：$1/$5、SWE-bench 73.3%。分层 agent 因此算得过账，边界在长任务一致性。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/claude-haiku-4.5-small-model-economics/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Claude Haiku 4.5：小模型第一次让人认真考虑「够用」", "description": "10 月 15 日 Haiku 4.5 上线：$1/$5、SWE-bench 73.3%（128K 思考预算、50 次平均）。它把「前沿能力」的价格压到 1/3，也让 sub-agent 架构第一次算得过账。", "datePublished": "2025-10-16T09:20:00+08:00", "dateModified": "2025-10-16T09:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/claude-haiku-4.5-small-model-economics/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Anthropic, Claude, 成本, Agent, 编码"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Claude Haiku 4.5：小模型第一次让人认真考虑「够用」", "description": "10 月 15 日 Haiku 4.5：$1/$5、SWE-bench 73.3%。分层 agent 因此算得过账，边界在长任务一致性。", "datePublished": "2025-10-16T09:20:00+08:00", "dateModified": "2025-10-16T09:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/claude-haiku-4.5-small-model-economics/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Anthropic, Claude, 成本, Agent, 编码"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="Claude Haiku 4.5：小模型第一次让人认真考虑「够用」 - farfood">
-<meta property="og:description" content="10 月 15 日 Haiku 4.5 上线：$1/$5、SWE-bench 73.3%（128K 思考预算、50 次平均）。它把「前沿能力」的价格压到 1/3，也让 sub-agent 架构第一次算得过账。">
+<meta property="og:description" content="10 月 15 日 Haiku 4.5：$1/$5、SWE-bench 73.3%。分层 agent 因此算得过账，边界在长任务一致性。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/claude-haiku-4.5-small-model-economics/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Claude Haiku 4.5：小模型第一次让人认真考虑「够用」 - farfood">
-<meta name="twitter:description" content="10 月 15 日 Haiku 4.5 上线：$1/$5、SWE-bench 73.3%（128K 思考预算、50 次平均）。它把「前沿能力」的价格压到 1/3，也让 sub-agent 架构第一次算得过账。">
+<meta name="twitter:description" content="10 月 15 日 Haiku 4.5：$1/$5、SWE-bench 73.3%。分层 agent 因此算得过账，边界在长任务一致性。">
 <meta property="article:published_time" content="2025-10-16T09:20:00+08:00">
 <meta name="keywords" content="Anthropic, Claude, 成本, Agent, 编码">
 </head>
@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</h1>
-    <p class="meta"><time datetime="2025-10-16T09:20:00">2025-10-16</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1795 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-10-16T09:20:00">2025-10-16</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1961 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#口径733-是怎么测的">口径：73.3% 是怎么测的</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#口径733-是怎么测的">口径：73.3% 是怎么测的</a></li>
 <li class="h2"><a href="#价格差-3-倍意味着架构可以变">价格差 3 倍意味着架构可以变</a></li>
 <li class="h2"><a href="#小模型的能力边界在哪">&quot;小模型&quot;的能力边界在哪</a></li>
 <li class="h2"><a href="#一个被忽略的收益延迟">一个被忽略的收益：延迟</a></li>
+<li class="h2"><a href="#一个反例把规划也交给小模型">一个反例：把规划也交给小模型</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>10 月 15 日，<a href="https://www.anthropic.com/news/claude-haiku-4-5">Claude Haiku 4.5</a> 发布，定价 <strong>\$1 / \$5</strong> 每百万 token（<a href="https://www.anthropic.com/news/claude-haiku-4-5">公告</a>）。同一天的公告里还给了一个很硬的数字：<strong>SWE-bench Verified 73.3%</strong>。</p>
@@ -69,16 +72,18 @@
 <p>50 次平均比 Sonnet 4.5 的 10 次更严（小模型方差大，官方用更多次压噪）。<strong>这个细节说明 73.3% 不是运气</strong>：如果只跑 5 次取最好，数字会虚高不少。</p>
 <p>对比同一口径下的 Sonnet 4.5（77.2% / 200K 预算），差距只有 4 分，价格却差 3 倍。</p>
 <h2 id="价格差-3-倍意味着架构可以变">价格差 3 倍意味着架构可以变</h2>
-<p>假设一个 agent 任务平均要 40 次工具调用、每次 20K token：</p>
+<p>假设一个 agent 任务平均要 40 次工具调用、每次 20K 输入 token（合计 800K）、总输出约 20K token。口径：缓存命中部分按 cache read 单价计（约为输入价的 1/10），未命中的按原价，输出不缓存。</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>方案</th>
-<th>单任务成本（粗算）</th>
+<th>输入</th>
+<th>输出</th>
+<th>单任务</th>
 </tr></thead>
 <tbody>
-<tr><td>全用 Sonnet 4.5（$3/$15）</td><td>~\$0.6</td></tr>
-<tr><td>全用 Haiku 4.5（$1/$5）</td><td>~\$0.2</td></tr>
-<tr><td>规划用 Sonnet + 执行用 Haiku</td><td>~\$0.25</td></tr>
+<tr><td>全用 Sonnet 4.5（$3/$15，无缓存）</td><td>$2.40</td><td>$0.30</td><td>~$2.70</td></tr>
+<tr><td>全用 Haiku 4.5（$1/$5，无缓存）</td><td>$0.80</td><td>$0.10</td><td>~$0.90</td></tr>
+<tr><td>规划 Sonnet + 执行 Haiku（token 1:9 分，前缀命中 90%）</td><td>~$0.18</td><td>~$0.15</td><td><strong>~$0.33</strong></td></tr>
 </tbody>
 </table></div>
 <p>差价足够支撑<strong>分层 agent</strong>：让贵模型做规划、便宜模型做执行与验证。这就是 2025 年下半年开始流行的“orchestrator + sub-agent”结构：</p>
@@ -111,14 +116,10 @@
 <li>更短的等待 → 可以更频繁地“取中间结果、纠偏”，减少最后一次性大改；</li>
 <li>对交互式编辑（边写边跑）来说，1 秒和 5 秒是两种产品。</li>
 </ul>
-<p><strong>延迟是功能</strong>，这句话在 agent 时代才真正成立。</p>
-<p>说到最后，给几句自己的判断：</p>
-<ul>
-<li>“够用”会成为 2026 年的主流需求。企业不需要每个请求都用最强模型，需要的是“这一档任务用这一档模型”。</li>
-<li><strong>分层 agent 会成为默认架构</strong>，配套的是“路由 + 预算 + 验收”三件套。</li>
-<li>小模型的评测会更难做。方差大、对 prompt 敏感，10 次平均不够，得跑几十次才能看出差异。</li>
-<li>给团队的一条实践：<strong>先把小模型的失败样本收集起来</strong>，别急着全量切换。哪些任务小模型做不了，比它的平均分更有决策价值。</li>
-</ul>
+<p><strong>延迟是功能</strong>：在单人对话里它是体验，在一条几十步的调用链里它是总账。</p>
+<h2 id="一个反例把规划也交给小模型">一个反例：把规划也交给小模型</h2>
+<p>我们试过一次极端配置：规划、执行、验收全用 Haiku，只留一个 Sonnet 调用做最后审核。在“跨三个文件的接口改名”这类任务上，40 次调用里有 11 次在原地打转：同一个函数签名改了七八遍，测试跑不过就换一种改法再改回去。</p>
+<p>失败点不在单步能力，在<strong>任务的自我诊断</strong>：模型判断不了“我卡住了”，于是把预算全花在重复动作上。换成 Sonnet 规划、Haiku 执行之后，同样的任务 22 次调用收敛，比全小模型那版少一半空转。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>发布公告（含评测脚注与定价）：<a href="https://www.anthropic.com/news/claude-haiku-4-5">Introducing Claude Haiku 4.5</a></li>
@@ -129,7 +130,6 @@
   <p class="tag-list"><a class="tag" href="/tags/anthropic/">Anthropic</a><a class="tag" href="/tags/claude/">Claude</a><a class="tag" href="/tags/成本/">成本</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Claude+Haiku+4.5%EF%BC%9A%E5%B0%8F%E6%A8%A1%E5%9E%8B%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%AE%A9%E4%BA%BA%E8%AE%A4%E7%9C%9F%E8%80%83%E8%99%91%E3%80%8C%E5%A4%9F%E7%94%A8%E3%80%8D" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/minimax-m2-10b-active-agents/">← MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><a class="next" href="/post/claude-sonnet-4.5-swe-bench-77/">Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-opus-4.5-effort-parameter/">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</a><time>2025-11</time></li><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」</a><time>2025-05</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -171,6 +171,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#口径733-是怎么测的">口径：73.3% 是怎么测的</a></li>
+<li class="h2"><a href="#价格差-3-倍意味着架构可以变">价格差 3 倍意味着架构可以变</a></li>
+<li class="h2"><a href="#小模型的能力边界在哪">&quot;小模型&quot;的能力边界在哪</a></li>
+<li class="h2"><a href="#一个被忽略的收益延迟">一个被忽略的收益：延迟</a></li>
+<li class="h2"><a href="#一个反例把规划也交给小模型">一个反例：把规划也交给小模型</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-opus-4.5-effort-parameter/">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</a><time>2025-11</time></li><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」</a><time>2025-05</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

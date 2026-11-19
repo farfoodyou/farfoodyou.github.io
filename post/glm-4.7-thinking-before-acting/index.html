@@ -37,16 +37,18 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</h1>
-    <p class="meta"><time datetime="2025-12-23T21:30:00">2025-12-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2306 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-12-23T21:30:00">2025-12-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2328 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个新概念交错保留轮次级">三个新概念：交错、保留、轮次级</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个新概念交错保留轮次级">三个新概念：交错、保留、轮次级</a></li>
 <li class="h2"><a href="#terminal-bench-从-245-到-410-意味着什么">Terminal-Bench 从 24.5 到 41.0 意味着什么</a></li>
 <li class="h2"><a href="#算笔账32b-激活的账">算笔账：32B 激活的账</a></li>
-<li class="h2"><a href="#几句判断">几句判断</a></li>
+<li class="h2"><a href="#一条止损不等式">一条止损不等式</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>12 月 22 日，智谱开源 <a href="https://huggingface.co/zai-org/GLM-4.7">GLM-4.7</a>：355B 总参数 / 32B 激活，MIT 协议。模型卡给的三行对比很清楚：</p>
@@ -84,7 +86,7 @@
 <tr><td>上下文溢出风险</td><td>高</td><td>低（思考可压缩）</td></tr>
 </tbody>
 </table></div>
-<p>这本质上和 Claude 4 的“模型自己写记忆文件”是同一类解法，只是实现层次不同（一个是 KV/思考状态，一个是文件系统）。</p>
+<p>这和 Claude 4 的“模型自己写记忆文件”是同一类解法，只是实现层次不同（一个是 KV/思考状态，一个是文件系统）。</p>
 <h2 id="terminal-bench-从-245-到-410-意味着什么">Terminal-Bench 从 24.5 到 41.0 意味着什么</h2>
 <p>Terminal-Bench 测的是多步终端操作：装依赖、跑构建、改配置、看日志。24.5 → 41.0 是一个很大的跳跃，但离“可靠”还远——<strong>41% 意味着每 5 个任务就有 3 个失败</strong>。</p>
 <p>这类任务的失败模式很固定：</p>
@@ -111,9 +113,10 @@
 </tbody>
 </table></div>
 <p>在 H200（4.8 TB/s）上，读 32 GB 需要 <strong>6.7 ms</strong>，单流上限约 <strong>150 token/s</strong>。而 agent 场景里每次工具调用平均要吐 300～800 token，折算下来单步 2～5 秒——<strong>agent 的墙钟时间主要花在 weight streaming 上，不是在“思考”上</strong>。</p>
-<p>所以“交错思考”的成本要这么算：</p>
-<pre data-lang="text"><code class="language-text">每步成本 ≈ 权重读取(6.7ms) × 输出 token 数 + 思考 token 数 × 单 token 成本</code></pre>
-<p>思考 token 也是 token，也要过一次权重。<strong>“每次动作前都想想”等于把权重读取的次数乘上步数</strong>——这是 GLM-4.7 类模型真正的账单，也是为什么“轮次级思考”（不该想的轮次不想）很重要。</p>
+<p>所以“交错思考”的账要分两个口径：</p>
+<pre data-lang="text"><code class="language-text">每步墙钟 ≈ 6.7 ms × 输出 token 数      # 思考 token 已在输出 token 里
+每步费用  = 输出 token 数 × 输出单价     # 不再乘一次思考量</code></pre>
+<p>思考 token 按输出计费，且已经包含在“输出 token 数”里，再乘一遍就重复了。被“思考前置”真正放大的是<strong>权重读取次数</strong>：每一步都要把 32 GB 过一遍，步数和每步输出共同决定账单。</p>
 <p>再往下看，开源侧的横向位置（2025-12）：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -131,13 +134,12 @@
 </tbody>
 </table></div>
 <p>到年底，开源第一梯队的编码能力已经进入 <strong>70～75%</strong> 的窄带，和闭源旗舰（77～81%）只差几个点。<strong>差距从“能力”变成“稳定性与成本”</strong>。</p>
-<h2 id="几句判断">几句判断</h2>
-<ul>
-<li>“思考状态”会成为 agent 模型的核心竞争力，它同时解决成本（少重复推理）和一致性（跨轮不漂移）两个问题。</li>
-<li><strong>轮次级思考（该想才想）比“一律长思考”更实用</strong>，因为它直接决定 agent 的步均成本。</li>
-<li>MIT 协议 + 32B 激活是当前最优的商业化组合，法务简单、两张卡能跑、能力够用。</li>
-<li>对工程团队：<strong>先把“思考缓存”做进 harness</strong>（把上一轮的思考摘要喂回去），比换更大的模型见效快。</li>
-</ul>
+<h2 id="一条止损不等式">一条止损不等式</h2>
+<p>交错思考的代价可以写成一条门禁：</p>
+<pre data-lang="text"><code class="language-text">步数 × 每步输出 token × 6.7 ms ≤ 任务墙钟预算
+20 × 600 × 6.7 ms ≈ 80 s     # 超过 60 s 预算
+20 × 400 × 6.7 ms ≈ 54 s     # 压到 400 token 才进预算</code></pre>
+<p>20 步、60 秒的任务，每步只能吐 400 token；思考前置把 200 token 的答案推到 600，就越线了。这条不等式比“该不该开思考”的讨论实在，因为它把模型、硬件、产品预算放在同一行里。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>模型卡（基准、三个思考机制、部署）：<a href="https://huggingface.co/zai-org/GLM-4.7">GLM-4.7</a></li>
@@ -148,7 +150,6 @@
   <p class="tag-list"><a class="tag" href="/tags/智谱/">智谱</a><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=GLM-4.7%EF%BC%9AMIT+%E5%8D%8F%E8%AE%AE%E8%BF%BD%E5%88%B0+73.8%25%EF%BC%8C%E4%BB%A5%E5%8F%8A%E3%80%8C%E6%80%9D%E8%80%83%E5%89%8D%E7%BD%AE%E3%80%8D%E7%9A%84%E5%B7%A5%E7%A8%8B%E5%90%AB%E4%B9%89" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/inference-engines-2025-review/">← 2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a><a class="next" href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</a><time>2026-04</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -190,6 +191,12 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#三个新概念交错保留轮次级">三个新概念：交错、保留、轮次级</a></li>
+<li class="h2"><a href="#terminal-bench-从-245-到-410-意味着什么">Terminal-Bench 从 24.5 到 41.0 意味着什么</a></li>
+<li class="h2"><a href="#算笔账32b-激活的账">算笔账：32B 激活的账</a></li>
+<li class="h2"><a href="#一条止损不等式">一条止损不等式</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</a><time>2026-04</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><time>2025-10</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

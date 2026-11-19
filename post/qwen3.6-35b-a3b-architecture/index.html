@@ -37,20 +37,21 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</h1>
-    <p class="meta"><time datetime="2026-04-16T22:40:00">2026-04-16</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2748 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-04-16T22:40:00">2026-04-16</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2757 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#层布局31-的混合注意力">层布局：3:1 的混合注意力</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#层布局31-的混合注意力">层布局：3:1 的混合注意力</a></li>
 <li class="h2"><a href="#gated-deltanet-在算什么">Gated DeltaNet 在算什么</a></li>
 <li class="h2"><a href="#专家配置256-个每个很小">专家配置：256 个，每个很小</a></li>
 <li class="h2"><a href="#一次-decode-读多少字节">一次 decode 读多少字节</a></li>
 <li class="h2"><a href="#单卡能跑但要看量化方式">单卡能跑，但要看量化方式</a></li>
 <li class="h2"><a href="#能力小模型里少见的三项">能力：小模型里少见的三项</a></li>
-<li class="h2"><a href="#部署建议实测视角">部署建议（实测视角）</a></li>
-<li class="h2"><a href="#两点保留">两点保留</a></li>
+<li class="h2"><a href="#部署建议">部署建议</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>Qwen3.6-35B-A3B 是这一代最值得研究的“小激活”模型：<strong>35B 总参数，每 token 只激活 3B</strong>。单卡能跑，却带着 256 个专家和原生 262K 上下文。</p>
@@ -68,16 +69,16 @@
 <p><strong>3:1 这个比例是这类架构的核心参数。</strong> 它决定了“KV 开销”和“检索精度”的平衡点：</p>
 <div class="table-wrap"><table>
 <thead><tr>
-<th>比例</th>
+<th>比例（线性:全注意力）</th>
 <th>全注意力层数</th>
 <th>KV 开销</th>
 <th>长文检索</th>
 </tr></thead>
 <tbody>
-<tr><td>1:0（全稠密）</td><td>40</td><td>最大</td><td>最好</td></tr>
-<tr><td>1:1</td><td>20</td><td>减半</td><td>好</td></tr>
-<tr><td><strong>1:3（本模型）</strong></td><td>10</td><td>1/4</td><td>略降</td></tr>
-<tr><td>纯线性</td><td>0</td><td>常数</td><td>明显不足</td></tr>
+<tr><td>0:40（全稠密）</td><td>40</td><td>最大</td><td>最好</td></tr>
+<tr><td>20:20</td><td>20</td><td>减半</td><td>好</td></tr>
+<tr><td><strong>30:10（本模型）</strong></td><td>10</td><td>1/4</td><td>略降</td></tr>
+<tr><td>40:0（纯线性）</td><td>0</td><td>常数</td><td>明显不足</td></tr>
 </tbody>
 </table></div>
 <p>10 个全注意力层是“精度保底”：所有需要精确回看的操作（数字比对、代码符号匹配）都靠它们。</p>
@@ -103,13 +104,7 @@ S     = S + beta * outer(delta, k)   # write only the error</code></pre>
 <tr><td>Hidden</td><td>2048</td><td>相对小</td></tr>
 </tbody>
 </table></div>
-<p>256 × 512 的专家意味着<strong>每个专家只存一点点知识</strong>，路由必须在“选对专家”上做得很准。好处是：</p>
-<ul>
-<li>同样的总参数下，知识容量比“8 个大专家”高得多；</li>
-<li>单个 token 的计算量更小（3B 激活）；</li>
-<li>但负载均衡更难，训练时容易出现“专家塌缩”（少数专家被过度使用）。</li>
-</ul>
-<p>这也是为什么这代模型都强调 shared expert（共享专家）：它兜住“通用语言能力”，让 routed 专家专心做特化。</p>
+<p>256 × 512 的专家意味着<strong>每个专家只存一点点知识</strong>，路由必须在“选对专家”上做得很准：同样的总参数下知识容量比“8 个大专家”高得多，单 token 计算量更小，但负载均衡更难，训练时容易出现“专家塌缩”（少数专家被过度使用）。这也是这代模型都强调 shared expert 的原因：它兜住通用语言能力，让 routed 专家专心做特化。</p>
 <h2 id="一次-decode-读多少字节">一次 decode 读多少字节</h2>
 <p>把配置代进账本（FP8 权重）：</p>
 <div class="table-wrap"><table>
@@ -163,20 +158,17 @@ S     = S + beta * outer(delta, k)   # write only the error</code></pre>
 <tr><td>LiveCodeBench v6</td><td>80.7</td></tr>
 </tbody>
 </table></div>
-<p>SWE-bench 75 分出现在一个 35B（3B 激活）的模型上，是这一代最刺眼的事实——两年前这是旗舰闭源模型的水平。</p>
+<p>SWE-bench 75 分出现在一个 35B（3B 激活）的模型上，是这一代最刺眼的事实。2024 年 4 月的公开最好成绩还在 20% 量级（Devin 13.9%），这个基准两年涨了三倍多，而最后一段增量是 3B 激活的小模型交出来的。</p>
 <p>另一个新特性是 <strong>Thinking Preservation</strong>：保留历史消息里的推理上下文，多轮开发时不用每次重建思路。工程上这相当于给 KV/思考加了一层持久化（见 <a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7 的同类做法</a>）。</p>
-<h2 id="部署建议实测视角">部署建议（实测视角）</h2>
+<h2 id="部署建议">部署建议</h2>
 <ol>
 <li><strong>FP8 起步，INT4 兜底</strong>。FP8 在 48GB 卡上很舒服；只有 24GB 卡才考虑 INT4，且要重新跑评测（INT4 在小激活 MoE 上掉点更明显）。</li>
 <li><strong>长上下文按 128K 设计</strong>。原生 262K 可用，但注意全注意力层只有 10 层，超长上下文里“精确检索”会先退化。</li>
-<li><strong>MTP 一定要开</strong>。模型卡说 multi-step MTP 训练过，配合投机解码能吃 1.5～2 倍吞吐（代价见 <a href="/post/speculative-decoding-economics/">投机解码的账</a>）。</li>
-<li><strong>batch 优先于单流速度</strong>。3GB/token 的权重读取意味着 batch 摊薄收益很大，单流优化不如提高并发。</li>
+<li><strong>MTP 一定要开</strong>。模型卡说 multi-step MTP 训练过，配合投机解码能吃 1.5～2 倍吞吐（代价是 MTP 头多一次前向、多读一份 KV）。</li>
+<li><strong>batch 优先于单流速度</strong>。3GB/token 的权重读取意味着 batch 摊薄收益很大。</li>
 </ol>
-<h2 id="两点保留">两点保留</h2>
-<ul>
-<li><strong>3:1 的比例不是普适最优</strong>。它适合“agent 编码 + 长文档”这类混合负载；纯长文检索任务还是要更多全注意力层。</li>
-<li><strong>256 专家的路由质量没有公开评测</strong>。这类模型的真实差距往往在“专家选择错的时候有多崩”，而这只能靠自己的任务集测。</li>
-</ul>
+<p>256 个专家的路由质量没有公开评测，这类模型的真实差距在“专家选错时崩得多厉害”，只能拿自己的任务集挑错样本看。</p>
+<p>判据压成一句：只有当长文本占多数、且 batch 能开到 8 以上时，30:10 的混合才划算；纯检索负载把全注意力加到 20 层更稳，并发上不去时多出来的 KV 反而不是瓶颈。</p>
 <h2 id="来源">来源</h2>
 <ul>
 <li>模型卡（层布局、专家配置、基准）：&lt;https://huggingface.co/Qwen/Qwen3.6-35B-A3B&gt;</li>
@@ -187,7 +179,6 @@ S     = S + beta * outer(delta, k)   # write only the error</code></pre>
   <p class="tag-list"><a class="tag" href="/tags/qwen/">Qwen</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/线性注意力/">线性注意力</a><a class="tag" href="/tags/架构/">架构</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8A%8A+Qwen3.6-35B-A3B+%E6%8B%86%E5%BC%80%E7%9C%8B%EF%BC%9A3B+%E6%BF%80%E6%B4%BB%E6%98%AF%E6%80%8E%E4%B9%88%E8%A3%85%E4%B8%8B+35B+%E7%9A%84" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kimi-k2.6-agent-swarm/">← Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</a><a class="next" href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a><time>2026-08</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -229,6 +220,15 @@ S     = S + beta * outer(delta, k)   # write only the error</code></pre>
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#层布局31-的混合注意力">层布局：3:1 的混合注意力</a></li>
+<li class="h2"><a href="#gated-deltanet-在算什么">Gated DeltaNet 在算什么</a></li>
+<li class="h2"><a href="#专家配置256-个每个很小">专家配置：256 个，每个很小</a></li>
+<li class="h2"><a href="#一次-decode-读多少字节">一次 decode 读多少字节</a></li>
+<li class="h2"><a href="#单卡能跑但要看量化方式">单卡能跑，但要看量化方式</a></li>
+<li class="h2"><a href="#能力小模型里少见的三项">能力：小模型里少见的三项</a></li>
+<li class="h2"><a href="#部署建议">部署建议</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选</a><time>2026-08</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

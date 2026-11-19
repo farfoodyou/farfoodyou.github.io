@@ -33,7 +33,9 @@
     <nav class="site-nav"><a href="/" class="active">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <h1 class="page-title">全部文章 · 第 3 页</h1>
 <article class="card">
   <h2><a href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a></h2>
@@ -50,13 +52,13 @@
 <article class="card">
   <h2><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a></h2>
   <p class="meta"><time datetime="2026-02-13T09:40:00">2026-02-13</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。</p>
+  <p class="excerpt">744B/40B、28.5T token、MIT，集成 DSA。SWE-bench 77.8%，定位是长程 agent 任务。</p>
   <a class="more" href="/post/glm-5-744b-dsa/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a></h2>
   <p class="meta"><time datetime="2026-01-20T22:10:00">2026-01-20</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
-  <p class="excerpt">不用表格，直接拿纸笔算：80 层、head_dim 128、FP16，MHA/GQA/MLA 各占多少，128K 和 1M 分别要几张卡，以及分页和量化能砍掉多少。</p>
+  <p class="excerpt">128K 请求的 KV：MHA 320 GiB、GQA 40 GiB、MLA 5.6 GiB，再看带宽与分页。</p>
   <a class="more" href="/post/kv-cache-ledger-128k/">阅读全文 →</a>
 </article>
 <article class="card">
@@ -74,13 +76,13 @@
 <article class="card">
   <h2><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a></h2>
   <p class="meta"><time datetime="2025-12-02T22:40:00">2025-12-02</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">12 月 1 日 V3.2 发布：DSA 稀疏注意力 + 大规模 RL + agentic 数据合成三件套，把「推理」和「工具调用」焊在一起；同期的高算力版本 Speciale 在官方口径里已经摸到 GPT-5 的水平。</p>
+  <p class="excerpt">12 月 1 日 V3.2 发布：DSA、大规模 RL、agentic 数据合成，把推理和工具调用焊在一起；高算力变体用来说明上限。</p>
   <a class="more" href="/post/deepseek-v3.2-thinking-with-tools/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/claude-opus-4.5-effort-parameter/">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</a></h2>
   <p class="meta"><time datetime="2025-11-25T08:50:00">2025-11-25</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">11 月 24 日 Opus 4.5 发布，价格从 $15/$75 砍到 $5/$25，并首次把 effort 参数放到旗舰模型上：默认 high，可按任务降档。旗舰的定义从「最强」变成「最划算的上限」。</p>
+  <p class="excerpt">Opus 4.5 从 $15/$75 砍到 $5/$25，effort 参数首次上旗舰，默认 high，可按任务降档。</p>
   <a class="more" href="/post/claude-opus-4.5-effort-parameter/">阅读全文 →</a>
 </article>
 <article class="card">
@@ -92,10 +94,12 @@
 <article class="card">
   <h2><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a></h2>
   <p class="meta"><time datetime="2025-10-28T22:05:00">2025-10-28</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。</p>
+  <p class="excerpt">230B 总参数 / 10B 激活、MIT 变体（模型卡写 modified-mit）、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B，意味着单卡吞吐和延迟都进入可交互区间。</p>
   <a class="more" href="/post/minimax-m2-10b-active-agents/">阅读全文 →</a>
 </article>
 <nav class="pager"><a class="prev" href="/post/page/2/">← 更新的文章</a><a class="next" href="/post/page/4/">更早的文章 →</a></nav>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

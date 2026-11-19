@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选 - farfood</title>
+<title>Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选 - farfood</title>
 <meta name="description" content="27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/">
@@ -15,16 +15,16 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选", "description": "27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。", "datePublished": "2026-08-15T09:30:00+08:00", "dateModified": "2026-08-15T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Qwen, 开源模型, MoE, 部署, 对比, 多模态"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选", "description": "27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。", "datePublished": "2026-08-15T09:30:00+08:00", "dateModified": "2026-08-15T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Qwen, 开源模型, MoE, 部署, 对比, 多模态"}</script>
 
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选 - farfood">
+<meta property="og:title" content="Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选 - farfood">
 <meta property="og:description" content="27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选 - farfood">
+<meta name="twitter:title" content="Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选 - farfood">
 <meta name="twitter:description" content="27B 稠密 vs 35B/3B 激活稀疏，都是 3:1 混合注意力、都带视觉和 MTP。把它们放在同一张显存/带宽账上算，结论比榜单清楚：稠密赢在稳定，稀疏赢在吞吐。">
 <meta property="article:published_time" content="2026-08-15T09:30:00+08:00">
 <meta name="keywords" content="Qwen, 开源模型, MoE, 部署, 对比, 多模态">
@@ -37,19 +37,22 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</h1>
-    <p class="meta"><time datetime="2026-08-15T09:30:00">2026-08-15</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2529 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <h1 class="post-title">Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选</h1>
+    <p class="meta"><time datetime="2026-08-15T09:30:00">2026-08-15</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2717 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一配置对照">一、配置对照</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一配置对照">一、配置对照</a></li>
 <li class="h2"><a href="#二显存谁都装得下但装法不同">二、显存：谁都装得下，但装法不同</a></li>
 <li class="h2"><a href="#三带宽差距最大的一项">三、带宽：差距最大的一项</a></li>
 <li class="h2"><a href="#四kv稀疏版略省但都不是瓶颈">四、KV：稀疏版略省，但都不是瓶颈</a></li>
 <li class="h2"><a href="#五能力模型卡的数字摆一起">五、能力：模型卡的数字摆一起</a></li>
 <li class="h2"><a href="#六怎么选三条判据">六、怎么选：三条判据</a></li>
 <li class="h2"><a href="#七两个容易踩的坑">七、两个容易踩的坑</a></li>
+<li class="h2"><a href="#八落到两条-if-上">八、落到两条 if 上</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>Qwen 这一代有意思的地方是：<strong>同一套架构骨架，出了两种“身材”</strong>——稠密 27B（Qwen3.8-27B）和稀疏 35B-A3B（Qwen3.6-35B-A3B）。两者都在单机可部署区间，选型时绕不开。</p>
@@ -75,7 +78,7 @@
 <tr><td>许可</td><td>Apache 2.0</td><td>Apache 2.0</td></tr>
 </tbody>
 </table></div>
-<p>两处结构细节值得注意：</p>
+<p>两处结构差异决定了后面所有的账：</p>
 <ol>
 <li><strong>稀疏版把 hidden 压到 2048</strong>（稠密版 5120）。hidden 小意味着每层更“薄”，但层数也少（40 vs 64）——稀疏版靠专家深度补容量，稠密版靠宽度和深度补。</li>
 <li><strong>全注意力层数 16 vs 10</strong>。稠密版的检索精度理论上更好，因为它有更多“精确回看”的机会。</li>
@@ -132,7 +135,7 @@
 </ul>
 <p>两个都能接受（相对 27～35GB 的权重）。所以<strong>长上下文在这两个模型上都不是显存问题，而是 prefill 时间问题</strong>。</p>
 <h2 id="五能力模型卡的数字摆一起">五、能力：模型卡的数字摆一起</h2>
-<p>这里要小心口径——两张表用的对比模型不同，不能直接横比。但同代同源，趋势可读：</p>
+<p>这里要小心口径：两张表用的对比模型不同，不能直接横比。但同源、架构骨架相同，趋势可读：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>基准</th>
@@ -145,10 +148,11 @@
 <tr><td>GPQA Diamond</td><td>89.2</td><td>85.5</td></tr>
 <tr><td>HLE</td><td>30.8</td><td>—</td></tr>
 <tr><td>OSWorld-Verified</td><td>84.3</td><td>—</td></tr>
+<tr><td>WebArena</td><td>64.8</td><td>—</td></tr>
 <tr><td>NL2Repo-Bench</td><td>42.3</td><td>—</td></tr>
 </tbody>
 </table></div>
-<p>3.8 是更晚的一代（后训练更强），所以整体领先是预期的。真正值得注意的是 <strong>OSWorld 84.3 与 WebArena 64.8</strong>——这是“能操作电脑”的成绩，说明稠密版在 agent 环境里的视觉-动作闭环做得更稳。</p>
+<p>3.8 是更晚的一代（后训练更强），整体领先是预期的，不能当成架构的功劳。两行 agent 环境成绩更说明问题：表里的 OSWorld 84.3 与 WebArena 64.8 都是“能操作电脑”的指标，稠密版在视觉-动作这类长序列任务上更稳。</p>
 <h2 id="六怎么选三条判据">六、怎么选：三条判据</h2>
 <p><strong>1）单位 token 成本谁低？</strong> → 稀疏（3GB vs 27GB 的读取量）。高并发、短输出场景差 3～5 倍。</p>
 <p><strong>2）长任务稳定性谁强？</strong> → 稠密。没有路由不确定性，同一输入的输出分布更集中；稀疏模型在“专家选错”时会成片崩。</p>
@@ -162,6 +166,8 @@
 <h2 id="七两个容易踩的坑">七、两个容易踩的坑</h2>
 <p><strong>坑一：拿激活参数估显存。</strong> “3B 激活”会让你以为 6GB 显存够用，实际要装 35GB 权重。买卡按总参数算。</p>
 <p><strong>坑二：拿稠密的 batch 经验套稀疏。</strong> 稀疏模型在低 batch 就接近带宽上限，加 batch 的收益主要来自 attention/KV 摊薄，不像稠密那样线性。压测要重做。</p>
+<h2 id="八落到两条-if-上">八、落到两条 if 上</h2>
+<p>单用户交互（首 token 300ms、单流 60 tok/s 以上）选 35B-A3B，一台 L40S 按 3GB/token 的读取量就能撑住；每天几万个短任务、按分压单价，就先按 27B 稠密、batch=32 算一遍吞吐再决定换不换——稀疏版省下的权重带宽，出了单机就会被 all-to-all 还回去一部分。</p>
 <h2 id="来源">来源</h2>
 <ul>
 <li>Qwen3.8-27B 模型卡（配置、基准、thinking 控制）：&lt;https://huggingface.co/Qwen/Qwen3.8-27B&gt;</li>
@@ -171,9 +177,8 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/qwen/">Qwen</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/部署/">部署</a><a class="tag" href="/tags/对比/">对比</a><a class="tag" href="/tags/多模态/">多模态</a></p>
-  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Qwen3.8-27B+%E4%B8%8E+3.6-35B-A3B%EF%BC%9A%E5%90%8C%E4%BB%A3%E4%B8%A4%E7%A7%8D%E8%BA%AB%E6%9D%90%EF%BC%8C%E6%80%8E%E4%B9%88%E9%80%89" target="_blank" rel="noopener">分享到 X</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Qwen3.8-27B+%E4%B8%8E+3.6-35B-A3B%EF%BC%9A%E4%B8%A4%E7%A7%8D%E8%BA%AB%E6%9D%90%EF%BC%8C%E6%80%8E%E4%B9%88%E9%80%89" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/hy4-preview-gated-dsa/">← Hy4 preview：770B/49B，把「抄作业」做成了体系</a><a class="next" href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a><time>2026-03</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -215,6 +220,16 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#一配置对照">一、配置对照</a></li>
+<li class="h2"><a href="#二显存谁都装得下但装法不同">二、显存：谁都装得下，但装法不同</a></li>
+<li class="h2"><a href="#三带宽差距最大的一项">三、带宽：差距最大的一项</a></li>
+<li class="h2"><a href="#四kv稀疏版略省但都不是瓶颈">四、KV：稀疏版略省，但都不是瓶颈</a></li>
+<li class="h2"><a href="#五能力模型卡的数字摆一起">五、能力：模型卡的数字摆一起</a></li>
+<li class="h2"><a href="#六怎么选三条判据">六、怎么选：三条判据</a></li>
+<li class="h2"><a href="#七两个容易踩的坑">七、两个容易踩的坑</a></li>
+<li class="h2"><a href="#八落到两条-if-上">八、落到两条 if 上</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a><time>2026-03</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

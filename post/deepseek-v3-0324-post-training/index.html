@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeepSeek-V3-0324：一次「点版本」更新暴露的方法论 - farfood</title>
-<meta name="description" content="架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。">
+<meta name="description" content="架构和参数都没动，只换了后训练配方，AIME 从 39.6 涨到 59.4。能力增量主要来自后训练。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-V3-0324：一次「点版本」更新暴露的方法论", "description": "架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。", "datePublished": "2025-03-26T21:15:00+08:00", "dateModified": "2025-03-26T21:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 开源模型, 后训练, MoE"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-V3-0324：一次「点版本」更新暴露的方法论", "description": "架构和参数都没动，只换了后训练配方，AIME 从 39.6 涨到 59.4。能力增量主要来自后训练。", "datePublished": "2025-03-26T21:15:00+08:00", "dateModified": "2025-03-26T21:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 开源模型, 后训练, MoE"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="DeepSeek-V3-0324：一次「点版本」更新暴露的方法论 - farfood">
-<meta property="og:description" content="架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。">
+<meta property="og:description" content="架构和参数都没动，只换了后训练配方，AIME 从 39.6 涨到 59.4。能力增量主要来自后训练。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-v3-0324-post-training/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="DeepSeek-V3-0324：一次「点版本」更新暴露的方法论 - farfood">
-<meta name="twitter:description" content="架构没动、参数没改，只换了后训练数据与配方，AIME 从 39.6 涨到 59.4。这个「0324」小版本比很多发布会更能说明：2025 年的能力增量主要来自后训练。">
+<meta name="twitter:description" content="架构和参数都没动，只换了后训练配方，AIME 从 39.6 涨到 59.4。能力增量主要来自后训练。">
 <meta property="article:published_time" content="2025-03-26T21:15:00+08:00">
 <meta name="keywords" content="DeepSeek, 开源模型, 后训练, MoE">
 </head>
@@ -37,16 +37,18 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</h1>
-    <p class="meta"><time datetime="2025-03-26T21:15:00">2025-03-26</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2303 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-03-26T21:15:00">2025-03-26</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2302 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#这次更新改了什么">这次更新改了什么</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#这次更新改了什么">这次更新改了什么</a></li>
 <li class="h2"><a href="#为什么点版本能涨这么多">为什么&quot;点版本&quot;能涨这么多</a></li>
 <li class="h2"><a href="#和-r1-的关系不是替代是分叉">和 R1 的关系：不是替代，是分叉</a></li>
-<li class="h2"><a href="#写到这里的判断">写到这里的判断</a></li>
+<li class="h2"><a href="#版本管理比分数更值钱">版本管理比分数更值钱</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
 <p>3 月 24 日，DeepSeek 在 Hugging Face 更新了 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324">DeepSeek-V3-0324</a>。名字里只有日期，没有“V3.1”，但模型卡给的三行对比很扎眼：</p>
@@ -80,7 +82,7 @@
 <li><strong>拒绝采样比 RL 便宜</strong>。给定强教师（R1 或 V3 自己 + 筛选），采样 → 校验 → SFT 的性价比远高于在线 RL；V3-0324 更像“离线蒸馏 + 精选”的产物。</li>
 <li><strong>通用能力不能被 RL 打坏</strong>。只见推理数据的模型会变成“解题机器”，中文写作和多轮对话退化。模型卡强调工具调用与写作，说明数据配比里留了大比例通用样本。</li>
 </ol>
-<p>再往下看，对开源自部署的三个实际影响：</p>
+<p>对开源自部署，这三点是实际影响：</p>
 <ul>
 <li><strong>换了权重就升级，不用改推理栈</strong>：这是开源模型相对闭源 API 的一个隐形优势。闭源升级意味着 prompt 重调、评测重跑、成本重算；开源换个 safetensors 就行（前提是没做激进架构改动）。</li>
 <li><strong>量化版本要重做</strong>：社区量化（GPTQ/AWQ/FP8）随权重更新失效，得等 24～72 小时。生产环境要有“权重版本锁”的意识。</li>
@@ -101,7 +103,7 @@
 <tr><td>适用</td><td>离线难题、比赛、复杂分析</td><td>线上对话、工具调用、批量处理</td></tr>
 </tbody>
 </table></div>
-<p>实际部署里这两个不是二选一，而是<strong>路由</strong>：简单请求走 V3-0324，命中难题（多步数学、复杂代码）才升级到 R1。这种“双模型路由”在 2025 年上半年成了开源侧的常见架构。</p>
+<p>实际部署里这两个按请求<strong>路由</strong>：默认走 V3-0324，命中难题（多步数学、复杂代码）才升级到 R1。这种“双模型路由”在 2025 年上半年成了开源侧的常见架构。</p>
 <pre data-lang="python"><code class="language-python"># cheap difficulty probe first, then pick the model
 V3_0324 = dict(model=&quot;deepseek-v3-0324&quot;, max_tokens=4096)
 R1      = dict(model=&quot;deepseek-r1&quot;,      max_tokens=32768)
@@ -110,13 +112,9 @@ def route(prompt: str) -&gt; dict:
     if hard_signals(prompt):     # stack traces, math symbols, multi-constraint asks
         return R1
     return V3_0324</code></pre>
-<h2 id="写到这里的判断">写到这里的判断</h2>
-<ul>
-<li>后训练是 2025 年的主战场。从零训练的代价（数据 + 万卡）把大多数团队挡在门外，但后训练的收益正在变得可复制。</li>
-<li><strong>“点版本”会成为常态</strong>：同架构反复打磨比换架构更快见效，代价是版本管理变复杂。生产环境需要一个明确的“权重版本 + 评测快照”机制。</li>
-<li>开源模型的迭代节奏正在超过闭源 API 的季度节奏。V3 → V3-0324 → V3.1 的节奏是月级，闭源旗舰是季度级。对能力敏感的场景，这是选择开源的实际理由。</li>
-<li>也得承认局限：这种涨分主要发生在<strong>可验证域</strong>。开放式写作、长文档理解、多跳检索的收益要小得多，别指望一次点版本把这些一起解决。</li>
-</ul>
+<h2 id="版本管理比分数更值钱">版本管理比分数更值钱</h2>
+<p>同架构反复打磨比换架构更快见效，代价是版本管理变复杂：生产环境要维护的不是“模型版本”，而是“权重哈希 + 评测快照”这一对。V3 → V3-0324 → V3.1 的间隔是月级，闭源旗舰是季度级，落后一个版本就可能差 10 分以上，而这个差距和模型好坏无关。</p>
+<p>反例：上半年见过一个团队把线上主力从 V3 换成 V3-0324，指望开放域写作、多跳问答跟着涨 20 分。实测那几项在 ±1 分内浮动，只有数学和代码明显抬升；最后回滚的原因也不是分数，是新权重的量化版本要等 24～72 小时，灰度窗口正好撞上大促。这种涨分只发生在<strong>可验证域</strong>，其余场景里它是一次无声的权重替换。</p>
 <h2 id="参考与数据">参考与数据</h2>
 <ul>
 <li>模型卡（含对比表、使用建议）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3-0324">DeepSeek-V3-0324</a></li>
@@ -128,7 +126,6 @@ def route(prompt: str) -&gt; dict:
   <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/后训练/">后训练</a><a class="tag" href="/tags/moe/">MoE</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-V3-0324%EF%BC%9A%E4%B8%80%E6%AC%A1%E3%80%8C%E7%82%B9%E7%89%88%E6%9C%AC%E3%80%8D%E6%9B%B4%E6%96%B0%E6%9A%B4%E9%9C%B2%E7%9A%84%E6%96%B9%E6%B3%95%E8%AE%BA" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/o3-o4-mini-tools-in-thinking/">← o3 与 o4-mini：在思考过程里调用工具</a><a class="next" href="/post/gemini-2.5-thinking-by-default/">Gemini 2.5 Pro：把「思考」设成默认行为 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -170,6 +167,12 @@ def route(prompt: str) -&gt; dict:
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#这次更新改了什么">这次更新改了什么</a></li>
+<li class="h2"><a href="#为什么点版本能涨这么多">为什么&quot;点版本&quot;能涨这么多</a></li>
+<li class="h2"><a href="#和-r1-的关系不是替代是分叉">和 R1 的关系：不是替代，是分叉</a></li>
+<li class="h2"><a href="#版本管理比分数更值钱">版本管理比分数更值钱</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

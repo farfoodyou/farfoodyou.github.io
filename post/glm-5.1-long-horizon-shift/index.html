@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 - farfood</title>
-<meta name="description" content="同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。">
+<meta name="description" content="相比 GLM-5 参数不变，进步在长程耐久：Terminal-Bench 2.0 从 56.2 到 63.5，定位是 8 小时班次。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GLM-5.1：8 小时工作日，agent 从「步」变成「班次」", "description": "同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。", "datePublished": "2026-04-08T09:10:00+08:00", "dateModified": "2026-04-08T09:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "智谱, GLM, 开源模型, Agent, 编码"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GLM-5.1：8 小时工作日，agent 从「步」变成「班次」", "description": "相比 GLM-5 参数不变，进步在长程耐久：Terminal-Bench 2.0 从 56.2 到 63.5，定位是 8 小时班次。", "datePublished": "2026-04-08T09:10:00+08:00", "dateModified": "2026-04-08T09:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "智谱, GLM, 开源模型, Agent, 编码"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 - farfood">
-<meta property="og:description" content="同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。">
+<meta property="og:description" content="相比 GLM-5 参数不变，进步在长程耐久：Terminal-Bench 2.0 从 56.2 到 63.5，定位是 8 小时班次。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 - farfood">
-<meta name="twitter:description" content="同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。">
+<meta name="twitter:description" content="相比 GLM-5 参数不变，进步在长程耐久：Terminal-Bench 2.0 从 56.2 到 63.5，定位是 8 小时班次。">
 <meta property="article:published_time" content="2026-04-08T09:10:00+08:00">
 <meta name="keywords" content="智谱, GLM, 开源模型, Agent, 编码">
 </head>
@@ -37,16 +37,17 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</h1>
-    <p class="meta"><time datetime="2026-04-08T09:10:00">2026-04-08</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2056 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-04-08T09:10:00">2026-04-08</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2229 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#8-小时工作日要解决什么">&quot;8 小时工作日&quot;要解决什么</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#8-小时工作日要解决什么">&quot;8 小时工作日&quot;要解决什么</a></li>
 <li class="h2"><a href="#swe-bench-pro-与-terminal-bench-20-的区别">SWE-Bench Pro 与 Terminal-Bench 2.0 的区别</a></li>
 <li class="h2"><a href="#和闭源的差距在哪">和闭源的差距在哪</a></li>
-<li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>4 月 7 日，智谱开源 <a href="https://huggingface.co/zai-org/GLM-5.1">GLM-5.1</a>（MIT）。和 GLM-5 相比参数不变，进步全在<strong>长程任务的耐久度</strong>上：</p>
@@ -64,7 +65,7 @@
 <tr><td>IMOAnswerBench</td><td>82.5</td><td>83.8</td></tr>
 </tbody>
 </table></div>
-<p>注意 Terminal-Bench 那两行：<strong>同一个模型，换个 harness 从 63.5 变成 69.0</strong>。这 5.5 分不是模型涨的，是脚手架涨的。</p>
+<p>注意 Terminal-Bench 那两行：<strong>同一个模型，换个 harness 从 63.5 变成 69.0</strong>。这 5.5 分不是模型涨的，是脚手架涨的，而 Terminal-Bench 上两代模型的差距是 7.3 分（56.2 → 63.5），脚手架一项就吃掉了大半。</p>
 <h2 id="8-小时工作日要解决什么">“8 小时工作日”要解决什么</h2>
 <p>把任务时长从 10 分钟拉到 8 小时，难度不是线性的。假设单步成功率 0.995：</p>
 <pre data-lang="text"><code class="language-text">1000 步  → 0.995^1000 ≈ 0.7%
@@ -113,7 +114,7 @@
 <tr><td>工具调用</td><td>数百至数千次</td><td>沙箱与网络成本</td></tr>
 </tbody>
 </table></div>
-<p>关键结论：<strong>长程任务的成本由“输入侧重复”主导，不是输出侧</strong>。一条 100K 上下文的请求走 200 步，如果前缀缓存命中 90%，输入成本降一个数量级；命中不了，账单直接爆。</p>
+<p>关键结论：<strong>长程任务的成本由“输入侧重复”主导，不是输出侧</strong>。一条 100K 上下文的请求走 200 步，前缀缓存命中 90% 时输入成本能降到 1/5（命中部分按 1/10 单价算），命中不了账单直接爆。</p>
 <p>这就是为什么 2026 年的引擎都在赌“前缀缓存 + KV 复用路由”（见 <a href="/post/inference-engines-2025-review/">2025 引擎复盘</a>）：<strong>长程 agent 的成本控制约等于缓存命中率优化。</strong></p>
 <h2 id="和闭源的差距在哪">和闭源的差距在哪</h2>
 <div class="table-wrap"><table>
@@ -130,14 +131,23 @@
 <tr><td>合规/私有化</td><td>可控</td><td>通常不可</td></tr>
 </tbody>
 </table></div>
-<p>2026 年的实际局面是：<strong>开源模型在“单步能力”上追到 1～3 分以内，差距转移到“系统整合”</strong>——谁的路由、缓存、验证闭环做得更好，谁的 agent 就更可靠。</p>
-<h2 id="几句判断">几句判断</h2>
-<ul>
-<li>“任务时长”会成为 2026 年的核心宣传指标，（8 小时、24 小时、7×24 后台），但它的含义是“能跑多久不回滚”，不是“能独立工作多久”。</li>
-<li><strong>harness 的分数贡献会超过模型</strong>。同模型换 harness 差 5.5 分，比两代模型的差距还大。</li>
-<li>MIT + 744B/40B + 长程调优，是目前开源最实用的组合，尤其对有合规要求的企业。</li>
-<li>对工程团队：<strong>先投缓存和验证，再投模型</strong>。这两项的 ROI 在长程任务里是数量级领先的。</li>
-</ul>
+<p>2026 年的实际局面是：<strong>开源模型在“单步能力”上追到 1～3 分以内，差距转移到“系统整合”</strong>——谁的路由、缓存、验证环节做得更好，谁的 agent 就更可靠。</p>
+<p>一条 8 小时的班次，账单几乎只跟一个数走。按输出 0.5M token、上下文 100K 重复带 200 次（输入 20M token）、输入 \$1/M、输出 \$5/M 算：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>前缀缓存命中率</th>
+<th>有效输入单价</th>
+<th>输入成本</th>
+<th>输出成本</th>
+<th>单次班次合计</th>
+</tr></thead>
+<tbody>
+<tr><td>0%</td><td>\$1.00/M</td><td>\$20</td><td>\$2.5</td><td>\$22.5</td></tr>
+<tr><td>50%</td><td>\$0.55/M</td><td>\$11</td><td>\$2.5</td><td>\$13.5</td></tr>
+<tr><td>90%</td><td>\$0.19/M</td><td>\$3.8</td><td>\$2.5</td><td>\$6.3</td></tr>
+</tbody>
+</table></div>
+<p>命中率从 0 打到 90%，账单掉 3.5 倍；换一代模型在同样的任务上通常省不到 30%。“任务时长”作为宣传指标会继续涨（8 小时、24 小时），但它的真实含义是“能跑多久不回滚”，跟这张表的三个数没有关系。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>模型卡（基准表、harness 说明）：<a href="https://huggingface.co/zai-org/GLM-5.1">GLM-5.1</a></li>
@@ -149,7 +159,6 @@
   <p class="tag-list"><a class="tag" href="/tags/智谱/">智谱</a><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=GLM-5.1%EF%BC%9A8+%E5%B0%8F%E6%97%B6%E5%B7%A5%E4%BD%9C%E6%97%A5%EF%BC%8Cagent+%E4%BB%8E%E3%80%8C%E6%AD%A5%E3%80%8D%E5%8F%98%E6%88%90%E3%80%8C%E7%8F%AD%E6%AC%A1%E3%80%8D" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/qwen3.6-35b-a3b-architecture/">← 把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</a><a class="next" href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><time>2025-12</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -191,6 +200,11 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#8-小时工作日要解决什么">&quot;8 小时工作日&quot;要解决什么</a></li>
+<li class="h2"><a href="#swe-bench-pro-与-terminal-bench-20-的区别">SWE-Bench Pro 与 Terminal-Bench 2.0 的区别</a></li>
+<li class="h2"><a href="#和闭源的差距在哪">和闭源的差距在哪</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><time>2025-12</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><time>2025-10</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

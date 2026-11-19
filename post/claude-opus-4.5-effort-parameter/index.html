@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角 - farfood</title>
-<meta name="description" content="11 月 24 日 Opus 4.5 发布，价格从 $15/$75 砍到 $5/$25，并首次把 effort 参数放到旗舰模型上：默认 high，可按任务降档。旗舰的定义从「最强」变成「最划算的上限」。">
+<meta name="description" content="Opus 4.5 从 $15/$75 砍到 $5/$25，effort 参数首次上旗舰，默认 high，可按任务降档。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角", "description": "11 月 24 日 Opus 4.5 发布，价格从 $15/$75 砍到 $5/$25，并首次把 effort 参数放到旗舰模型上：默认 high，可按任务降档。旗舰的定义从「最强」变成「最划算的上限」。", "datePublished": "2025-11-25T08:50:00+08:00", "dateModified": "2025-11-25T08:50:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Anthropic, Claude, 成本, 编码, Agent"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角", "description": "Opus 4.5 从 $15/$75 砍到 $5/$25，effort 参数首次上旗舰，默认 high，可按任务降档。", "datePublished": "2025-11-25T08:50:00+08:00", "dateModified": "2025-11-25T08:50:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Anthropic, Claude, 成本, 编码, Agent"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角 - farfood">
-<meta property="og:description" content="11 月 24 日 Opus 4.5 发布，价格从 $15/$75 砍到 $5/$25，并首次把 effort 参数放到旗舰模型上：默认 high，可按任务降档。旗舰的定义从「最强」变成「最划算的上限」。">
+<meta property="og:description" content="Opus 4.5 从 $15/$75 砍到 $5/$25，effort 参数首次上旗舰，默认 high，可按任务降档。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角 - farfood">
-<meta name="twitter:description" content="11 月 24 日 Opus 4.5 发布，价格从 $15/$75 砍到 $5/$25，并首次把 effort 参数放到旗舰模型上：默认 high，可按任务降档。旗舰的定义从「最强」变成「最划算的上限」。">
+<meta name="twitter:description" content="Opus 4.5 从 $15/$75 砍到 $5/$25，effort 参数首次上旗舰，默认 high，可按任务降档。">
 <meta property="article:published_time" content="2025-11-25T08:50:00+08:00">
 <meta name="keywords" content="Anthropic, Claude, 成本, 编码, Agent">
 </head>
@@ -37,16 +37,18 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</h1>
-    <p class="meta"><time datetime="2025-11-25T08:50:00">2025-11-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2290 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-11-25T08:50:00">2025-11-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2258 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#旗舰降价背后的三个原因">旗舰降价背后的三个原因</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#旗舰降价背后的三个原因">旗舰降价背后的三个原因</a></li>
 <li class="h2"><a href="#effort-参数为什么重要">effort 参数为什么重要</a></li>
 <li class="h2"><a href="#价格降下来之后架构会怎么变">价格降下来之后，架构会怎么变</a></li>
-<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#换不换先问一句">换不换，先问一句</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>11 月 24 日，<a href="https://www.anthropic.com/news/claude-opus-4-5">Claude Opus 4.5</a> 发布。最刺眼的不是分数，是价格：</p>
@@ -59,7 +61,7 @@
 <tbody>
 <tr><td>输入（$/M）</td><td>15</td><td><strong>5</strong></td></tr>
 <tr><td>输出（$/M）</td><td>75</td><td><strong>25</strong></td></tr>
-<tr><td>降价幅度</td><td>—</td><td><strong>约 1/3 价格</strong></td></tr>
+<tr><td>降价幅度</td><td>—</td><td><strong>输出与输入都降 67%（1/3 价）</strong></td></tr>
 </tbody>
 </table></div>
 <p>同时带来的还有 <code>effort</code> 参数（<a href="https://www.anthropic.com/news/claude-opus-4-5">发布公告</a> 里客户访谈专门提到它）：默认 high，可以按任务降档，低档位“质量够用但显著更省”。</p>
@@ -86,7 +88,7 @@
     # effort defaults to high; the server decides per task
     messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;refactor this module and make the tests pass&quot;}],
 )</code></pre>
-<p>再往下看，Opus 4.5 强在哪：不是单点，是多语言编码：</p>
+<p>Opus 4.5 的强项不在单价或单点分数，在多语言编码：</p>
 <p>官方强调的领先项是 <strong>SWE-bench Multilingual</strong>——“在 8 种编程语言里 7 种领先”，以及 Aider Polyglot、BrowseComp-Plus、Vending-Bench 等偏 agent 的基准。</p>
 <p>这个选点很说明问题：</p>
 <ul>
@@ -110,13 +112,9 @@
 </tbody>
 </table></div>
 <p>典型的“规划贵、执行便宜”结构里，规划层通常只占 token 的 5%～10%。<strong>把规划层的价格降 3 倍，整体成本只降 5%～15%，但任务成功率提升可能远超这个比例</strong>——这才是降价的真实杠杆。</p>
-<h2 id="最后说三句">最后说三句</h2>
-<ul>
-<li>旗舰模型的定价会继续向 Sonnet 档靠拢。2026 年很可能出现“旗舰 = $3/$15 或更低”。</li>
-<li><strong>effort 参数 + 思考预算的组合会成为标准 API</strong>，模型供应商真正卖的是“预算曲线的形状”。</li>
-<li>评测透明度成为竞争力。Opus 4.5 的脚注细到“5 次试验”“默认 effort”，这种披露会让后续横评更难糊弄。</li>
-<li>给工程团队的建议：<strong>先把规划层升级，别急着换执行层</strong>。规划错的代价是整轮返工，执行慢的代价只是等待。</li>
-</ul>
+<h2 id="换不换先问一句">换不换，先问一句</h2>
+<p>换之前先回答一个问题：这条链路上失败一次的成本是多少。一次失败要人工返工半小时，规划层就该上 Opus 4.5，执行层继续留 Haiku；一次失败只是重试多花 3 秒，两层都不值得动。</p>
+<p>答不上来的团队，先翻失败日志再翻价格表。脚注细到“5 次试验”“默认 effort”这种程度，其实是在提醒同一件事：横评的差别常常不在分数，在定价和口径。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>发布公告（定价、基准、方法学脚注）：<a href="https://www.anthropic.com/news/claude-opus-4-5">Introducing Claude Opus 4.5</a></li>
@@ -128,7 +126,6 @@
   <p class="tag-list"><a class="tag" href="/tags/anthropic/">Anthropic</a><a class="tag" href="/tags/claude/">Claude</a><a class="tag" href="/tags/成本/">成本</a><a class="tag" href="/tags/编码/">编码</a><a class="tag" href="/tags/agent/">Agent</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Claude+Opus+4.5%EF%BC%9A%E6%97%97%E8%88%B0%E9%99%8D%E4%BB%B7%E4%B8%89%E5%88%86%E4%B9%8B%E4%BA%8C%EF%BC%8Ceffort+%E5%8F%82%E6%95%B0%E6%88%90%E4%BA%86%E4%B8%BB%E8%A7%92" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/deepseek-v3.2-thinking-with-tools/">← DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><a class="next" href="/post/gemini-3-benchmark-saturation/">Gemini 3：1501 Elo 之后，评测本身成了问题 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</a><time>2025-10</time></li><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」</a><time>2025-05</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -170,6 +167,12 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#旗舰降价背后的三个原因">旗舰降价背后的三个原因</a></li>
+<li class="h2"><a href="#effort-参数为什么重要">effort 参数为什么重要</a></li>
+<li class="h2"><a href="#价格降下来之后架构会怎么变">价格降下来之后，架构会怎么变</a></li>
+<li class="h2"><a href="#换不换先问一句">换不换，先问一句</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</a><time>2025-10</time></li><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」</a><time>2025-05</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

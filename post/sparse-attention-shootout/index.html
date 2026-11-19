@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA - farfood</title>
-<meta name="description" content="2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
+<title>六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA - farfood</title>
+<meta name="description" content="2026 年 1M 上下文成了标配，但实现有六种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/sparse-attention-shootout/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA", "description": "2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。", "datePublished": "2026-09-25T09:40:00+08:00", "dateModified": "2026-09-25T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/sparse-attention-shootout/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "稀疏注意力, 长上下文, 推理优化, 系统, 对比"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA", "description": "2026 年 1M 上下文成了标配，但实现有六种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。", "datePublished": "2026-09-25T09:40:00+08:00", "dateModified": "2026-09-25T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/sparse-attention-shootout/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "稀疏注意力, 长上下文, 推理优化, 系统, 对比"}</script>
 
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA - farfood">
-<meta property="og:description" content="2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
+<meta property="og:title" content="六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA - farfood">
+<meta property="og:description" content="2026 年 1M 上下文成了标配，但实现有六种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/sparse-attention-shootout/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA - farfood">
-<meta name="twitter:description" content="2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
+<meta name="twitter:title" content="六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA - farfood">
+<meta name="twitter:description" content="2026 年 1M 上下文成了标配，但实现有六种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。">
 <meta property="article:published_time" content="2026-09-25T09:40:00+08:00">
 <meta name="keywords" content="稀疏注意力, 长上下文, 推理优化, 系统, 对比">
 </head>
@@ -37,13 +37,15 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</h1>
-    <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2313 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <h1 class="post-title">六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</h1>
+    <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2450 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#索引成本才是分水岭">索引成本才是分水岭</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#索引成本才是分水岭">索引成本才是分水岭</a></li>
 <li class="h2"><a href="#kv-压缩比的真实差距">KV 压缩比的真实差距</a></li>
 <li class="h2"><a href="#带宽视角一张对照表">带宽视角：一张对照表</a></li>
 <li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
@@ -54,7 +56,7 @@
 <thead><tr>
 <th>方案</th>
 <th>代表</th>
-<th>选谁</th>
+<th>怎么选 token</th>
 <th>KV 压缩</th>
 <th>索引成本</th>
 </tr></thead>
@@ -135,12 +137,13 @@
 <li><strong>要极长上下文 + 高并发（agent 记忆、日志分析）</strong> → CSA2 / HCA 类；</li>
 <li><strong>要极致吞吐（流式、端侧）</strong> → KDA 类线性注意力。</li>
 </ul>
+<p>横比之前先把 KV/token 和每 token 读取字节数报出来，否则两张表里的“1M”没法对账。</p>
 <h2 id="不确定的部分">不确定的部分</h2>
 <ul>
-<li>“稀疏”这个词已经不够用了，2026 年要区分“稀疏读取”和“压缩存储”，两者收益差一个数量级。</li>
-<li><strong>索引复用是必抄项</strong>（2.9× 不是小数），不做就等于白付索引税。</li>
-<li>FP4 KV 是下一步的确定性收益，但需要 per-block scale 与校准，长文场景要单独验。</li>
-<li>评测时务必报告 <strong>KV/token</strong> 和 <strong>每 token 读取字节数</strong>，否则不同实现的“1M”根本不可比。</li>
+<li><strong>索引复用到底能推到多密</strong>：我们把共享层数从 4 加到 8，1M 检索任务开始出现 2～3 个点的掉分，但样本只有几十条，不知道这个拐点是不是任务相关的。</li>
+<li><strong>CSA2 的 FP4 KV 在 500K 以上会不会累积误差</strong>：没测过，公开材料只给到 128K。</li>
+<li><strong>gather 效率的 40%～60%</strong> 是从小规模 kernel 推的上限，真实负载（top-k 分布偏斜）下能不能到 40% 取决于实现，我们手上的数据还不足以得出可靠结论。</li>
+<li><strong>训练侧代价没法横比</strong>：DSA 要训 indexer，CSA2 要三模式路由，KDA 要盯状态漂移，哪一项最贵取决于你原有的训练栈。</li>
 </ul>
 <h2 id="原文在这">原文在这</h2>
 <ul>
@@ -152,9 +155,8 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/推理优化/">推理优化</a><a class="tag" href="/tags/系统/">系统</a><a class="tag" href="/tags/对比/">对比</a></p>
-  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E4%BA%94%E7%A7%8D%E7%A8%80%E7%96%8F%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%91%86%E5%9C%A8%E4%B8%80%E8%B5%B7%EF%BC%9ADSA+%2F+MSA+%2F+CSA%2BHCA+%2F+IndexShare+%2F+KDA" target="_blank" rel="noopener">分享到 X</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%85%AD%E7%A7%8D%E7%A8%80%E7%96%8F%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%91%86%E5%9C%A8%E4%B8%80%E8%B5%B7%EF%BC%9ADSA+%2F+MSA+%2F+CSA%2BHCA+%2F+IndexShare+%2F+CSA2+%2F+KDA" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/mistral-large-4-1.05t/">← Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</a><a class="next" href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><time>2025-09</time></li><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a><time>2026-06</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -196,6 +198,12 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#索引成本才是分水岭">索引成本才是分水岭</a></li>
+<li class="h2"><a href="#kv-压缩比的真实差距">KV 压缩比的真实差距</a></li>
+<li class="h2"><a href="#带宽视角一张对照表">带宽视角：一张对照表</a></li>
+<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><time>2025-09</time></li><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a><time>2026-06</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

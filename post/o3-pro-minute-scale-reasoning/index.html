@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>o3-pro：当推理从「秒」变成「分钟」，产品形态就得改 - farfood</title>
-<meta name="description" content="6 月 10 日 o3-pro 上线，官方定位就一句话：可靠性优先于速度，等几分钟是值得的。这类模型把「同步请求」逼到了尽头，异步任务队列、事件流、结果交付成了必需。">
+<meta name="description" content="6 月 10 日 o3-pro 上线，定位是可靠性优先于速度。分钟级推理把同步 API 逼到尽头，任务队列成了必需。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/o3-pro-minute-scale-reasoning/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3-pro：当推理从「秒」变成「分钟」，产品形态就得改", "description": "6 月 10 日 o3-pro 上线，官方定位就一句话：可靠性优先于速度，等几分钟是值得的。这类模型把「同步请求」逼到了尽头，异步任务队列、事件流、结果交付成了必需。", "datePublished": "2025-06-11T09:15:00+08:00", "dateModified": "2025-06-11T09:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-pro-minute-scale-reasoning/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, 延迟, 架构"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3-pro：当推理从「秒」变成「分钟」，产品形态就得改", "description": "6 月 10 日 o3-pro 上线，定位是可靠性优先于速度。分钟级推理把同步 API 逼到尽头，任务队列成了必需。", "datePublished": "2025-06-11T09:15:00+08:00", "dateModified": "2025-06-11T09:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-pro-minute-scale-reasoning/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, 延迟, 架构"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="o3-pro：当推理从「秒」变成「分钟」，产品形态就得改 - farfood">
-<meta property="og:description" content="6 月 10 日 o3-pro 上线，官方定位就一句话：可靠性优先于速度，等几分钟是值得的。这类模型把「同步请求」逼到了尽头，异步任务队列、事件流、结果交付成了必需。">
+<meta property="og:description" content="6 月 10 日 o3-pro 上线，定位是可靠性优先于速度。分钟级推理把同步 API 逼到尽头，任务队列成了必需。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/o3-pro-minute-scale-reasoning/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="o3-pro：当推理从「秒」变成「分钟」，产品形态就得改 - farfood">
-<meta name="twitter:description" content="6 月 10 日 o3-pro 上线，官方定位就一句话：可靠性优先于速度，等几分钟是值得的。这类模型把「同步请求」逼到了尽头，异步任务队列、事件流、结果交付成了必需。">
+<meta name="twitter:description" content="6 月 10 日 o3-pro 上线，定位是可靠性优先于速度。分钟级推理把同步 API 逼到尽头，任务队列成了必需。">
 <meta property="article:published_time" content="2025-06-11T09:15:00+08:00">
 <meta name="keywords" content="OpenAI, 推理模型, 延迟, 架构">
 </head>
@@ -37,21 +37,23 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</h1>
-    <p class="meta"><time datetime="2025-06-11T09:15:00">2025-06-11</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2183 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-06-11T09:15:00">2025-06-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2251 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#秒级十秒级分钟级是三门生意">秒级、十秒级、分钟级是三门生意</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#秒级十秒级分钟级是三门生意">秒级、十秒级、分钟级是三门生意</a></li>
 <li class="h2"><a href="#可靠性和速度是一对矛盾">可靠性和速度是一对矛盾</a></li>
 <li class="h2"><a href="#对基础设施的四个要求">对基础设施的四个要求</a></li>
 <li class="h2"><a href="#这类模型会被谁用">这类模型会被谁用</a></li>
+<li class="h2"><a href="#还没解决的">还没解决的</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
-<p>6 月 10 日，OpenAI 上线 <a href="https://en.wikipedia.org/wiki/OpenAI_o3">o3-pro</a>。官方推荐用法说得很直白（转引自 <a href="https://techcrunch.com/2025/06/10/openai-releases-o3-pro-a-souped-up-version-of-its-o3-ai-reasoning-model/">TechCrunch 报道</a>）：</p>
-<blockquote><p>建议用于可靠性比速度更重要的高难度问题，等上几分钟是值得的。</p></blockquote>
-<p>这句话本身就是一个信号：<strong>推理模型的延迟已经越过“人类可等待”的阈值</strong>，产品必须为之改形。</p>
+<p>6 月 10 日，OpenAI 上线 <a href="https://en.wikipedia.org/wiki/OpenAI_o3">o3-pro</a>。这次没有单独的技术博客，定位散在发布说明里，<a href="https://techcrunch.com/2025/06/10/openai-releases-o3-pro-a-souped-up-version-of-its-o3-ai-reasoning-model/">TechCrunch 的报道</a>把它归纳成一句：用于可靠性比速度更重要的问题，等几分钟是值得的。中文转述常把这句写成官方原话，实际是记者的概括，口径上得分开。</p>
+<p>这个定位本身就是信号：<strong>推理模型的延迟已经越过“人类可等待”的阈值</strong>，产品必须为之改形。</p>
 <h2 id="秒级十秒级分钟级是三门生意">秒级、十秒级、分钟级是三门生意</h2>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -61,7 +63,7 @@
 <th>关键指标</th>
 </tr></thead>
 <tbody>
-<tr><td>&lt; 1s</td><td>搜索补全、分类</td><td>同步 API</td><td>P99 延迟</td></tr>
+<tr><td>1s 以内</td><td>搜索补全、分类</td><td>同步 API</td><td>P99 延迟</td></tr>
 <tr><td>5～30s</td><td>对话、代码补全</td><td>流式输出</td><td>首字延迟 + 完成率</td></tr>
 <tr><td>1～5min</td><td>复杂调试、研究分析</td><td>异步任务 + 通知</td><td>任务成功率、成本</td></tr>
 </tbody>
@@ -88,7 +90,7 @@ result = st.output</code></pre>
 <li>思考长度翻倍：算力 ×2；</li>
 <li>每步都跑测试验证：墙钟时间再加 IO。</li>
 </ul>
-<p>如果单次 o3 需要 40 秒，pro 档做到 3 分钟并不奇怪。<strong>这类模型卖的不是“更聪明”，而是“更少翻车”</strong>——对金融、法务、生产事故排查这类场景，“一次对”的价值远高于“快 10 倍”。</p>
+<p>如果单次 o3 需要 40 秒，pro 档做到 3 分钟并不奇怪。<strong>多出来的三分钟买的不是更聪明，而是更少翻车</strong>：对金融、法务、生产事故排查这类场景，“一次对”的价值远高于“快 10 倍”。</p>
 <h2 id="对基础设施的四个要求">对基础设施的四个要求</h2>
 <ol>
 <li><strong>可中断的推理</strong>：客户端断开时能取消上游生成，把 GPU 还回池子。需要推理引擎支持 mid-generation abort 与资源回收。</li>
@@ -104,13 +106,10 @@ result = st.output</code></pre>
 <li><strong>离线分析管线</strong>：日志归因、事故复盘、批量文档审阅。</li>
 </ul>
 <p>换句话说，<strong>o3-pro 是基础设施组件，不是聊天模型</strong>。它存在的意义是把“最高可靠性”这一档做成可采购的 API，而不是让所有人日常调用。</p>
-<p>落到工程上，我的判断是这样：</p>
-<ul>
-<li>延迟分层会固化，同一个模型家族里，快档和慢档长期并存，价格差 5～20 倍。选型的核心问题从“哪个模型最强”变成“这个任务能等多久”。</li>
-<li><strong>同步 API 会被异步 API 侵蚀</strong>。分钟级任务 + 事件流，这套形态在 2025 年下半年开始成为主流供应商的标配。</li>
-<li>可靠性比分数更值钱。企业愿意为“少一次翻车”付 10 倍价钱，但不愿意为“+3 分 AIME”多付 1 毛。</li>
-<li>自建服务的同类能力（超长思考 + 验证循环）成本主要不在 GPU，而在<strong>编排与状态管理</strong>——这是自研 harness 的真正门槛。</li>
-</ul>
+<h2 id="还没解决的">还没解决的</h2>
+<p>最直接的是<strong>取消的粒度</strong>。我们测过一次客户端断开：上游进程退了，但那张卡上已经在跑的 batch 没有回收，下一个任务得等它自然结束。多租户下这部分损耗没有便宜的计量方式，我只能按峰值预留。</p>
+<p>第二个没答案的是<strong>思考缓存的复用边界</strong>。分钟级任务里同一份上下文会被带进多个子请求，理论上前缀缓存能命中，但工具结果插进上下文之后，后面那段 KV 的偏移就变了。命中率能到多少取决于工具返回的插入位置，我们的样本太少，测不出稳定值。</p>
+<p>第三个是<strong>定价</strong>。单任务成本能聚合，但“多花三分钟换少一次重试”到底值多少钱，取决于业务对错误的定价，从系统里算不出来。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>版本与发布时间：<a href="https://en.wikipedia.org/wiki/OpenAI_o3">Wikipedia: OpenAI o3</a></li>
@@ -121,7 +120,6 @@ result = st.output</code></pre>
   <p class="tag-list"><a class="tag" href="/tags/openai/">OpenAI</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/延迟/">延迟</a><a class="tag" href="/tags/架构/">架构</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=o3-pro%EF%BC%9A%E5%BD%93%E6%8E%A8%E7%90%86%E4%BB%8E%E3%80%8C%E7%A7%92%E3%80%8D%E5%8F%98%E6%88%90%E3%80%8C%E5%88%86%E9%92%9F%E3%80%8D%EF%BC%8C%E4%BA%A7%E5%93%81%E5%BD%A2%E6%80%81%E5%B0%B1%E5%BE%97%E6%94%B9" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/minimax-m1-lightning-attention/">← MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><a class="next" href="/post/deepseek-r1-0528-more-thinking/">DeepSeek-R1-0528：多想 11K token，涨 17 分 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a><time>2025-02</time></li><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li><li><a href="/post/gpt-5-router-system/">GPT-5 是个路由器，那评测到底在测谁？</a><time>2025-08</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -163,6 +161,13 @@ result = st.output</code></pre>
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#秒级十秒级分钟级是三门生意">秒级、十秒级、分钟级是三门生意</a></li>
+<li class="h2"><a href="#可靠性和速度是一对矛盾">可靠性和速度是一对矛盾</a></li>
+<li class="h2"><a href="#对基础设施的四个要求">对基础设施的四个要求</a></li>
+<li class="h2"><a href="#这类模型会被谁用">这类模型会被谁用</a></li>
+<li class="h2"><a href="#还没解决的">还没解决的</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍</a><time>2025-02</time></li><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li><li><a href="/post/gpt-5-router-system/">GPT-5 是个路由器，那评测到底在测谁？</a><time>2025-08</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

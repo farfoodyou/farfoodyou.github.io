@@ -37,23 +37,25 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的</h1>
-    <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4873 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4967 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么-125b-能进-12gb">为什么 125B 能进 12GB</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么-125b-能进-12gb">为什么 125B 能进 12GB</a></li>
 <li class="h2"><a href="#那-94-152-toks-是从哪来的">那 94 / 152 tok/s 是从哪来的</a></li>
-<li class="h2"><a href="#三层墙一层比一层硬">三层墙，一层比一层硬</a></li>
+<li class="h2"><a href="#三处带宽的账差一个数量级">三处带宽的账，差一个数量级</a></li>
 <li class="h2"><a href="#投机解码在这里格外值钱">投机解码在这里格外值钱</a></li>
 <li class="h2"><a href="#qsa-与-gated-residual省的是-prefill">QSA 与 Gated Residual：省的是 prefill</a></li>
 <li class="h2"><a href="#这些专用引擎的硬限制">这些专用引擎的硬限制</a></li>
 <li class="h2"><a href="#什么情况下别玩这套">什么情况下别玩这套</a></li>
-<li class="h2"><a href="#收个尾">收个尾</a></li>
+<li class="h2"><a href="#想自己复现先测两个数">想自己复现，先测两个数</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>先说结论：<strong>125B 跑在 12GB 卡上不是魔术，是把“权重放哪”这件事重新排了一遍。</strong> 显存不再是容器的下限，带宽才是速度的上限。12GB 是官方下限，10GB 是往下再压一档的调优结果。</p>
+<p><strong>125B 跑在 12GB 卡上不是魔术，是把“权重放哪”重新排了一遍。</strong> 显存不再是容器的下限，带宽才是速度的上限。下面四份实测里，12GB 是官方下限，10GB 是再往下压一档的调优结果。</p>
 <p>三份公开实测：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -70,7 +72,7 @@
 </tbody>
 </table></div>
 <p>两行消费卡的区别值得先说清：Strata 官方要求 <strong>12GB 显存起</strong>（RTX 20/30/40/50 系或对应 AMD 卡），发布数字全部在 RTX 5070 12GB 上测；Speedy 是第三方针对 10GB 3080 重调 preset 的分支，<strong>10GB 低于官方下限</strong>，属于把每档余量都榨干的做法。两行摆在一起，正好看出显存少 2GB 要付多少速度和工程成本。</p>
-<p>对照组：同一台机器上 NInfer 跑 27B <strong>稠密</strong>模型（RTX 5090，权重 15.9 GiB），decode 84 tok/s、prefill 3300 tok/s。<strong>125B 的 MoE 在小显存机器上比 27B 稠密还快</strong>——这件事值得拆开看。</p>
+<p>对照组：同一台机器上 NInfer 跑 27B <strong>稠密</strong>模型（RTX 5090，权重 15.9 GiB），decode 84 tok/s、prefill 3300 tok/s。<strong>125B 的 MoE 在小显存机器上比 27B 稠密还快</strong>，这件事值得拆开看。</p>
 <h2 id="为什么-125b-能进-12gb">为什么 125B 能进 12GB</h2>
 <p>Qwen3.8-Flash-Next 的参数量拆得很特别（<a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next">模型卡</a>）：</p>
 <pre data-lang="text"><code class="language-text">125B  主模型（每 token 激活 6B）
@@ -86,13 +88,13 @@
 </tr></thead>
 <tbody>
 <tr><td>注意力 + 共享层 + 激活专家</td><td>6B 量级</td><td>每 token 必读</td><td>显存（热）</td></tr>
-<tr><td>其余专家（125B - 6B）</td><td>上百 GB（Q2）</td><td>按路由稀疏访问</td><td>内存/磁盘（冷）</td></tr>
+<tr><td>其余专家（125B - 6B，119B）</td><td><strong>≈ 36 GB</strong>（Q2，2.4 bit/参数）</td><td>按路由稀疏访问</td><td>内存（冷）</td></tr>
 <tr><td>n-gram embedding</td><td>51B</td><td>按 token 查表，<strong>极少命中</strong></td><td>磁盘/内存</td></tr>
 <tr><td>MTP 头</td><td>4B</td><td>每次投机解码</td><td>显存</td></tr>
 </tbody>
 </table></div>
 <p><strong>n-gram embedding 是这代架构最“取巧”的设计</strong>：它用查表代替矩阵乘，参数量可以很大而算力几乎为零，且天然适合 offload——命中就取一行，不命中就跳过。官方措辞是“更易于 offload 而非 MoE”，说的就是这个。</p>
-<p>于是 12GB 显存只需要装“每 token 必读的 6B”，剩下的按需从内存搬。</p>
+<p>于是 12GB 显存只需要装“每 token 必读的 6B”，剩下的按需从内存搬。冷侧的总账也不大：119B 专家按 2.4 bit 算 36GB，51B 查表按同精度算 15GB，合起来约 51GB，正好压进 5070 那台的 64GB DDR5 里。</p>
 <h2 id="那-94-152-toks-是从哪来的">那 94 / 152 tok/s 是从哪来的</h2>
 <p>这里必须算带宽，因为 decode 的每一步都在搬权重。</p>
 <p>假设 Q2_0 量化约 2.4 bit/参数，激活 6B：</p>
@@ -115,11 +117,10 @@
 </tbody>
 </table></div>
 <p><strong>两组需求都超过了各自机器的内存带宽</strong>（169 &gt; 89.6，274 &gt; 204.8），所以真实机制只能是“热专家常驻显存 + 冷专家走内存 + 部分走 PCIe”三层混合。两个数都是三层叠加的结果，不是单一路径：3080 那台能把 152 做出来，一半来自更宽的 DDR4 八通道，一半来自解锁后的 prefill 路径。</p>
-<p>这也解释了为什么“更多显存 = 更多专家常驻 = 更快”，官方 README 直接给了外推（RTX 3090 24GB 大致 100～140 tok/s），Speedy 那边反而老实写了“more VRAM fits more experts but is unmeasured&quot;——<strong>没测过就不敢承诺</strong>。两家对同一件事的态度差异，比数字本身更值得看。</p>
-<h2 id="三层墙一层比一层硬">三层墙，一层比一层硬</h2>
-<p><strong>第一层：容量（可以绕过）</strong> 显存装不下 → 权重量化 + 冷热分离 + 磁盘。绕过成本是“首次加载慢”和“质量下降”。</p>
-<p><strong>第二层：DRAM 带宽（真正的天花板）</strong> 当 6B 激活权重都得从内存流式读取时，速度上限 = 内存带宽 / 每 token 字节数。128GB DDR4 八通道约 200 GB/s，对 1.8GB/token 就是 <strong>110 tok/s 量级</strong>；换到 12GB 那台的 DDR5 双通道（约 90 GB/s），同样算法只有 50 tok/s 量级。实测 94 和 152 都高于这条线，说明热专家缓存起了作用，但<strong>这个天花板抬不动</strong>——除非换成更高带宽的内存（DDR5 十二通道、或统一内存的 LPDDR5x）。</p>
-<p><strong>第三层：PCIe（跨卡/跨机时最疼）</strong> PCIe 4.0 x16 只有 32 GB/s。一旦模型分到两张卡（无 NVLink），每 token 的跨卡流量会成为瓶颈。DGX Spark 双机之所以用 200Gb/s（25 GB/s）RDMA + TP2，就是在这个约束下换“能跑更大模型”，而不是“能跑更快”。</p>
+<p>这也解释了为什么“更多显存 = 更多专家常驻 = 更快”，官方 README 直接给了外推（RTX 3090 24GB 大致 100～140 tok/s），Speedy 那边反而老实写了“more VRAM fits more experts but is unmeasured”，<strong>没测过就不敢承诺</strong>。两家对同一件事的态度差异，比数字本身更值得看。</p>
+<h2 id="三处带宽的账差一个数量级">三处带宽的账，差一个数量级</h2>
+<p>容量这一关是可以绕的：显存装不下就量化、冷热分离、丢磁盘，代价是首次加载慢和精度掉一点。真正钉死速度的是 DRAM：当 6B 激活权重都得从内存流式读取时，上限 = 内存带宽 / 每 token 字节数。128GB DDR4 八通道约 200 GB/s，对 1.8GB/token 就是 <strong>110 tok/s 量级</strong>；12GB 那台的 DDR5 双通道只有约 90 GB/s，同样算法掉到 50 tok/s 量级。实测 94 和 152 都高于这条线，说明热专家缓存确实在起作用，但这个天花板自己抬不动，除非把内存换成十二通道或者统一内存的 LPDDR5x。</p>
+<p>再往下是 PCIe：4.0 x16 只有 32 GB/s，比 DRAM 又低一个数量级。一张卡装不下、又没有 NVLink 时，每 token 的跨卡流量都走这条窄路。双 Spark 用 200Gb/s（25 GB/s）RDMA 加 TP2，是在这个约束下换“能跑更大模型”，不是换“能跑更快”。</p>
 <p>一个直接对比：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -150,7 +151,7 @@
 <li><strong>QSA（Qwen Sparse Attention）</strong>：在 <strong>micro-block 级别</strong>选块而不是选 token，对长序列的注意力计算降一个量级，同时避免 token 级 gather 的低效（token 级稀疏在 GPU 上很难 coalesced，这点见 <a href="/post/sparse-attention-shootout/">稀疏注意力横评</a>）。</li>
 <li><strong>Gated Residual</strong>：加宽残差流并用门控读/写，训练更稳、推理开销小。</li>
 </ul>
-<p>效果在数字上：单 Spark 冷读 200K 上下文，Speedy 在双 3080 上要 78 秒、NInfer 在 262K 上限下 TTFT 是几十秒量级。<strong>“能塞进 200K”和“能等它读完 200K”是两件事。</strong></p>
+<p>效果在数字上：单 Spark 冷读 200K 上下文，Speedy 在单张 3080 上要 78 秒、NInfer 在 262K 上限下 TTFT 是几十秒量级。<strong>“能塞进 200K”和“能等它读完 200K”是两件事。</strong></p>
 <h2 id="这些专用引擎的硬限制">这些专用引擎的硬限制</h2>
 <ol>
 <li><strong>模型白名单</strong>。Strata/NInfer/Speedy 都只支持特定 checkpoint（甚至特定 <code>.ninfer</code> 制品），换个 HuggingFace 权重不一定能跑。通用引擎（vLLM/SGLang）胜在覆盖面。</li>
@@ -166,10 +167,8 @@
 <li><strong>要商用</strong>：先看许可证，很多“能跑 125B”的项目只允许个人使用。</li>
 <li><strong>要稳定复现</strong>：这类引擎迭代极快（NInfer 两个月内改了多轮 benchmark 方法），版本锁不死就别指望可复现。</li>
 </ul>
-<h2 id="收个尾">收个尾</h2>
-<p>我对这波“小显存跑大模型”的看法是：<strong>它是带宽工程，不是模型魔法。</strong></p>
-<p>125B 能进 12GB（官方下限，调优分支甚至压到 10GB），靠的是把参数量拆成“必读的 6B + 稀疏的专家 + 查表的 51B”；能跑到 94～150 tok/s，靠的是热专家常驻显存加投机解码。一旦你换一个每 token 要读 16GB 的稠密模型，同样的机器立刻回到个位数 tok/s——<strong>架构决定了你在哪堵墙前面</strong>。</p>
-<p>想看更细的账，NInfer 的性能文档把每个 run 的配置、KV 容量、接受长度全列了出来（<a href="https://github.com/Neroued/ninfer/tree/master/docs/performance">performance 目录</a>），是我今年见过最诚实的推理性能披露之一。</p>
+<h2 id="想自己复现先测两个数">想自己复现，先测两个数</h2>
+<p>拿自己的机器复现这套之前，先量两个数，量完就知道上面哪些数字能搬到你这儿：一是<strong>热专家命中率</strong>，同一批 20 条真实 prompt 连跑两遍，看 decode 的波动，波动超过 30% 说明 12GB 装不稳那 6B 激活，得把量化再降一档；二是<strong>冷读带宽</strong>，取一条 200K 上下文的请求，用下载字节数除以 TTFT，64GB DDR5 双通道要测到 70 GB/s 以上才算配置正确，低于这个数就是磁盘或 mmap 路径没调好。这两个数把你定位在“94 tok/s”和“个位数 tok/s”之间的某一格，比任何卡型外推表都准；想知道每一档的配置细节，NInfer 的性能文档把每个 run 的 KV 容量、接受长度都列了出来（<a href="https://github.com/Neroued/ninfer/tree/master/docs/performance">performance 目录</a>）。</p>
 <h2 id="来源">来源</h2>
 <ul>
 <li>Strata（125B 消费级硬件一键部署，官方要求 12GB 显存起）：&lt;https://github.com/Niko1221/Strata&gt;</li>
@@ -182,7 +181,6 @@
   <p class="tag-list"><a class="tag" href="/tags/端侧推理/">端侧推理</a><a class="tag" href="/tags/量化/">量化</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/引擎/">引擎</a><a class="tag" href="/tags/ninfer/">NInfer</a><a class="tag" href="/tags/strata/">Strata</a><a class="tag" href="/tags/带宽/">带宽</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%B0%8F%E6%98%BE%E5%AD%98%E7%9A%84%E6%9E%81%E9%99%90%EF%BC%9A125B+%E8%B7%91%E5%9C%A8+12GB+%E6%98%BE%E5%8D%A1%E4%B8%8A%EF%BC%8C%E8%B4%A6%E6%98%AF%E6%80%8E%E4%B9%88%E7%AE%97%E7%9A%84" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><span></span><a class="next" href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B</a><time>2026-10</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a><time>2026-11</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -224,6 +222,16 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#为什么-125b-能进-12gb">为什么 125B 能进 12GB</a></li>
+<li class="h2"><a href="#那-94-152-toks-是从哪来的">那 94 / 152 tok/s 是从哪来的</a></li>
+<li class="h2"><a href="#三处带宽的账差一个数量级">三处带宽的账，差一个数量级</a></li>
+<li class="h2"><a href="#投机解码在这里格外值钱">投机解码在这里格外值钱</a></li>
+<li class="h2"><a href="#qsa-与-gated-residual省的是-prefill">QSA 与 Gated Residual：省的是 prefill</a></li>
+<li class="h2"><a href="#这些专用引擎的硬限制">这些专用引擎的硬限制</a></li>
+<li class="h2"><a href="#什么情况下别玩这套">什么情况下别玩这套</a></li>
+<li class="h2"><a href="#想自己复现先测两个数">想自己复现，先测两个数</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B</a><time>2026-10</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a><time>2026-11</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

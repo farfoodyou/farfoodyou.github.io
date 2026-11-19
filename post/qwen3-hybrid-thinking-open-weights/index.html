@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Qwen3：把 thinking 开关做进开源权重</h1>
-    <p class="meta"><time datetime="2025-04-29T22:00:00">2025-04-29</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2269 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-04-29T22:00:00">2025-04-29</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2315 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合思考一个权重两种行为">混合思考：一个权重，两种行为</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合思考一个权重两种行为">混合思考：一个权重，两种行为</a></li>
 <li class="h2"><a href="#训练上怎么做出两种模式">训练上怎么做出&quot;两种模式&quot;</a></li>
 <li class="h2"><a href="#规格与现实的落差">规格与现实的落差</a></li>
 <li class="h2"><a href="#开源侧的竞争格局变了">开源侧的竞争格局变了</a></li>
+<li class="h2"><a href="#如果要上先确认三件事">如果要上，先确认三件事</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>4 月 29 日，阿里放出 <a href="https://qwen.ai/blog?id=qwen3">Qwen3 全系列</a>：两款 MoE（30B-A3B、235B-A22B）+ 六款 dense（0.6B / 1.7B / 4B / 8B / 14B / 32B），<strong>全部 Apache 2.0</strong>。一次放八个尺寸，本身就是策略：从手机端到机房，一套谱系全覆盖。</p>
@@ -85,12 +88,12 @@ text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False
 <li><strong>思考模式融合</strong>：把长 CoT 能力压缩进短回答，用 DPO/蒸馏让模型学会“该想的时候想”；</li>
 <li><strong>通用 RL</strong>：补对话、指令跟随、多语言、agent 能力，防止变成做题机器。</li>
 </ol>
-<p>难点在第 3 步：<strong>同一份权重里同时存在两种行为模式</strong>，推理时必须靠 prompt 或参数显式激活。这本质上是一个隐式的“模式选择器”，训练数据里必须明确标注模式，否则模型会摇摆（该想的时候不想、不该想的时候啰嗦）。</p>
+<p>难点在第 3 步：<strong>同一份权重里同时存在两种行为模式</strong>，推理时必须靠 prompt 或参数显式激活。这相当于一个隐式的“模式选择器”，训练数据里必须明确标注模式，否则模型会摇摆（该想的时候不想、不该想的时候啰嗦）。</p>
 <h2 id="规格与现实的落差">规格与现实的落差</h2>
 <p>几个容易被忽略的细节：</p>
 <ul>
 <li><strong>原生上下文 32K，YaRN 外推到 131K</strong>。不是原生 128K，长文场景要靠位置编码外推，效果随长度衰减。</li>
-<li><strong>MoE 的激活参数是 22B（235B 总参数）</strong>，单卡部署仍然不现实（fp8 也要 3 张 H100 级），真正好落地的反而是 8B/14B dense。</li>
+<li><strong>MoE 的激活参数是 22B（235B 总参数）</strong>，单卡部署仍然不现实（fp8 也要 3 张 H100 级），实际好落地的反而是 8B/14B dense。</li>
 <li><strong>Apache 2.0 是真的宽松</strong>，没有“月活超过 7 亿要单独授权”这类条款，对企业合规友好。</li>
 <li><strong>119 种语言</strong>（<a href="https://arxiv.org/abs/2505.09388">报告口径</a>）是训练数据口径，多语言能力在小尺寸上明显弱于大尺寸，“支持”和“好用”要分开看。</li>
 </ul>
@@ -101,14 +104,14 @@ text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False
 <li><strong>接口对齐闭源</strong>：thinking 开关、工具调用格式、chat template 都往主流 API 靠；</li>
 <li><strong>许可证统一</strong>：Apache 2.0 覆盖全系，法务成本最低。</li>
 </ul>
-<p>这三点的共同指向是<strong>降低迁移成本</strong>。模型能力差几分，团队会选“换起来最省事”的那个。</p>
-<p>落到工程上，我的判断是这样：</p>
-<ul>
-<li>“思考开关”会成为开源模型的默认接口，没有这个开关的模型在 2025 年下半年会被当成“只能聊天”。</li>
-<li><strong>dense 小模型被低估</strong>。8B/14B 在 think 模式下能顶很多线上任务，延迟可控、部署简单，比 MoE 更适合“每个业务一个模型”的用法。</li>
-<li>32K 原生上下文是短板。YaRN 外推在检索类任务上会掉点，长文场景还是得看原生长上下文模型（Gemini 那一类）。</li>
-<li><strong>开源追平的是“可验证能力”，不是“产品能力”</strong>。榜单上 Qwen3-235B 能和一线闭源掰手腕，但工具调用的稳定性、指令跟随的细腻度、拒答的边界感，差距还在。</li>
-</ul>
+<p>这三点的共同指向是<strong>降低迁移成本</strong>。模型能力差几分，团队会选“换起来最省事”的那个。但开源追平的是可验证能力：工具调用的稳定性、指令跟随的细腻度、拒答的边界感，和闭源旗舰的差距还在。</p>
+<h2 id="如果要上先确认三件事">如果要上，先确认三件事</h2>
+<ol>
+<li><strong>量两条延迟曲线</strong>：同一批请求下 no-think 与 think 的 P99 差不到 2 倍，就别拆两条链路，多一套部署比省下的 token 贵。</li>
+<li><strong>确认 <code>enable_thinking</code> 的默认值</strong>：它是 True。线上分类、抽取任务的 chat template 漏传这个参数，成本会按思考长度翻几倍，且不会报错。</li>
+<li><strong>长文按 32K 设计</strong>：131K 是 YaRN 外推，先在自己的检索集上测一遍，掉点超过 5 个就退回 32K 加检索。</li>
+</ol>
+<p>这三条里第二条最容易漏：默认值写在 chat template 里，不在调用参数里，代码 review 时看不见。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>发布博客：<a href="https://qwen.ai/blog?id=qwen3">Qwen3: Think Deeper, Act Faster</a></li>
@@ -119,7 +122,6 @@ text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False
   <p class="tag-list"><a class="tag" href="/tags/qwen/">Qwen</a><a class="tag" href="/tags/阿里/">阿里</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/推理模型/">推理模型</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Qwen3%EF%BC%9A%E6%8A%8A+thinking+%E5%BC%80%E5%85%B3%E5%81%9A%E8%BF%9B%E5%BC%80%E6%BA%90%E6%9D%83%E9%87%8D" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/claude-4-long-horizon-agents/">← Claude 4：长时间自主任务，和被重新定义的「上下文」</a><a class="next" href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.6-35b-a3b-architecture/">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</a><time>2026-04</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a><time>2026-08</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -161,6 +163,13 @@ text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#混合思考一个权重两种行为">混合思考：一个权重，两种行为</a></li>
+<li class="h2"><a href="#训练上怎么做出两种模式">训练上怎么做出&quot;两种模式&quot;</a></li>
+<li class="h2"><a href="#规格与现实的落差">规格与现实的落差</a></li>
+<li class="h2"><a href="#开源侧的竞争格局变了">开源侧的竞争格局变了</a></li>
+<li class="h2"><a href="#如果要上先确认三件事">如果要上，先确认三件事</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.6-35b-a3b-architecture/">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</a><time>2026-04</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选</a><time>2026-08</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

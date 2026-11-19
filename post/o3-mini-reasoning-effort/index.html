@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱 - farfood</title>
+<title>o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍 - farfood</title>
 <meta name="description" content="一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/o3-mini-reasoning-effort/">
@@ -15,16 +15,16 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱", "description": "一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。", "datePublished": "2025-02-03T10:05:00+08:00", "dateModified": "2025-02-03T10:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-mini-reasoning-effort/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, API, 成本"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍", "description": "一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。", "datePublished": "2025-02-03T10:05:00+08:00", "dateModified": "2025-02-03T10:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-mini-reasoning-effort/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, API, 成本"}</script>
 
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱 - farfood">
+<meta property="og:title" content="o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍 - farfood">
 <meta property="og:description" content="一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/o3-mini-reasoning-effort/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱 - farfood">
+<meta name="twitter:title" content="o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍 - farfood">
 <meta name="twitter:description" content="一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。">
 <meta property="article:published_time" content="2025-02-03T10:05:00+08:00">
 <meta name="keywords" content="OpenAI, 推理模型, API, 成本">
@@ -37,29 +37,31 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</h1>
-    <p class="meta"><time datetime="2025-02-03T10:05:00">2025-02-03</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1482 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <h1 class="post-title">o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍</h1>
+    <p class="meta"><time datetime="2025-02-03T10:05:00">2025-02-03</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1571 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#周一先按默认接">周一：先按默认接</a></li>
-<li class="h2"><a href="#周二加路由第一次降本">周二：加路由，第一次降本</a></li>
-<li class="h2"><a href="#周三把评估集补上">周三：把评估集补上</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先按默认接">先按默认接</a></li>
+<li class="h2"><a href="#加路由第一次降本">加路由，第一次降本</a></li>
+<li class="h2"><a href="#把评估集补上">把评估集补上</a></li>
 <li class="h2"><a href="#数字之外的两件事">数字之外的两件事</a></li>
-<li class="h2"><a href="#现在回头看">现在回头看</a></li>
+<li class="h2"><a href="#路由表上线之后的两个细节">路由表上线之后的两个细节</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>1 月 31 日 o3-mini 上线，2 月 1 日我们的模型网关就加了它。一周后的账单很难看，这篇是那周的记录。</p>
-<h2 id="周一先按默认接">周一：先按默认接</h2>
+<p>1 月 31 日 o3-mini 上线，2 月 1 日我们的模型网关就加了它。三天跑到现在的账单很难看，这篇是这三天的记录。</p>
+<h2 id="先按默认接">先按默认接</h2>
 <p>默认档是 medium。第一版接入很朴素——把所有 <code>gpt-4o</code> 的调用换成 <code>o3-mini</code>，<code>reasoning_effort</code> 不传。</p>
 <p>第一天跑完，成本比原来高 <strong>2.3 倍</strong>。原因不复杂：思考 token 也按输出计费，而输出单价 \$4.40 是 GPT-4o 的 40%——问题是思考 token 让输出量涨了 5～8 倍，一乘就超了。</p>
 <p>当时贴在图上的错误判断是“推理模型就是贵”。后来把 usage 拆开看才发现，<strong>8 成成本集中在 3 类短请求上</strong>：意图分类、字段抽取、改写润色。这三类根本不需要思考。</p>
-<h2 id="周二加路由第一次降本">周二：加路由，第一次降本</h2>
+<h2 id="加路由第一次降本">加路由，第一次降本</h2>
 <p>改法很土：按 prompt 长度和任务类型打标，分类/抽取类强制 <code>low</code>，其余保持 <code>medium</code>。</p>
 <p>当天成本降到原来的 <strong>1.4 倍</strong>，但质量报警了——<code>low</code> 档在“多条件筛选”这类任务上开始漏条件（漏一个条件，下游全错）。</p>
 <p>这是个有用的教训：<strong>effort 不是“质量旋钮”，是“思考深度旋钮”</strong>。任务本身不需要多步推理时，降档无损；需要时，降档直接掉正确率。</p>
-<h2 id="周三把评估集补上">周三：把评估集补上</h2>
+<h2 id="把评估集补上">把评估集补上</h2>
 <p>之前我们只有一个“人工看 50 条”的土办法，没法支撑按档位决策。于是给三类任务各标了 200 条，加了两条判定：</p>
 <ul>
 <li>严格匹配（分类/抽取）：字段完全一致才算过；</li>
@@ -80,22 +82,18 @@
 </tbody>
 </table></div>
 <p>表格读起来很干脆：<strong>分类任务 low 就够（差 0.9 分，成本 1/4），抽取和筛选必须 medium 起</strong>。而 high 相对 medium 的提升只有 0.5～0.6 分，价格却是 2～3 倍。</p>
-<p>那周最后定的规则：</p>
+<p>最后定的规则：</p>
 <pre data-lang="text"><code class="language-text">classify / extract_simple  -&gt; low
 extract_compound / filter  -&gt; medium
 debug / math / code_review -&gt; high   (~8% of traffic)</code></pre>
-<p>月底账单：成本回到基线的 <strong>1.29 倍</strong>，比第一版省了 71%，而人工抽检的通过率只降了 0.7 个百分点。</p>
+<p>三天累计账单：成本回到基线的 <strong>1.29 倍</strong>（2.3 → 1.29，省掉 44%），而人工抽检的通过率只降了 0.7 个百分点。</p>
 <h2 id="数字之外的两件事">数字之外的两件事</h2>
 <p><strong>一、延迟分布变了，重试策略得跟着改。</strong> 高 effort 的 P99 从 4 秒跳到 34 秒。我们原来“超时 10 秒就重试”的策略直接导致两次计费，改成“超时只上报不重试 + 前端显示进度”之后，成本才稳定。</p>
 <p><strong>二、思考 token 不可缓存。</strong> 输入侧缓存命中能省一半（\$0.55 vs \$1.10），但思考部分每次都要重算。所以长 system prompt + 高 effort 的组合，边际成本比直觉高。</p>
-<h2 id="现在回头看">现在回头看</h2>
-<p>那周学到的三件事，后来一直用：</p>
-<ol>
-<li><strong>先量再降</strong>。没有评估集，任何“省钱”都是在赌正确率；</li>
-<li><strong>路由要按任务分，不要按用户分</strong>。同一个用户的不同请求，难度差得远；</li>
-<li><strong>effort 会改变延迟分布</strong>，容量规划必须按 P99 而不是均值。</li>
-</ol>
-<p>至于 o3-mini 本身：它把“推理”从旗舰能力变成了可调参数，这件事比它拿了多少分重要得多。<code>reasoning_effort</code> 现在是我们网关里最常被改的一个字段。</p>
+<h2 id="路由表上线之后的两个细节">路由表上线之后的两个细节</h2>
+<p>打标按 prompt 模板 ID，不按租户。同一个租户的意图分类和事故排查会同时进来，按用户分档两头得罪：便宜任务被抬档，贵任务被压档。模板 ID 的好处是规则可解释、可回滚，出问题能一眼看出是哪条规则改的。</p>
+<p>限流也要分档。<code>high</code> 档单独一条并发队列，我们试过共用一个池子，一批代码审查把 <code>low</code> 的分类请求挤到排队，P99 比降本之前还差。分池之后 <code>high</code> 队列的积压只影响那 8% 的请求，其余流量有独立的容量。</p>
+<p><code>reasoning_effort</code> 现在是我改得最频繁的一个字段：它把“推理”从旗舰能力变成了可以按请求调的参数，代价是每个月的账得按路由表估，按模型名估不准了。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li>三档 effort 与定价：&lt;https://simonwillison.net/2025/Jan/31/o3-mini/&gt;</li>
@@ -104,9 +102,8 @@ debug / math / code_review -&gt; high   (~8% of traffic)</code></pre>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/openai/">OpenAI</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/api/">API</a><a class="tag" href="/tags/成本/">成本</a></p>
-  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=o3-mini+%E4%B8%8A%E7%BA%BF%E9%82%A3%E5%91%A8%EF%BC%8C%E6%88%91%E4%BB%AC%E6%8A%8A+effort+%E4%BB%8E+high+%E6%94%B9%E6%88%90+low+%E7%9C%81%E4%BA%86+71%25+%E7%9A%84%E9%92%B1" target="_blank" rel="noopener">分享到 X</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=o3-mini+%E4%B8%8A%E7%BA%BF%E4%B8%89%E5%A4%A9%EF%BC%9A%E9%9D%A0+effort+%E8%B7%AF%E7%94%B1%E6%8A%8A%E6%88%90%E6%9C%AC%E4%BB%8E+2.3+%E5%80%8D%E5%8E%8B%E5%9B%9E+1.29+%E5%80%8D" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/claude-3.7-sonnet-hybrid-reasoning/">← Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><a class="next" href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li><li><a href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><time>2025-06</time></li><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -148,6 +145,13 @@ debug / math / code_review -&gt; high   (~8% of traffic)</code></pre>
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#先按默认接">先按默认接</a></li>
+<li class="h2"><a href="#加路由第一次降本">加路由，第一次降本</a></li>
+<li class="h2"><a href="#把评估集补上">把评估集补上</a></li>
+<li class="h2"><a href="#数字之外的两件事">数字之外的两件事</a></li>
+<li class="h2"><a href="#路由表上线之后的两个细节">路由表上线之后的两个细节</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li><li><a href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><time>2025-06</time></li><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

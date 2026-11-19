@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级 - farfood</title>
-<meta name="description" content="2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。">
+<meta name="description" content="2.8T、1M 上下文、原生视觉、KDA + AttnRes。许可证换成自定义的 K3 License。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级", "description": "2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。", "datePublished": "2026-07-17T09:10:00+08:00", "dateModified": "2026-07-17T09:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Moonshot, 开源模型, 长上下文, 注意力, 多模态"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级", "description": "2.8T、1M 上下文、原生视觉、KDA + AttnRes。许可证换成自定义的 K3 License。", "datePublished": "2026-07-17T09:10:00+08:00", "dateModified": "2026-07-17T09:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Moonshot, 开源模型, 长上下文, 注意力, 多模态"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级 - farfood">
-<meta property="og:description" content="2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。">
+<meta property="og:description" content="2.8T、1M 上下文、原生视觉、KDA + AttnRes。许可证换成自定义的 K3 License。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级 - farfood">
-<meta name="twitter:description" content="2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。">
+<meta name="twitter:description" content="2.8T、1M 上下文、原生视觉、KDA + AttnRes。许可证换成自定义的 K3 License。">
 <meta property="article:published_time" content="2026-07-17T09:10:00+08:00">
 <meta name="keywords" content="Moonshot, 开源模型, 长上下文, 注意力, 多模态">
 </head>
@@ -37,16 +37,18 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级</h1>
-    <p class="meta"><time datetime="2026-07-17T09:10:00">2026-07-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1801 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-07-17T09:10:00">2026-07-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1882 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#kda把线性注意力做成可更新状态">KDA：把线性注意力做成&quot;可更新状态&quot;</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#kda把线性注意力做成可更新状态">KDA：把线性注意力做成&quot;可更新状态&quot;</a></li>
 <li class="h2"><a href="#attnres给层间加残差注意力">AttnRes：给层间加&quot;残差注意力&quot;</a></li>
 <li class="h2"><a href="#许可证不是-mit">许可证：不是 MIT</a></li>
-<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#模型卡里的那句话">模型卡里的那句话</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>7 月 16 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K3">Kimi K3</a>：<strong>2.8T 参数</strong>、<strong>1M 上下文</strong>、原生视觉（文本/图像/视频同一模型）。</p>
@@ -97,13 +99,10 @@
 <tr><td>自定义许可（K3 类）</td><td>需逐条评估，可能限制托管服务</td></tr>
 </tbody>
 </table></div>
-<h2 id="最后说三句">最后说三句</h2>
-<ul>
-<li>“开放权重”和“开源”继续分化，权重能下载 ≠ 能商用，选型时先看许可证再看分数。</li>
-<li><strong>线性注意力 + 残差改造会成为 2026-2027 的主线</strong>，因为长上下文的成本结构逼着大家动结构，而不是只堆数据。</li>
-<li>3T 级模型的象征意义大于实用价值，能跑它的机构屈指可数，但它把“开源上限”的标尺又推了一格。</li>
-<li>如果你自己部署：这类模型的现实用法是<strong>评估 API 供应商的成本底线</strong>，而不是自己部署。</li>
-</ul>
+<h2 id="模型卡里的那句话">模型卡里的那句话</h2>
+<p>模型卡写的是“世界首个开放的 3T 级模型”。同一句里更重要的是下一行：<code>license_name: &quot;kimi-k3&quot;</code>。K2 那版用的还是 Modified MIT，K3 换成了自定义条款，于是“开放”这个词能承载的东西少了一截——权重可以下载、可以自跑，能不能托管给第三方卖，要逐条读。</p>
+<p>判断一个权重能不能进生产，读 <code>license_name</code> 比读标题有用。</p>
+<p>至于 3T 级本身，能跑它的机构屈指可数，这类模型的现实用法是<strong>摸 API 供应商的成本底线</strong>，不是自己部署。长上下文逼着大家动结构，线性注意力加残差改造这条线，2027 年之前都会有人接着改。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>模型卡（KDA/AttnRes、1M 上下文、许可证）：<a href="https://huggingface.co/moonshotai/Kimi-K3">Kimi-K3</a></li>
@@ -114,7 +113,6 @@
   <p class="tag-list"><a class="tag" href="/tags/moonshot/">Moonshot</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/注意力/">注意力</a><a class="tag" href="/tags/多模态/">多模态</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Kimi+K3%EF%BC%9A2.8T+%E5%8F%82%E6%95%B0+%2B+KDA%EF%BC%8C%E5%BC%80%E6%BA%90%E7%AC%AC%E4%B8%80%E6%AC%A1%E6%91%B8%E5%88%B0+3T+%E7%BA%A7" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/qwen3.8-2.4t-preview/">← Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><a class="next" href="/post/longcat-2.0-asic-superpod/">LongCat-2.0：1.6T 模型，全程在 ASIC 上训完 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a><time>2026-03</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -156,6 +154,12 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#kda把线性注意力做成可更新状态">KDA：把线性注意力做成&quot;可更新状态&quot;</a></li>
+<li class="h2"><a href="#attnres给层间加残差注意力">AttnRes：给层间加&quot;残差注意力&quot;</a></li>
+<li class="h2"><a href="#许可证不是-mit">许可证：不是 MIT</a></li>
+<li class="h2"><a href="#模型卡里的那句话">模型卡里的那句话</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a><time>2026-03</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

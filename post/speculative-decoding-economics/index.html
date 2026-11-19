@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>投机解码踩坑记：开了之后反而慢了 30% - farfood</title>
-<meta name="description" content="一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。">
+<meta name="description" content="一次上线记录：默认开投机解码，单流涨 1.8 倍，高并发和长上下文下掉回 0.7 倍，靠分档开关救回来。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/speculative-decoding-economics/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "投机解码踩坑记：开了之后反而慢了 30%", "description": "一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。", "datePublished": "2026-05-30T22:15:00+08:00", "dateModified": "2026-05-30T22:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/speculative-decoding-economics/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "投机解码, MTP, 推理优化, vLLM, 引擎"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "投机解码踩坑记：开了之后反而慢了 30%", "description": "一次上线记录：默认开投机解码，单流涨 1.8 倍，高并发和长上下文下掉回 0.7 倍，靠分档开关救回来。", "datePublished": "2026-05-30T22:15:00+08:00", "dateModified": "2026-05-30T22:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/speculative-decoding-economics/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "投机解码, MTP, 推理优化, vLLM, 引擎"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="投机解码踩坑记：开了之后反而慢了 30% - farfood">
-<meta property="og:description" content="一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。">
+<meta property="og:description" content="一次上线记录：默认开投机解码，单流涨 1.8 倍，高并发和长上下文下掉回 0.7 倍，靠分档开关救回来。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/speculative-decoding-economics/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="投机解码踩坑记：开了之后反而慢了 30% - farfood">
-<meta name="twitter:description" content="一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。">
+<meta name="twitter:description" content="一次上线记录：默认开投机解码，单流涨 1.8 倍，高并发和长上下文下掉回 0.7 倍，靠分档开关救回来。">
 <meta property="article:published_time" content="2026-05-30T22:15:00+08:00">
 <meta name="keywords" content="投机解码, MTP, 推理优化, vLLM, 引擎">
 </head>
@@ -37,22 +37,23 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">投机解码踩坑记：开了之后反而慢了 30%</h1>
-    <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time><span class="sep">·</span>3 分钟<span class="sep">·</span>1215 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1712 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#第一版直接照文档开">第一版：直接照文档开</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#第一版直接照文档开">第一版：直接照文档开</a></li>
 <li class="h2"><a href="#为什么高并发会退化">为什么高并发会退化</a></li>
 <li class="h2"><a href="#第二个坑长上下文把它彻底干废">第二个坑：长上下文把它彻底干废</a></li>
 <li class="h2"><a href="#第三个坑接受率没人看">第三个坑：接受率没人看</a></li>
-<li class="h2"><a href="#最后的配置">最后的配置</a></li>
 <li class="h2"><a href="#数字复盘">数字复盘</a></li>
-<li class="h2"><a href="#记下来的四条">记下来的四条</a></li>
+<li class="h2"><a href="#现在留在配置里的三行">现在留在配置里的三行</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>先说结论：<strong>投机解码不是“开了就快”，它是一笔浮动的交易。</strong> 这篇是我们上线那两周的踩坑记录。</p>
+<p>照文档把投机解码打开，单流快了一倍，我们当天就全量推了。第二天并发一上来，集群吞吐反而掉了三分之一。这篇是那两周的记录。</p>
 <h2 id="第一版直接照文档开">第一版：直接照文档开</h2>
 <p>vLLM 的文档给了 <code>--speculative_config</code>，我们就照抄了一版，draft 用模型自带的 MTP 头，<code>num_speculative_tokens=3</code>。</p>
 <p>压测结果很漂亮：单流从 42 tok/s 涨到 76 tok/s（1.8 倍），P50 延迟降了 40%。当天就上线了。</p>
@@ -74,10 +75,11 @@
 <p>投机解码在验证阶段要一次性算 k 个位置，KV 峰值更高；显存先满，batch 变小，吞吐就被拉下来。<strong>单流快 ≠ 总吞吐高</strong>，这是第一个坑。</p>
 <h2 id="第二个坑长上下文把它彻底干废">第二个坑：长上下文把它彻底干废</h2>
 <p>我们的请求里有约 15% 是长文档（&gt;64K token）。开投机后，这部分请求的 P99 从 18 秒变成 30 秒。</p>
-<p>原因在带宽账上：</p>
-<pre data-lang="text"><code class="language-text">plain decode  : read KV once per token        (64K x 320B ~ 20MB)
-speculative   : verify k=3 reads 3 positions  (60MB) for ~2 tokens</code></pre>
-<p>当 KV 读取已经超过权重读取时（长上下文），<strong>投机解码是用更贵的那部分资源换更便宜的那部分</strong>——完全反了。</p>
+<p>原因是算力账，不是带宽账。验证 k 个候选时，KV 前缀只读一次（64K × 320B ≈ 20MB，权重读取仍是每步数十 GB 的量级），真正翻倍的是 attention 算力：</p>
+<pre data-lang="text"><code class="language-text">plain decode  : attention over L context, 1x per token   (~L FLOPs/token)
+speculative   : verify k=3 candidates, attention over the same L, 3x
+                KV read shared once, weight read still once per step</code></pre>
+<p>短上下文时权重读取占大头，多算 2 份 attention 几乎不要钱；长上下文时 attention 那项随 L 线性涨，验证 3 个候选就是把这一项乘 3，而接受长度只有 2 左右，摊完是负收益。我们量到的拐点在 32K～64K 之间，和 70B 级模型 attention 计算超过权重读取的那条线基本重合。</p>
 <h2 id="第三个坑接受率没人看">第三个坑：接受率没人看</h2>
 <p>上线一周后我们才加上接受率监控，发现：</p>
 <div class="table-wrap"><table>
@@ -92,19 +94,9 @@ speculative   : verify k=3 reads 3 positions  (60MB) for ~2 tokens</code></pre>
 <tr><td>开放式问答</td><td>1.1</td></tr>
 </tbody>
 </table></div>
-<p><code>a &lt; 1.5</code> 的那些流量，开投机就是纯亏——draft 的成本没被摊掉。而这类流量占了 40%。</p>
-<h2 id="最后的配置">最后的配置</h2>
-<p>改了三件事之后，整体吞吐 1.35 倍、P99 反而降了：</p>
-<pre data-lang="text"><code class="language-text">1) enable only for prompts tagged code / structured output
-2) force off above 32K context
-3) drop k from 3 to 2 when concurrency &gt; 24, give VRAM back to batch</code></pre>
-<p>配置大概是这样的（示意，不是完整配置）：</p>
-<pre data-lang="yaml"><code class="language-yaml">speculative:
-  method: mtp
-  num_speculative_tokens: 2      # lowered under high concurrency
-  max_context_for_spec: 32768    # disabled for long context
-  enable_when: [code, structured]</code></pre>
+<p>接受长度 <code>a</code> 低于 1.5 的那些流量，开投机就是纯亏，draft 的成本没被摊掉，而这类流量占了 40%。</p>
 <h2 id="数字复盘">数字复盘</h2>
+<p>改了三处的开关：只对打了 code / structured 标签的 prompt 开、超过 32K 上下文强关、并发过 24 时把 k 从 3 降到 2 把显存还给 batch。改完整体吞吐 1.35 倍、P99 反而降了：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>场景</th>
@@ -119,14 +111,14 @@ speculative   : verify k=3 reads 3 positions  (60MB) for ~2 tokens</code></pre>
 <tr><td>每千 token 成本</td><td>1.0×</td><td>1.1×</td><td><strong>0.82×</strong></td></tr>
 </tbody>
 </table></div>
-<h2 id="记下来的四条">记下来的四条</h2>
-<ol>
-<li><strong>先看接受率再开</strong>，a &lt; 1.5 的流量直接排除；</li>
-<li><strong>长上下文默认关</strong>，KV 读取已经是瓶颈时，投机只会更慢；</li>
-<li><strong>把 k 和 batch 一起调</strong>，显存是共享的，不是免费的；</li>
-<li><strong>单流吞吐和集群吞吐要分开压测</strong>，只看一个指标一定翻车。</li>
-</ol>
-<p>顺带一提，今年几个新模型（GLM-5.2、Hy4、Step 3.7 Flash）都内置了 MTP 层，官方还说把接受长度提升了 10%～20%。内置确实省事——省掉了跨模型的 KV 管理——但“要不要开”这个问题一点没变。</p>
+<h2 id="现在留在配置里的三行">现在留在配置里的三行</h2>
+<p>配置最后收敛成三行，每行后面都挂着一个数字：</p>
+<pre data-lang="yaml"><code class="language-yaml">speculative:
+  method: mtp
+  enable_when: [code, structured]   # 其余流量族 a 只有 1.1～1.3，开了纯亏（占 40%）
+  max_context_for_spec: 32768       # 再长，attention 那项就要乘 k
+  num_speculative_tokens: 2         # 并发 &gt; 24 时给 batch 让显存</code></pre>
+<p>这三行不用再动，要动的是盯着接受率的告警线：某个流量族 5 分钟滑动平均掉到 1.5 就把 tag 摘掉，回到 1.8 再加回来。内置 MTP 的模型（GLM-5.2、Hy4、Step 3.7 Flash）官方说接受长度提升 10%～20%，落到这条线上就是阈值要不要跟着调，而不是内置了就该默认开。</p>
 <h2 id="来源">来源</h2>
 <ul>
 <li>EAGLE 投机解码：&lt;https://arxiv.org/abs/2406.16858&gt;</li>
@@ -138,7 +130,6 @@ speculative   : verify k=3 reads 3 positions  (60MB) for ~2 tokens</code></pre>
   <p class="tag-list"><a class="tag" href="/tags/投机解码/">投机解码</a><a class="tag" href="/tags/mtp/">MTP</a><a class="tag" href="/tags/推理优化/">推理优化</a><a class="tag" href="/tags/vllm/">vLLM</a><a class="tag" href="/tags/引擎/">引擎</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8A%95%E6%9C%BA%E8%A7%A3%E7%A0%81%E8%B8%A9%E5%9D%91%E8%AE%B0%EF%BC%9A%E5%BC%80%E4%BA%86%E4%B9%8B%E5%90%8E%E5%8F%8D%E8%80%8C%E6%85%A2%E4%BA%86+30%25" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/glm-5.2-indexshare-1m-context/">← GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a><a class="next" href="/post/step-3.7-flash-11b-active/">Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a><time>2026-01</time></li><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -180,6 +171,14 @@ speculative   : verify k=3 reads 3 positions  (60MB) for ~2 tokens</code></pre>
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#第一版直接照文档开">第一版：直接照文档开</a></li>
+<li class="h2"><a href="#为什么高并发会退化">为什么高并发会退化</a></li>
+<li class="h2"><a href="#第二个坑长上下文把它彻底干废">第二个坑：长上下文把它彻底干废</a></li>
+<li class="h2"><a href="#第三个坑接受率没人看">第三个坑：接受率没人看</a></li>
+<li class="h2"><a href="#数字复盘">数字复盘</a></li>
+<li class="h2"><a href="#现在留在配置里的三行">现在留在配置里的三行</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a><time>2026-01</time></li><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</a><time>2026-09</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

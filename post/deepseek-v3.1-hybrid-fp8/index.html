@@ -37,16 +37,18 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</h1>
-    <p class="meta"><time datetime="2025-08-22T22:15:00">2025-08-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2022 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-08-22T22:15:00">2025-08-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2006 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一个权重两种模式的实现">一个权重，两种模式的实现</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一个权重两种模式的实现">一个权重，两种模式的实现</a></li>
 <li class="h2"><a href="#128k-是续训出来的">128K 是&quot;续训&quot;出来的</a></li>
 <li class="h2"><a href="#工具调用从能调到调得对">工具调用：从&quot;能调&quot;到&quot;调得对&quot;</a></li>
-<li class="h2"><a href="#我的看法">我的看法</a></li>
+<li class="h2"><a href="#什么时候别选它">什么时候别选它</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>8 月 21 日，DeepSeek 放出 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.1">V3.1</a>。这是把两条产品线合并的一步：<strong>R1 的推理能力 + V3 的通用能力，合成一个权重</strong>。</p>
@@ -70,12 +72,12 @@
 <li>630B / 209B 这两个数字说明：<strong>长上下文的成本主要在数据工程</strong>，不在算力。</li>
 </ul>
 <p>对使用者：标称 128K 的模型，实际可用区间通常在 60～100K（再长就开始丢细节）。做产品时按 64K 设计比较稳。</p>
-<p>再往下看，UE8M0 FP8：一条不太显眼但很关键的线：</p>
-<p>V3.1 的权重和激活都用 <strong>UE8M0 的 FP8 scale 格式</strong>（无符号指数、8 位尾数共享 scale），目的写的是“适配 microscaling 数据格式”，实现细节在 <a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a>。</p>
-<p>为什么值得单独说：</p>
+<p>再往下看 UE8M0 FP8，这条线不太显眼但很关键。</p>
+<p>V3.1 的权重和激活都用 <strong>UE8M0 的 FP8 scale 格式</strong>（8 位无符号指数 + 0 位尾数，所以 scale 只能是 2 的幂），目的写的是“适配 microscaling 数据格式”，实现细节在 <a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a>。</p>
+<p>这条线上要盯的是 scale 怎么定：</p>
 <ul>
 <li>FP8 推理的精度问题主要来自 <strong>scale 的选择</strong>，不是 8 位本身；</li>
-<li>UE8M0 的 scale 只有 2 的幂，硬件实现简单（移位即可），但需要软件侧保证动态范围；</li>
+<li>没有尾数位，硬件实现简单（移位即可），但需要软件侧保证动态范围；</li>
 <li>这套格式和下一代加速器的 microscaling 指令对齐，等于<strong>提前把权重格式准备好了</strong>。</li>
 </ul>
 <p>工程上的直接影响：老版本推理框架可能不认这种 scale，部署前要确认 vLLM/SGLang 的版本矩阵；另外 FP8 下数值稳定性对长思考更敏感，温度与 top-p 的默认值要重新调。</p>
@@ -95,13 +97,14 @@
 </tbody>
 </table></div>
 <p>agent 的成本是<strong>步数乘思考长度</strong>。把单步思考压下来，比把单步分数提上去更省钱——这也是“混合模式 + 高效思考”成为主流的原因。</p>
-<h2 id="我的看法">我的看法</h2>
+<h2 id="什么时候别选它">什么时候别选它</h2>
 <ul>
-<li>“一个权重两种模式 + 一个 token 切换”会成为开源标准做法。两套权重的时代基本结束了。</li>
-<li><strong>FP8 格式之争刚开始</strong>。谁的低精度格式被硬件和框架同时支持，谁就能在推理成本上占两年便宜。</li>
-<li>长上下文的价格被高估了能力、低估了成本。续训数据是门槛，不是算力。</li>
-<li>给自部署团队的一条实用建议：<strong>V3.1 的价值主要在“单权重 + FP8 + 128K”这套组合</strong>，如果只要推理能力，R1-0528 蒸馏版更划算；如果要做 agent 底座，V3.1 是目前开源里最省心的选择之一。</li>
+<li><strong>只要单轮难题的分数</strong>：R1-0528 蒸馏版在同样硬件上更省，混合模式对你没有增量；</li>
+<li><strong>上下文稳定在 8K 以内</strong>：128K 的续训成本你付了，但用不上；</li>
+<li><strong>推理框架冻结、短期不能升级</strong>：UE8M0 的 scale 会直接卡住部署，报错信息也不会告诉你缺哪个版本；</li>
+<li><strong>需要确定性行为</strong>：chat template 里那个 <code>&lt;/think&gt;</code> 前缀写错不报错，只会静默走错模式。</li>
 </ul>
+<p>四条里后两条是硬伤，前两条只是花钱买了用不到的东西。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>模型卡（模式切换、上下文扩展、FP8 格式）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.1">DeepSeek-V3.1</a></li>
@@ -112,7 +115,6 @@
   <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/fp8/">FP8</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/推理优化/">推理优化</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-V3.1%EF%BC%9A%E4%B8%80%E4%B8%AA%E6%A8%A1%E5%9E%8B%E4%B8%A4%E7%A7%8D%E6%A8%A1%E5%BC%8F%EF%BC%8C%E5%92%8C%E4%B8%80%E6%AC%A1+FP8+%E6%A0%BC%E5%BC%8F%E7%9A%84%E6%8A%BC%E6%B3%A8" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/deepseek-v3.2-exp-sparse-attention/">← DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><a class="next" href="/post/gpt-5-router-system/">GPT-5 是个路由器，那评测到底在测谁？ →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -154,6 +156,12 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#一个权重两种模式的实现">一个权重，两种模式的实现</a></li>
+<li class="h2"><a href="#128k-是续训出来的">128K 是&quot;续训&quot;出来的</a></li>
+<li class="h2"><a href="#工具调用从能调到调得对">工具调用：从&quot;能调&quot;到&quot;调得对&quot;</a></li>
+<li class="h2"><a href="#什么时候别选它">什么时候别选它</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

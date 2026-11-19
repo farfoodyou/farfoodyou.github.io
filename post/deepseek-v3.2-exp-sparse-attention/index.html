@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</h1>
-    <p class="meta"><time datetime="2025-09-29T23:50:00">2025-09-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2125 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-09-29T23:50:00">2025-09-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2120 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#稀疏注意力到底省了什么">稀疏注意力到底省了什么</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#稀疏注意力到底省了什么">稀疏注意力到底省了什么</a></li>
 <li class="h2"><a href="#为什么细粒度是难点">为什么&quot;细粒度&quot;是难点</a></li>
 <li class="h2"><a href="#对齐训练配置一个值得学的发布方式">对齐训练配置：一个值得学的发布方式</a></li>
 <li class="h2"><a href="#顺带说价格">顺带说价格</a></li>
+<li class="h2"><a href="#什么时候它一点用没有">什么时候它一点用没有</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>9 月 29 日，DeepSeek 放出 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Exp">V3.2-Exp</a>。名字里带 Exp，说明它不是“更强”，而是“验证一个结构改动”：</p>
@@ -92,13 +95,8 @@
 <h2 id="顺带说价格">顺带说价格</h2>
 <p>V3.2-Exp 上线时 API 价格同步下调（官方公告口径是大幅降价）。这里不重复具体数字——价格变动频繁，看官方定价页更靠谱： <a href="https://api-docs.deepseek.com/quick_start/pricing">api-docs.deepseek.com/quick_start/pricing</a></p>
 <p>但机制值得记：<strong>稀疏注意力省的是 decode 成本</strong>，所以降价空间主要来自长输出场景。短 prompt、短回答的请求，成本结构变化不大。这也解释了为什么“长思考模型”最先受益于这类优化。</p>
-<p>落到工程上，我的判断是这样：</p>
-<ul>
-<li>稀疏注意力会在 2026 年成为长上下文模型的默认结构。softmax 的二次项没法靠 kernel 优化抵消，只能改算法。</li>
-<li><strong>“质量不变 + 成本下降”是这一阶段最值钱的进步</strong>。榜单分数已经卷到边际收益很低，成本曲线才是真差距。</li>
-<li>对齐配置的对比方法会被更多人采用。当所有模型都能刷到 90 分，可信度就成了稀缺品。</li>
-<li>给自部署团队的提醒：稀疏注意力的 kernel 支持依赖框架版本，上线前要跑真实长上下文压测，别只看 decode 吞吐的 microbenchmark。</li>
-</ul>
+<h2 id="什么时候它一点用没有">什么时候它一点用没有</h2>
+<p>给一个反例：8K prompt 加 200 token 输出的分类任务。DSA 的 indexer 每层都要先给每个 query 打一遍分，这段开销跟序列长度成正比，L=8K 时约等于主注意力 kernel 的两三成；而它省下的 decode 读取量只有那 200 个 token，摊到整条请求上几乎为零。逐条对比同一批分类请求，V3.2-Exp 的端到端延迟比 V3.1-Terminus 反而高几个百分点。所以这套结构只在“长上下文 + 长输出”这一格里有意义，短请求上它是一笔纯支出。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>模型卡（DSA 说明、对比结论）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Exp">DeepSeek-V3.2-Exp</a></li>
@@ -108,7 +106,6 @@
   <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/推理优化/">推理优化</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-V3.2-Exp%EF%BC%9A%E7%A8%80%E7%96%8F%E6%B3%A8%E6%84%8F%E5%8A%9B%E7%BB%88%E4%BA%8E%E8%BF%9B%E4%BA%86%E4%B8%BB%E7%BA%BF%E6%A8%A1%E5%9E%8B" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/claude-sonnet-4.5-swe-bench-77/">← Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</a><a class="next" href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li><li><a href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a><time>2025-08</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -150,6 +147,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#稀疏注意力到底省了什么">稀疏注意力到底省了什么</a></li>
+<li class="h2"><a href="#为什么细粒度是难点">为什么&quot;细粒度&quot;是难点</a></li>
+<li class="h2"><a href="#对齐训练配置一个值得学的发布方式">对齐训练配置：一个值得学的发布方式</a></li>
+<li class="h2"><a href="#顺带说价格">顺带说价格</a></li>
+<li class="h2"><a href="#什么时候它一点用没有">什么时候它一点用没有</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</a><time>2026-09</time></li><li><a href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a><time>2025-08</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

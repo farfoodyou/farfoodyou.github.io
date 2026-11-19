@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>o3 与 o4-mini：在思考过程里调用工具 - farfood</title>
-<meta name="description" content="4 月 16 日 o3 和 o4-mini 一起上线。它们的关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」：模型可以在 CoT 里搜网页、跑 Python、放大图片。">
+<meta name="description" content="4 月 16 日 o3 与 o4-mini 上线。关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3 与 o4-mini：在思考过程里调用工具", "description": "4 月 16 日 o3 和 o4-mini 一起上线。它们的关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」：模型可以在 CoT 里搜网页、跑 Python、放大图片。", "datePublished": "2025-04-17T09:50:00+08:00", "dateModified": "2025-04-17T09:50:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, Agent, 多模态"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3 与 o4-mini：在思考过程里调用工具", "description": "4 月 16 日 o3 与 o4-mini 上线。关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」。", "datePublished": "2025-04-17T09:50:00+08:00", "dateModified": "2025-04-17T09:50:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, Agent, 多模态"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="o3 与 o4-mini：在思考过程里调用工具 - farfood">
-<meta property="og:description" content="4 月 16 日 o3 和 o4-mini 一起上线。它们的关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」：模型可以在 CoT 里搜网页、跑 Python、放大图片。">
+<meta property="og:description" content="4 月 16 日 o3 与 o4-mini 上线。关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/o3-o4-mini-tools-in-thinking/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="o3 与 o4-mini：在思考过程里调用工具 - farfood">
-<meta name="twitter:description" content="4 月 16 日 o3 和 o4-mini 一起上线。它们的关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」：模型可以在 CoT 里搜网页、跑 Python、放大图片。">
+<meta name="twitter:description" content="4 月 16 日 o3 与 o4-mini 上线。关键变化不是分数，而是工具调用从「思考之后」挪进了「思考之中」。">
 <meta property="article:published_time" content="2025-04-17T09:50:00+08:00">
 <meta name="keywords" content="OpenAI, 推理模型, Agent, 多模态">
 </head>
@@ -37,13 +37,15 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">o3 与 o4-mini：在思考过程里调用工具</h1>
-    <p class="meta"><time datetime="2025-04-17T09:50:00">2025-04-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2290 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-04-17T09:50:00">2025-04-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2315 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#从串行到思考内工具">从&quot;串行&quot;到&quot;思考内工具&quot;</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#从串行到思考内工具">从&quot;串行&quot;到&quot;思考内工具&quot;</a></li>
 <li class="h2"><a href="#视觉进了推理链">视觉进了推理链</a></li>
 <li class="h2"><a href="#o3-和-o4-mini-怎么分工">o3 和 o4-mini 怎么分工</a></li>
 <li class="h2"><a href="#工程上的连锁反应">工程上的连锁反应</a></li>
@@ -60,9 +62,9 @@
                 +-- needs detail --&gt; crop/zoom ---&gt; back to CoT
         -&gt; keep reasoning -&gt; answer</code></pre>
 <p>差别在于<strong>中间结论可以被外部事实纠正</strong>。纯 CoT 的失败模式是“一路自信地推错”，工具插入后，模型有机会在中途发现“我记的数字不对”。</p>
-<p>代价也很清楚：一次请求可能触发多次工具调用，延迟从“一次生成”变成“多轮生成 + IO”。<strong>成本模型彻底变了</strong>——不再按 token 线性估算，而是按“工具调用次数 × 每轮上下文”估算，且上下文会随着工具结果不断增长。</p>
+<p>代价也很清楚：一次请求可能触发多次工具调用，延迟从“一次生成”变成“多轮生成 + IO”。<strong>成本模型彻底变了</strong>，不再按 token 线性估算，而是按“工具调用次数 × 每轮上下文”估算，且上下文会随着工具结果不断增长。</p>
 <h2 id="视觉进了推理链">视觉进了推理链</h2>
-<p>o3/o4-mini 都是视觉语言模型，宣传语是 <a href="https://en.wikipedia.org/wiki/OpenAI_o4-mini">“think with images&quot;</a>。实用差别在于：模型可以对图像做<strong>操作</strong>——放大局部、旋转、裁剪后再看，而不是一次性把整张图编码进上下文。</p>
+<p>o3/o4-mini 都是视觉语言模型，宣传语是 <a href="https://en.wikipedia.org/wiki/OpenAI_o4-mini">“think with images&quot;</a>。实用差别在于：模型可以对图像做<strong>操作</strong>，放大局部、旋转、裁剪后再看，而不是一次性把整张图编码进上下文。</p>
 <p>对工程来说这意味着：</p>
 <ul>
 <li>图像 token 的消耗不再是常数，取决于模型看了几次、看了多大区域；</li>
@@ -76,7 +78,7 @@
 <li><strong>o4-mini-high</strong>：高 effort 档，只在付费档提供。</li>
 </ul>
 <p>OpenAI 自己的说法是 o3 在<strong>高难度真实任务</strong>上显著减少“重大错误”（官方口径约 20%），这类指标比 AIME 更贴近生产。AIME 满分只证明会做题，而“少犯大错”才是能托管给 agent 的前提。</p>
-<p>值得注意的是，o4-mini 上线一周后（4 月 24 日）就对<strong>免费用户</strong>开放了。这和 o3-mini 在 1 月的动作是同一逻辑：<strong>推理能力不是高端功能，而是默认功能</strong>。</p>
+<p>o4-mini 的开放节奏也延续了 o3-mini：发布当天只给 Plus/Pro 和付费 API，免费档延后（<a href="https://openai.com/index/introducing-o3-and-o4-mini/">发布说明</a>）。上一代推理模型同样是先让付费流量把成本曲线跑出来，再决定免费档给多少配额：一次带工具的请求可能花掉普通对话十几倍的 token，配额放得太早，账单会先出事。</p>
 <h2 id="工程上的连锁反应">工程上的连锁反应</h2>
 <ol>
 <li><strong>评测要重做</strong>。带工具的模型，分数强依赖工具质量（搜索索引、Python 沙箱、图像裁切策略）。横评如果不说明工具栈，数字不可比。</li>
@@ -92,14 +94,13 @@ resp = client.responses.create(
     max_tool_calls=8,          # hard cap: no unbounded agent loops
     input=messages,
 )</code></pre>
-<p><code>max_tool_calls</code> 这类参数在 2025 年会成为标配——<strong>没有硬上限的 agent 就是一个会自己烧钱的进程</strong>。</p>
-<p>说到最后，给几句自己的判断：</p>
-<ul>
-<li>“思考 + 工具”是 2025 年最重要的范式变化，比上下文长度、比 MoE 结构都更影响实际可用性。纯语言模型的推理天花板，很大程度上是“没有外部输入”造成的。</li>
-<li><strong>成本可预测性下降</strong>是这个范式的最大障碍。企业采购要的是“每千次请求多少钱”的稳定区间，而带工具的 agent 给出的是长尾分布。</li>
-<li>o3 系列真正的用户是 agent 框架，不是聊天窗口。个人用户感知不到“思考里调工具”的价值，Harness（Claude Code、Codex CLI 那一类）才吃得到。</li>
-<li>评测方向会变：SWE-bench 这类“有环境、有反馈”的基准会取代静态题库，成为能力的主度量。</li>
-</ul>
+<p><code>max_tool_calls</code> 这类参数在 2025 年会成为标配：没有硬上限的 agent 就是一个会自己烧钱的进程。</p>
+<p>如果要上，先确认三件事：</p>
+<ol>
+<li><strong>工具预算写死在代码里</strong>：<code>max_tool_calls</code> 给 8，超了就返回部分结果。没有这条上限，单请求的上下文会长到算不出成本。</li>
+<li><strong>每一步都能回放</strong>：工具的入参、原始输出、当步的推理摘要全部落盘。一条请求十几步，按我们的采样日志量是普通请求的 8～10 倍，得单独给容量。</li>
+<li><strong>评测口径写明 harness</strong>：工具栈、超时时间、重试次数不写清，SWE-bench 这类数字跨团队不可比。</li>
+</ol>
 <h2 id="出处">出处</h2>
 <ul>
 <li>发布公告：<a href="https://openai.com/index/introducing-o3-and-o4-mini/">Introducing OpenAI o3 and o4-mini</a></li>
@@ -110,7 +111,6 @@ resp = client.responses.create(
   <p class="tag-list"><a class="tag" href="/tags/openai/">OpenAI</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/多模态/">多模态</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=o3+%E4%B8%8E+o4-mini%EF%BC%9A%E5%9C%A8%E6%80%9D%E8%80%83%E8%BF%87%E7%A8%8B%E9%87%8C%E8%B0%83%E7%94%A8%E5%B7%A5%E5%85%B7" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/qwen3-hybrid-thinking-open-weights/">← Qwen3：把 thinking 开关做进开源权重</a><a class="next" href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a><time>2025-02</time></li><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><time>2025-06</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -152,6 +152,12 @@ resp = client.responses.create(
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#从串行到思考内工具">从&quot;串行&quot;到&quot;思考内工具&quot;</a></li>
+<li class="h2"><a href="#视觉进了推理链">视觉进了推理链</a></li>
+<li class="h2"><a href="#o3-和-o4-mini-怎么分工">o3 和 o4-mini 怎么分工</a></li>
+<li class="h2"><a href="#工程上的连锁反应">工程上的连锁反应</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍</a><time>2025-02</time></li><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><time>2025-06</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

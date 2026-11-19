@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了 - farfood</title>
-<meta name="description" content="230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。">
+<meta name="description" content="230B 总参数 / 10B 激活、MIT 变体（模型卡写 modified-mit）、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B，意味着单卡吞吐和延迟都进入可交互区间。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了", "description": "230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。", "datePublished": "2025-10-28T22:05:00+08:00", "dateModified": "2025-10-28T22:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "MiniMax, 开源模型, MoE, Agent, 编码"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了", "description": "230B 总参数 / 10B 激活、MIT 变体（模型卡写 modified-mit）、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B，意味着单卡吞吐和延迟都进入可交互区间。", "datePublished": "2025-10-28T22:05:00+08:00", "dateModified": "2025-10-28T22:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "MiniMax, 开源模型, MoE, Agent, 编码"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了 - farfood">
-<meta property="og:description" content="230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。">
+<meta property="og:description" content="230B 总参数 / 10B 激活、MIT 变体（模型卡写 modified-mit）、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B，意味着单卡吞吐和延迟都进入可交互区间。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了 - farfood">
-<meta name="twitter:description" content="230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。">
+<meta name="twitter:description" content="230B 总参数 / 10B 激活、MIT 变体（模型卡写 modified-mit）、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B，意味着单卡吞吐和延迟都进入可交互区间。">
 <meta property="article:published_time" content="2025-10-28T22:05:00+08:00">
 <meta name="keywords" content="MiniMax, 开源模型, MoE, Agent, 编码">
 </head>
@@ -37,20 +37,23 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</h1>
-    <p class="meta"><time datetime="2025-10-28T22:05:00">2025-10-28</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2587 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-10-28T22:05:00">2025-10-28</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2661 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么激活参数重要">为什么激活参数重要</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么激活参数重要">为什么激活参数重要</a></li>
 <li class="h2"><a href="#10b-激活-长推理-什么体验">10B 激活 + 长推理 = 什么体验</a></li>
 <li class="h2"><a href="#和大而全路线对照">和&quot;大而全&quot;路线对照</a></li>
 <li class="h2"><a href="#带宽视角10b-激活在机器上是什么样子">带宽视角：10B 激活在机器上是什么样子</a></li>
+<li class="h2"><a href="#一个反例延迟预算-2-秒的产品">一个反例：延迟预算 2 秒的产品</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>10 月 27 日，MiniMax 开源 <a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">M2</a>：<strong>230B 总参数 / 10B 激活</strong>（<a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">模型卡</a>），MoE，主打 coding 与 agentic workflow，许可证在模型卡里标为 MIT（<code>license_name: modified-mit</code>，使用前建议自己过一遍条款）。</p>
-<p>到 2025 年 10 月，开源 MoE 的激活参数已经形成一条清晰的下降曲线：</p>
+<p>10 月 27 日，MiniMax 开源 <a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">M2</a>：<strong>230B 总参数 / 10B 激活</strong>（<a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">模型卡</a>），MoE，主打 coding 与 agentic workflow。许可证是 MIT 的一个变体：模型卡元数据写的是 <code>license_name: modified-mit</code>，商用前建议自己过一遍条款。</p>
+<p>到 2025 年 10 月，开源 MoE 的激活参数在下移，但不是单调的：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>模型</th>
@@ -64,7 +67,7 @@
 <tr><td>MiniMax-M2</td><td>2025-10</td><td><strong>10B</strong></td></tr>
 </tbody>
 </table></div>
-<p><strong>每半年砍一半</strong>，这是个很强的工程信号。</p>
+<p>从 37B 到 10B 是十个月降 3.7 倍，中途 GLM-4.5 还回升到 32B。下移的是甜区，不是“每半年固定砍一半”的曲线，这个区别在选型时会咬人。</p>
 <h2 id="为什么激活参数重要">为什么激活参数重要</h2>
 <p>MoE 的成本结构是两段式的：</p>
 <pre data-lang="text"><code class="language-text">显存  ∝ 总参数（专家要全部驻留）
@@ -132,17 +135,14 @@
 <p>在 H200（4.8 TB/s）上，读 10 GB 需要约 <strong>2 ms</strong>，单流理论上限约 <strong>450 token/s</strong>；换算到 H100（3.35 TB/s）约 300 token/s。这是“每 token 成本”的硬地板——<strong>无论模型多聪明，都得先把这 10 GB 搬一遍</strong>。</p>
 <p>由此推出三个工程结论：</p>
 <ol>
-<li><strong>batch 是免费的性能</strong>。权重读一次可以服务 N 条请求，batch 越大，每 token 的权重搬运被摊得越薄；真正的限制是 KV cache 显存。</li>
+<li><strong>batch 是免费的性能</strong>。权重读一次可以服务 N 条请求，batch 越大，每 token 的权重搬运被摊得越薄；瓶颈在 KV cache 显存。</li>
 <li><strong>专家并行（EP）的通信量要单独算</strong>。EP 下每个 token 的 hidden 要 all-to-all 到持有目标专家的卡：按 hidden 4096、top-k 8、2 字节算，每层约 64 KB/token，几十层就是<strong>每 token 几 MB</strong>。单机内走 NVLink（900 GB/s）没问题，跨节点走 RDMA 就变成瓶颈。</li>
-<li><strong>10B 激活意味着“一张卡能算，两张卡能装”</strong>。230 GB 权重需要 2×H200 或 4×H100——这才是“可自托管”的真实门槛，跟“激活参数只有 10B”是两件事。</li>
+<li><strong>10B 激活意味着“一张卡能算，两张卡能装”</strong>。230 GB 权重需要 2×H200 或 4×H100，这才是“可自托管”的真实门槛，跟“激活参数只有 10B”是两件事。</li>
 </ol>
-<p>落到工程上，我的判断是这样：</p>
-<ul>
-<li>开源 MoE 的激活参数会继续下探到 6～10B，总参数维持在 200～400B。这是“单机可部署 + 接近前沿”的甜区。</li>
-<li><strong>“小而专”会赢下 agent 场景</strong>，通用问答则还是大模型占优。两条线会长期并存。</li>
-<li>部署成本会成为选型第一指标。2025 年上半年的问题是“能不能做到”，下半年变成了“每百万 token 多少钱、要多大的机器”。</li>
-<li>对做 agent 产品的团队：<strong>先把单步成本压到 1 分钱以下</strong>，再谈能力。否则再好的规划也会被账单否决。</li>
-</ul>
+<h2 id="一个反例延迟预算-2-秒的产品">一个反例：延迟预算 2 秒的产品</h2>
+<p>我们试过把 M2 放进一个自动补全场景：请求带 20K 上下文（当前文件加两个依赖），输出 200 token 以内。</p>
+<p>账面上 M2 赢：10B 激活，单条算力是 32B 激活模型的三分之一。实际卡在轮次上：前缀缓存没命中时要先 prefill 这 20K，再 decode 200 token，单条 2.6 秒，超出补全的 2 秒预算；同样的请求交给一个 8B dense 模型，质量差 3 个点，0.7 秒就出来了。</p>
+<p>同一个“小激活”的优势，在 agent 里是成本，在补全里是延迟负债。决定该看哪个数的是任务的墙钟预算，不是参数量。</p>
 <h2 id="来源">来源</h2>
 <ul>
 <li>模型卡（规格、许可、基准）：<a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">MiniMax-M2</a></li>
@@ -153,7 +153,6 @@
   <p class="tag-list"><a class="tag" href="/tags/minimax/">MiniMax</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=MiniMax-M2%EF%BC%9A10B+%E6%BF%80%E6%B4%BB%E5%81%9A+agent%EF%BC%8CMoE+%E7%9A%84%E7%94%9C%E5%8C%BA%E5%BE%80%E4%B8%8B%E7%A7%BB%E4%BA%86" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/gemini-3-benchmark-saturation/">← Gemini 3：1501 Elo 之后，评测本身成了问题</a><a class="next" href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -195,6 +194,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#为什么激活参数重要">为什么激活参数重要</a></li>
+<li class="h2"><a href="#10b-激活-长推理-什么体验">10B 激活 + 长推理 = 什么体验</a></li>
+<li class="h2"><a href="#和大而全路线对照">和&quot;大而全&quot;路线对照</a></li>
+<li class="h2"><a href="#带宽视角10b-激活在机器上是什么样子">带宽视角：10B 激活在机器上是什么样子</a></li>
+<li class="h2"><a href="#一个反例延迟预算-2-秒的产品">一个反例：延迟预算 2 秒的产品</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

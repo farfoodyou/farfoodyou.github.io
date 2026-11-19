@@ -21,18 +21,18 @@
     <summary>把这一年推理栈的四条主线结账：前缀缓存从「优化项」变成「准入项」，稀疏注意力吃掉长上下文，PD/EP 把集群拆成异构两层，FP4 从实验走到默认。附一张代价表。</summary>
   </entry>
   <entry>
-    <title>2026 开源年表：从 1T 到 3T，从 128K 到 1M</title>
+    <title>2026 开源年表：从 744B 到 2.8T，从 128K 到 1M</title>
     <link href="https://farfoodyou.github.io/post/open-source-2026-yearbook/"/>
     <id>https://farfoodyou.github.io/post/open-source-2026-yearbook/</id>
     <updated>2026-11-05T09:30:00+08:00</updated>
-    <summary>把 2026 年 1—10 月的开源旗舰排成一张表：参数从 744B 走到 2.8T，上下文从 128K 走到 1M，协议从 MIT 开始分化，稀疏注意力成为标配，内置 MTP 成为默认。</summary>
+    <summary>把 2026 年 1—10 月的开源旗舰排成表：参数从 744B 走到 2.8T，上下文从 128K 走到 1M，稀疏注意力成标配。</summary>
   </entry>
   <entry>
     <title>端侧推理的几种设计：从 30B 本地模型到手机上的 1B</title>
     <link href="https://farfoodyou.github.io/post/on-device-inference-designs/"/>
     <id>https://farfoodyou.github.io/post/on-device-inference-designs/</id>
     <updated>2026-10-28T22:30:00+08:00</updated>
-    <summary>端侧不是「小一号的云端」：内存墙、功耗墙、带宽墙三重约束下，量化、KV 管理、算子后端的选择完全不同。把 llama.cpp / MLX / MNN / Core ML 几条路线摆在一起看。</summary>
+    <summary>内存、带宽、功耗三重墙下，量化格式、KV 管理与算子后端的选择和云端完全不同。</summary>
   </entry>
   <entry>
     <title>Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</title>
@@ -42,28 +42,28 @@
     <summary>1.05T 参数、预览版发布。在欧洲算力受限的现实下，Mistral 选择「万亿级但压到可部署」——和北美动辄 1.6T/2.8T 的路线形成对照。</summary>
   </entry>
   <entry>
-    <title>五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</title>
+    <title>六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</title>
     <link href="https://farfoodyou.github.io/post/sparse-attention-shootout/"/>
     <id>https://farfoodyou.github.io/post/sparse-attention-shootout/</id>
     <updated>2026-09-25T09:40:00+08:00</updated>
-    <summary>2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。</summary>
+    <summary>2026 年 1M 上下文成了标配，但实现有六种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。</summary>
   </entry>
   <entry>
     <title>V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</title>
     <link href="https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/"/>
     <id>https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/</id>
     <updated>2026-09-10T22:10:00+08:00</updated>
-    <summary>552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。</summary>
+    <summary>552B 主干、1M 上下文、MIT。CED 让 prefill 只激活 8B，FP4 主 KV 把每 token 的 KV 压到 890 字节。</summary>
   </entry>
   <entry>
     <title>Hy4 preview：770B/49B，把「抄作业」做成了体系</title>
     <link href="https://farfoodyou.github.io/post/hy4-preview-gated-dsa/"/>
     <id>https://farfoodyou.github.io/post/hy4-preview-gated-dsa/</id>
     <updated>2026-08-28T22:20:00+08:00</updated>
-    <summary>770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。</summary>
+    <summary>770B/49B、78 层、内置 MTP、Gated DSA + IndexCache、iHC，Apache 2.0。</summary>
   </entry>
   <entry>
-    <title>Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</title>
+    <title>Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选</title>
     <link href="https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/"/>
     <id>https://farfoodyou.github.io/post/qwen3.8-27b-vs-35b-a3b/</id>
     <updated>2026-08-15T09:30:00+08:00</updated>
@@ -81,21 +81,21 @@
     <link href="https://farfoodyou.github.io/post/qwen3.8-2.4t-preview/"/>
     <id>https://farfoodyou.github.io/post/qwen3.8-2.4t-preview/</id>
     <updated>2026-07-20T22:30:00+08:00</updated>
-    <summary>7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。</summary>
+    <summary>7 月 19 日 Qwen3.8-Max 预览上线：2.4T/95B，另有 27B 一档的预告。看点是单机部署那档留下多少能力。</summary>
   </entry>
   <entry>
     <title>Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级</title>
     <link href="https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/"/>
     <id>https://farfoodyou.github.io/post/kimi-k3-2.8t-kda/</id>
     <updated>2026-07-17T09:10:00+08:00</updated>
-    <summary>2.8T 参数、1M 上下文、原生视觉、Kimi Delta Attention + Attention Residuals。官网称其为「世界首个开放的 3T 级模型」，但许可证是自定义的 Kimi K3 License，不是 MIT。</summary>
+    <summary>2.8T、1M 上下文、原生视觉、KDA + AttnRes。许可证换成自定义的 K3 License。</summary>
   </entry>
   <entry>
     <title>LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</title>
     <link href="https://farfoodyou.github.io/post/longcat-2.0-asic-superpod/"/>
     <id>https://farfoodyou.github.io/post/longcat-2.0-asic-superpod/</id>
     <updated>2026-06-30T22:40:00+08:00</updated>
-    <summary>1.6T 总参数 / 48B 激活、35T token、MIT。更值得注意的是：预训练与大规模部署全程跑在 ASIC 超节点上，数百万加速器·天，没有回滚、没有不可恢复的 loss 尖峰。</summary>
+    <summary>1.6T 总参数 / 48B 激活、35T token、MIT。预训练与大规模部署全程跑在自研 ASIC 超节点上，数百万加速器·天没有一次回滚，loss 曲线全程无不可恢复尖峰。</summary>
   </entry>
   <entry>
     <title>GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</title>
@@ -109,14 +109,14 @@
     <link href="https://farfoodyou.github.io/post/speculative-decoding-economics/"/>
     <id>https://farfoodyou.github.io/post/speculative-decoding-economics/</id>
     <updated>2026-05-30T22:15:00+08:00</updated>
-    <summary>一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。</summary>
+    <summary>一次上线记录：默认开投机解码，单流涨 1.8 倍，高并发和长上下文下掉回 0.7 倍，靠分档开关救回来。</summary>
   </entry>
   <entry>
     <title>Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</title>
     <link href="https://farfoodyou.github.io/post/step-3.7-flash-11b-active/"/>
     <id>https://farfoodyou.github.io/post/step-3.7-flash-11b-active/</id>
-    <updated>2026-05-22T09:30:00+08:00</updated>
-    <summary>196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。</summary>
+    <updated>2026-05-29T09:30:00+08:00</updated>
+    <summary>196B 语言主干 + 1.8B 视觉，激活 11B，256K 上下文，三档 reasoning，Apache 2.0。</summary>
   </entry>
   <entry>
     <title>Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</title>
@@ -137,14 +137,14 @@
     <link href="https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/"/>
     <id>https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/</id>
     <updated>2026-04-08T09:10:00+08:00</updated>
-    <summary>同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。</summary>
+    <summary>相比 GLM-5 参数不变，进步在长程耐久：Terminal-Bench 2.0 从 56.2 到 63.5，定位是 8 小时班次。</summary>
   </entry>
   <entry>
     <title>MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</title>
     <link href="https://farfoodyou.github.io/post/mimo-v2-pro-hybrid-attention/"/>
     <id>https://farfoodyou.github.io/post/mimo-v2-pro-hybrid-attention/</id>
     <updated>2026-03-19T09:20:00+08:00</updated>
-    <summary>小米的旗舰 agent 模型：总参数超 1T、激活 42B、1M 上下文，混合注意力比例从 5:1 提到 7:1，并加了轻量 MTP 层做快速生成。先以 Hunter Alpha 匿名出现在 OpenRouter 上，被误认成 DeepSeek。</summary>
+    <summary>1T/42B、1M 上下文、混合注意力 7:1、轻量 MTP：先匿名上线，被误认成别家的模型。</summary>
   </entry>
   <entry>
     <title>Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</title>
@@ -165,14 +165,14 @@
     <link href="https://farfoodyou.github.io/post/glm-5-744b-dsa/"/>
     <id>https://farfoodyou.github.io/post/glm-5-744b-dsa/</id>
     <updated>2026-02-13T09:40:00+08:00</updated>
-    <summary>744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。</summary>
+    <summary>744B/40B、28.5T token、MIT，集成 DSA。SWE-bench 77.8%，定位是长程 agent 任务。</summary>
   </entry>
   <entry>
     <title>手算一遍：128K 上下文的 KV 到底占多少显存</title>
     <link href="https://farfoodyou.github.io/post/kv-cache-ledger-128k/"/>
     <id>https://farfoodyou.github.io/post/kv-cache-ledger-128k/</id>
     <updated>2026-01-20T22:10:00+08:00</updated>
-    <summary>不用表格，直接拿纸笔算：80 层、head_dim 128、FP16，MHA/GQA/MLA 各占多少，128K 和 1M 分别要几张卡，以及分页和量化能砍掉多少。</summary>
+    <summary>128K 请求的 KV：MHA 320 GiB、GQA 40 GiB、MLA 5.6 GiB，再看带宽与分页。</summary>
   </entry>
   <entry>
     <title>2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</title>
@@ -193,14 +193,14 @@
     <link href="https://farfoodyou.github.io/post/deepseek-v3.2-thinking-with-tools/"/>
     <id>https://farfoodyou.github.io/post/deepseek-v3.2-thinking-with-tools/</id>
     <updated>2025-12-02T22:40:00+08:00</updated>
-    <summary>12 月 1 日 V3.2 发布：DSA 稀疏注意力 + 大规模 RL + agentic 数据合成三件套，把「推理」和「工具调用」焊在一起；同期的高算力版本 Speciale 在官方口径里已经摸到 GPT-5 的水平。</summary>
+    <summary>12 月 1 日 V3.2 发布：DSA、大规模 RL、agentic 数据合成，把推理和工具调用焊在一起；高算力变体用来说明上限。</summary>
   </entry>
   <entry>
     <title>Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</title>
     <link href="https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/"/>
     <id>https://farfoodyou.github.io/post/claude-opus-4.5-effort-parameter/</id>
     <updated>2025-11-25T08:50:00+08:00</updated>
-    <summary>11 月 24 日 Opus 4.5 发布，价格从 $15/$75 砍到 $5/$25，并首次把 effort 参数放到旗舰模型上：默认 high，可按任务降档。旗舰的定义从「最强」变成「最划算的上限」。</summary>
+    <summary>Opus 4.5 从 $15/$75 砍到 $5/$25，effort 参数首次上旗舰，默认 high，可按任务降档。</summary>
   </entry>
   <entry>
     <title>Gemini 3：1501 Elo 之后，评测本身成了问题</title>
@@ -214,6 +214,6 @@
     <link href="https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/"/>
     <id>https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/</id>
     <updated>2025-10-28T22:05:00+08:00</updated>
-    <summary>230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。</summary>
+    <summary>230B 总参数 / 10B 激活、MIT 变体（模型卡写 modified-mit）、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B，意味着单卡吞吐和延迟都进入可交互区间。</summary>
   </entry>
 </feed>

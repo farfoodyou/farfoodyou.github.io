@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</h1>
-    <p class="meta"><time datetime="2025-07-12T23:10:00">2025-07-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2308 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-07-12T23:10:00">2025-07-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2462 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#muon-优化器的规模化">Muon 优化器的规模化</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#muon-优化器的规模化">Muon 优化器的规模化</a></li>
 <li class="h2"><a href="#155t-token-与-agentic-数据">15.5T token 与 agentic 数据</a></li>
 <li class="h2"><a href="#1t-moe-的部署现实">1T MoE 的部署现实</a></li>
-<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
+<li class="h2"><a href="#没测出来的">没测出来的</a></li>
+<li class="h2"><a href="#两组数放在一起">两组数放在一起</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>7 月 11 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K2-Instruct">Kimi K2</a>。规格：</p>
@@ -103,7 +106,6 @@
 <li>提供一套可复现的配方，让小模型团队抄思路。</li>
 </ol>
 <p>对照 671B/37B 的 DeepSeek 系列，1T/32B 的稀疏度更高：<strong>激活比例只有 3.2%</strong>。稀疏度越高，单 token 算力越省，但对显存容量和专家负载均衡的要求越高。</p>
-<p>说到最后，给几句自己的判断：</p>
 <p>K2-Instruct 明确是“没有长思考的反射级模型”。2025 年 7 月的时点上，这是一个反共识的选择：</p>
 <ul>
 <li>长思考的收益集中在数学/竞赛/复杂调试；</li>
@@ -111,13 +113,10 @@
 <li>agent 场景里 80% 的步骤是“读文件/调接口/改一行”，不需要深思。</li>
 </ul>
 <p>所以 K2 的路线是：<strong>先做一个又快又稳的执行者，把思考留给需要的地方</strong>（后续的 K2-Thinking 补上了这一块）。这个分工和 Claude 的 Sonnet/Opus、Gemini 的 Flash/Pro 是同一逻辑，只是 K2 是从“完全不思考”起步。</p>
-<h2 id="不确定的部分">不确定的部分</h2>
-<ul>
-<li>Muon + clip 会成为大模型预训练的标准组合之一。AdamW 不是不能跑 1T，而是它对超参太敏感，工程上不划算。</li>
-<li><strong>“零不稳定”比“高 MFU”更值钱</strong>。一个 15.5T token 的 run 失败一次，损失的是几百万美元和两个月。</li>
-<li>1T 开源模型的象征意义大于实用价值。它证明“前沿规模可以被复现”，但真正被广泛部署的会是 100B 以下的模型。</li>
-<li><strong>agent 数据的合成管线是新的护城河</strong>。谁的“任务生成 + 环境验证”闭环更强，谁的 agent 模型就更像人写的——这一块比模型结构更难抄。</li>
-</ul>
+<h2 id="没测出来的">没测出来的</h2>
+<p>MuonClip 的 clip 阈值 tau 是全局一个还是分层设，报告没写；1T 规模上这个超参的敏感区间有多宽，也没有扫参结果。官方说“零不稳定”，但没公开 loss 曲线分阶段的细节，所以 Muon 能不能推到 3T，现在只能算猜测。还有一条我确实不知道答案：激活比例从 3.2% 再压到 2%，路由退化的临界点在哪里，取决于训练 token 与专家数的配比，K2 这一版没有给对照组。</p>
+<h2 id="两组数放在一起">两组数放在一起</h2>
+<p>把 K2 和上一代 671B/37B 的部署账并排放：总参数从 671B 涨到 1T（+49%），权重从 671GB 涨到 1TB，但每 token 要读的激活权重只从 37GB 降到 32GB，H200 上对应 7.7ms 和 6.7ms 的 decode 单步——<strong>参数多了一半，单流延迟只省 13%</strong>。稀疏化的收益落在算力侧（每 token FLOPs 少 14%），不在带宽侧；真要降单流延迟，得靠更狠的量化：INT4 后 32B 激活只占 16GB，单步掉到 3.3ms，代价是精度要重新评。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>模型卡（架构、优化器、训练细节）：<a href="https://huggingface.co/moonshotai/Kimi-K2-Instruct">Kimi-K2-Instruct</a></li>
@@ -128,7 +127,6 @@
   <p class="tag-list"><a class="tag" href="/tags/moonshot/">Moonshot</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/训练稳定性/">训练稳定性</a><a class="tag" href="/tags/agent/">Agent</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Kimi+K2%EF%BC%9A1T+MoE+%E5%85%A8%E6%9D%83%E9%87%8D%E5%BC%80%E6%BA%90%EF%BC%8C%E4%BB%A5%E5%8F%8A+Muon+%E4%BC%98%E5%8C%96%E5%99%A8%E7%9A%84%E4%B8%80%E6%AC%A1%E5%A4%A7%E8%80%83" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/glm-4.5-hybrid-thinking-mit/">← GLM-4.5：把「思考开关」做成开源模型的默认项</a><a class="next" href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><time>2025-10</time></li><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -170,6 +168,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#muon-优化器的规模化">Muon 优化器的规模化</a></li>
+<li class="h2"><a href="#155t-token-与-agentic-数据">15.5T token 与 agentic 数据</a></li>
+<li class="h2"><a href="#1t-moe-的部署现实">1T MoE 的部署现实</a></li>
+<li class="h2"><a href="#没测出来的">没测出来的</a></li>
+<li class="h2"><a href="#两组数放在一起">两组数放在一起</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><time>2025-10</time></li><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

@@ -37,19 +37,37 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</h1>
-    <p class="meta"><time datetime="2026-01-08T09:30:00">2026-01-08</time><span class="sep">·</span>8 分钟<span class="sep">·</span>3303 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-01-08T09:30:00">2026-01-08</time><span class="sep">·</span>9 分钟<span class="sep">·</span>3511 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#vllm一次真正的内核替换">vLLM：一次真正的内核替换</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#vllm一次真正的内核替换">vLLM：一次真正的内核替换</a></li>
 <li class="h2"><a href="#sglang从-radixattention-到网关">SGLang：从 RadixAttention 到网关</a></li>
 <li class="h2"><a href="#dynamo-llm-d分布式推理成为独立一层">Dynamo / llm-d：分布式推理成为独立一层</a></li>
-<li class="h2"><a href="#几句判断">几句判断</a></li>
+<li class="h2"><a href="#上手之前先量三个数">上手之前先量三个数</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>模型在台前，引擎在台后。2025 年真正决定“能不能用”的，是引擎这一层。这篇把一年的版本记录和架构变化过一遍——数据全部来自各项目的 release note，可点开核对。</p>
+<p>把 2025 年所有引擎 PR 归类，其实只有四条主线：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>主线</th>
+<th>优化对象</th>
+<th>典型手段</th>
+<th>收益量级</th>
+</tr></thead>
+<tbody>
+<tr><td>减少 host 开销</td><td>kernel launch / Python</td><td>CUDA Graph、torch.compile、异步调度</td><td>10%～30%</td></tr>
+<tr><td>减少重复计算</td><td>prefill 算力</td><td>前缀缓存、RadixAttention、KV 复用路由</td><td>长 prompt 场景 2～10×</td></tr>
+<tr><td>减少数据搬运</td><td>HBM 带宽</td><td>FP8/FP4 量化、MLA、稀疏注意力、KV 分层（HBM→CPU→NVMe）</td><td>1.5～4×</td></tr>
+<tr><td>拆分异构负载</td><td>资源错配</td><td>PD 分离、chunked prefill、EP/TP 混合并行</td><td>吞吐 2～5×</td></tr>
+</tbody>
+</table></div>
+<p>注意第三条：<strong>引擎能做的“搬得少”，前提是模型结构允许</strong>（MLA、稀疏注意力、量化友好）。这也是 2025 年模型和引擎开始“共同设计”的原因——DeepSeek 出 DSA 时同时给了 <a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a> 和 <a href="https://github.com/deepseek-ai/FlashMLA">FlashMLA</a> 的 kernel，Moonshot 在 K2 Thinking 里直接用 INT4 原生量化。</p>
 <h2 id="vllm一次真正的内核替换">vLLM：一次真正的内核替换</h2>
 <p>vLLM 在 2025 年做了一件很少见的事：<strong>在高速迭代期把核心引擎整体重写，并干掉了旧引擎</strong>。</p>
 <div class="table-wrap"><table>
@@ -67,7 +85,7 @@
 <tr><td>2025-12-19</td><td><a href="https://github.com/vllm-project/vllm/releases/tag/v0.13.0">v0.13.0</a></td><td>常规迭代，模型支持为主</td></tr>
 </tbody>
 </table></div>
-<p>V1 到底改了什么？官方博客的说法是“为性能和架构简洁重写”（<a href="https://blog.vllm.ai/2025/01/27/v1-alpha-release.html">vLLM V1 alpha 公告</a>），落到工程上是四件事：</p>
+<p>V1 到底改了什么？官方博客的说法是“为性能和架构简洁重写”（<a href="https://blog.vllm.ai/2025/01/27/v1-alpha-release.html">vLLM V1 alpha 公告</a>），拆到代码上是四件事：</p>
 <ol>
 <li><strong>调度器与执行器解耦</strong>：CPU 侧的调度开销成为瓶颈后，把 tokenize/调度/采样的流水线拆开，避免 GPU 空转；</li>
 <li><strong><code>torch.compile</code> 进入主路径</strong>：默认编译，减少 Python 侧逐 op 派发的开销（decode 每 token 要走几百个 kernel，Python 的 10 μs × N 很致命）；</li>
@@ -95,29 +113,14 @@
 <li><strong>llm-d</strong>（Kubernetes 原生）把同一套思路搬到 K8s 上：用 Gateway API + InferencePool 做路由，用 KV 事件驱动调度。</li>
 </ul>
 <p>它们解决的是同一件事：<strong>单机放不下/不划算时，怎么把 prefill 和 decode 分到不同机器上，并且让 KV 高效地流动。</strong></p>
-<p>把 2025 年所有引擎 PR 归类，其实只有四条主线：</p>
-<div class="table-wrap"><table>
-<thead><tr>
-<th>主线</th>
-<th>优化对象</th>
-<th>典型手段</th>
-<th>收益量级</th>
-</tr></thead>
-<tbody>
-<tr><td>减少 host 开销</td><td>kernel launch / Python</td><td>CUDA Graph、torch.compile、异步调度</td><td>10%～30%</td></tr>
-<tr><td>减少重复计算</td><td>prefill 算力</td><td>前缀缓存、RadixAttention、KV 复用路由</td><td>长 prompt 场景 2～10×</td></tr>
-<tr><td>减少数据搬运</td><td>HBM 带宽</td><td>FP8/FP4 量化、MLA、稀疏注意力、KV 分层（HBM→CPU→NVMe）</td><td>1.5～4×</td></tr>
-<tr><td>拆分异构负载</td><td>资源错配</td><td>PD 分离、chunked prefill、EP/TP 混合并行</td><td>吞吐 2～5×</td></tr>
-</tbody>
-</table></div>
-<p>注意第三条：<strong>引擎能做的“搬得少”，前提是模型结构允许</strong>（MLA、稀疏注意力、量化友好）。这也是 2025 年模型和引擎开始“共同设计”的原因——DeepSeek 出 DSA 时同时给了 <a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a> 和 <a href="https://github.com/deepseek-ai/FlashMLA">FlashMLA</a> 的 kernel，Moonshot 在 K2 Thinking 里直接用 INT4 原生量化。</p>
-<h2 id="几句判断">几句判断</h2>
-<ul>
-<li>引擎的竞争从“支持多少模型”转向“系统层能力”，路由、KV 复用、分离式部署，这些决定集群吞吐，而不是单卡性能。</li>
-<li><strong>网关会继续下沉</strong>。KV-aware routing 需要引擎内部信息，外挂 LB 做不好。</li>
-<li>模型与 kernel 共同设计会成为前沿团队的标配，通用引擎只能被动跟进。</li>
-<li>如果你自己部署：<strong>先做前缀缓存与路由，再考虑量化</strong>。前者收益快且无精度损失，后者要重新跑评测。</li>
-</ul>
+<h2 id="上手之前先量三个数">上手之前先量三个数</h2>
+<p>换引擎前先在自己流量上量三个数，量不出来就别信 release note 里的百分比：</p>
+<pre data-lang="bash"><code class="language-bash"># 1) host 侧开销占比：同 batch 下开/关 CUDA Graph 的 decode 单步差
+vllm bench latency --model your-ckpt --input-len 2048 --output-len 128 \
+  --enforce-eager
+# 2) 前缀命中率：同一 system prompt 连发 100 次，prefill 时间应该收敛到零
+# 3) PD 分离的收益：prefill 与 decode 拆机后，比 TTFT 与吞吐两条曲线</code></pre>
+<p>三个数里只要有一个不动，就说明瓶颈不在这一层：host 开销占比低于 5% 就别折腾 torch.compile；前缀命中率不到 20% 先去查 prompt 拼接顺序，别急着换引擎；PD 分离只在 prefill 与 decode 的资源比长期稳定时才划算，否则 KV 搬运会把省下的时间吃回去。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>vLLM 版本记录：<a href="https://github.com/vllm-project/vllm/releases">github.com/vllm-project/vllm/releases</a></li>
@@ -129,7 +132,6 @@
   <p class="tag-list"><a class="tag" href="/tags/vllm/">vLLM</a><a class="tag" href="/tags/sglang/">SGLang</a><a class="tag" href="/tags/推理引擎/">推理引擎</a><a class="tag" href="/tags/系统/">系统</a><a class="tag" href="/tags/kv缓存/">KV缓存</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=2025+%E6%8E%A8%E7%90%86%E5%BC%95%E6%93%8E%E5%A4%8D%E7%9B%98%EF%BC%9AvLLM+%E6%8D%A2%E4%BA%86%E5%86%85%E6%A0%B8%EF%BC%8CSGLang+%E5%BC%80%E5%A7%8B%E5%81%9A%E7%BD%91%E5%85%B3" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kv-cache-ledger-128k/">← 手算一遍：128K 上下文的 KV 到底占多少显存</a><a class="next" href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -171,6 +173,12 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#vllm一次真正的内核替换">vLLM：一次真正的内核替换</a></li>
+<li class="h2"><a href="#sglang从-radixattention-到网关">SGLang：从 RadixAttention 到网关</a></li>
+<li class="h2"><a href="#dynamo-llm-d分布式推理成为独立一层">Dynamo / llm-d：分布式推理成为独立一层</a></li>
+<li class="h2"><a href="#上手之前先量三个数">上手之前先量三个数</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</a><time>2026-09</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</h1>
-    <p class="meta"><time datetime="2026-08-14T09:30:00">2026-08-14</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2115 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-08-14T09:30:00">2026-08-14</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2219 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#csa-hca两种压缩各管一段">CSA + HCA：两种压缩，各管一段</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#csa-hca两种压缩各管一段">CSA + HCA：两种压缩，各管一段</a></li>
 <li class="h2"><a href="#两段式后训练先分家再合并">两段式后训练：先分家，再合并</a></li>
 <li class="h2"><a href="#机器上的字节v4-pro-在机器上的样子">机器上的字节：V4-Pro 在机器上的样子</a></li>
 <li class="h2"><a href="#开源的1m-上下文俱乐部">开源的&quot;1M 上下文俱乐部&quot;</a></li>
+<li class="h2"><a href="#三种机器配置下的账">三种机器配置下的账</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>8 月 13 日，DeepSeek 发布 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">V4</a>（MIT）：<strong>V4-Pro 1.6T / 49B 激活</strong>、<strong>V4-Flash 284B / 13B 激活</strong>，两者都支持 <strong>1M 上下文</strong>，训练数据 <strong>32T token</strong>。</p>
@@ -119,25 +122,22 @@ V4 (compress+sparse): ~3.5 KB/token (10% per the model card)
 </tbody>
 </table></div>
 <p>五家五种实现，但方向一致：<strong>把 O(L²) 打掉</strong>。2026 年下半年，“支持 1M”已经不是卖点，“1M 上下文的每 token 成本”才是。</p>
-<p>说到最后，给几句自己的判断：</p>
-<ul>
-<li>CSA/HCA 这类“分层压缩”会成为长上下文的标准答案，纯线性注意力在精确检索上仍有短板。</li>
-<li><strong>“先训专家再蒸馏合并”会普及</strong>，多目标 RL 的相互干扰是目前最大的隐性损耗。</li>
-<li>MIT + 1.6T + 1M 上下文，是今年最强的组合，但它只对“有集群”的机构有意义。</li>
-<li>对工程团队：<strong>V4-Flash（284B/13B）才是多数人的落点</strong>，Pro 是标杆，不是日常。</li>
-</ul>
+<h2 id="三种机器配置下的账">三种机器配置下的账</h2>
+<p><strong>8 卡 H200</strong>：只有 V4-Flash 装得下。284B 的 FP8 权重占 284GB，剩下的八百多 GB 全给 KV 和激活，1M 请求一条 3.5GB，能开到一百条并发。</p>
+<p><strong>16～32 卡</strong>：V4-Pro 刚够装权重（1.6TB），余量只够小 batch。单流被 49GB/token 的权重读取压在 100 token/s 以下，并发靠 batch 推。</p>
+<p><strong>64 卡以上</strong>：Pro 才能跑出吞吐，但 EP 的 all-to-all 会把跨机带宽变成新瓶颈；这时 1M 上下文省下的 KV 显存，换成了网络里的通信量。</p>
+<p>分档的界线不是参数量，是“下一档装不装得下”。Pro 对绝大多数团队来说是个基准点，不是选型项。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>模型卡（架构、27%/10% 口径、后训练流程）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">DeepSeek-V4-Pro</a></li>
 <li>稀疏注意力前代：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Exp">DeepSeek-V3.2-Exp</a></li>
-<li>索引器共享（同期对比）：<a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2</a></li>
+<li>索引器共享（两个月前的对比）：<a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2</a></li>
 <li>稀疏注意力 kernel：<a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a></li>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/moe/">MoE</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-V4%EF%BC%9A1M+%E4%B8%8A%E4%B8%8B%E6%96%87%E5%8F%AA%E8%A6%81+V3.2+%E7%9A%84+27%25+FLOPs%EF%BC%8C%E6%80%8E%E4%B9%88%E5%81%9A%E5%88%B0%E7%9A%84" target="_blank" rel="noopener">分享到 X</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/qwen3.8-27b-vs-35b-a3b/">← Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a><a class="next" href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><time>2025-09</time></li></ul></aside>
+  <nav class="post-nav"><a class="prev" href="/post/qwen3.8-27b-vs-35b-a3b/">← Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选</a><a class="next" href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路 →</a></nav>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -179,6 +179,13 @@ V4 (compress+sparse): ~3.5 KB/token (10% per the model card)
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#csa-hca两种压缩各管一段">CSA + HCA：两种压缩，各管一段</a></li>
+<li class="h2"><a href="#两段式后训练先分家再合并">两段式后训练：先分家，再合并</a></li>
+<li class="h2"><a href="#机器上的字节v4-pro-在机器上的样子">机器上的字节：V4-Pro 在机器上的样子</a></li>
+<li class="h2"><a href="#开源的1m-上下文俱乐部">开源的&quot;1M 上下文俱乐部&quot;</a></li>
+<li class="h2"><a href="#三种机器配置下的账">三种机器配置下的账</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li><li><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><time>2025-09</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

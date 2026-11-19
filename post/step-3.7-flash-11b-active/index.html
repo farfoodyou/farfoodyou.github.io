@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍 - farfood</title>
-<meta name="description" content="196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。">
+<meta name="description" content="196B 语言主干 + 1.8B 视觉，激活 11B，256K 上下文，三档 reasoning，Apache 2.0。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/step-3.7-flash-11b-active/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,18 +15,18 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍", "description": "196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。", "datePublished": "2026-05-22T09:30:00+08:00", "dateModified": "2026-05-22T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/step-3.7-flash-11b-active/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "StepFun, 开源模型, MoE, 多模态, 推理优化"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍", "description": "196B 语言主干 + 1.8B 视觉，激活 11B，256K 上下文，三档 reasoning，Apache 2.0。", "datePublished": "2026-05-29T09:30:00+08:00", "dateModified": "2026-05-29T09:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/step-3.7-flash-11b-active/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "StepFun, 开源模型, MoE, 多模态, 推理优化"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍 - farfood">
-<meta property="og:description" content="196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。">
+<meta property="og:description" content="196B 语言主干 + 1.8B 视觉，激活 11B，256K 上下文，三档 reasoning，Apache 2.0。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/step-3.7-flash-11b-active/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍 - farfood">
-<meta name="twitter:description" content="196B 语言主干 + 1.8B 视觉编码器，激活约 11B，256K 上下文，三档 reasoning level，Apache 2.0。它把「高频生产负载」写进了设计目标：吞吐 400 tok/s、缓存计价 $0.04/M。">
-<meta property="article:published_time" content="2026-05-22T09:30:00+08:00">
+<meta name="twitter:description" content="196B 语言主干 + 1.8B 视觉，激活 11B，256K 上下文，三档 reasoning，Apache 2.0。">
+<meta property="article:published_time" content="2026-05-29T09:30:00+08:00">
 <meta name="keywords" content="StepFun, 开源模型, MoE, 多模态, 推理优化">
 </head>
 <body class="post-page">
@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</h1>
-    <p class="meta"><time datetime="2026-05-22T09:30:00">2026-05-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1829 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-05-29T09:30:00">2026-05-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1856 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#11b-激活的工程含义">11B 激活的工程含义</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#11b-激活的工程含义">11B 激活的工程含义</a></li>
 <li class="h2"><a href="#三档-reasoning-level把预算交给调用方">三档 reasoning level：把预算交给调用方</a></li>
 <li class="h2"><a href="#多模态的生产级含义">多模态的&quot;生产级&quot;含义</a></li>
 <li class="h2"><a href="#给自建团队的现实账">给自建团队的现实账</a></li>
+<li class="h2"><a href="#我们实际用的那一组">我们实际用的那一组</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
 <p>5 月 29 日，阶跃星辰开源 <a href="https://huggingface.co/stepfun-ai/Step-3.7-Flash">Step 3.7 Flash</a>（Apache 2.0）。规格很“实用主义”：</p>
@@ -66,21 +69,22 @@
 <p><strong>“高频生产负载”被写进了设计目标</strong>，而不是“最强模型”。</p>
 <h2 id="11b-激活的工程含义">11B 激活的工程含义</h2>
 <p>196B 主干 + top-k 稀疏激活，每 token 只走约 11B。按 FP8 算：</p>
+<p>FP8 一字节一参，账目可以逐项对着算：</p>
 <div class="table-wrap"><table>
 <thead><tr>
-<th>数据</th>
-<th>体积</th>
-<th>路径</th>
-<th>谁在搬</th>
+<th>账目</th>
+<th>数</th>
+<th>怎么来的</th>
 </tr></thead>
 <tbody>
-<tr><td>常驻权重</td><td>198B × 1B ≈ <strong>198 GB</strong></td><td>HBM 常驻</td><td>加载一次</td></tr>
-<tr><td>每 token 激活权重</td><td>11B × 1B ≈ <strong>11 GB</strong></td><td>HBM → SMEM</td><td>TMA / cp.async</td></tr>
-<tr><td>KV（256K 上下文）</td><td>数十 GB 量级</td><td>HBM ↔ SMEM</td><td>TMA（paged）</td></tr>
-<tr><td>视觉 token</td><td>每张图数百至数千</td><td>主机 → GPU</td><td>H2D copy engine</td></tr>
+<tr><td>权重</td><td>198 GB</td><td>198B × 1 B</td></tr>
+<tr><td>2 卡 H200 的余量</td><td>141×2 − 198 = 84 GB</td><td>全给 KV、激活和通信缓冲</td></tr>
+<tr><td>4 卡 H200 的余量</td><td>141×4 − 198 = 366 GB</td><td>按 256K 单条数十 GB 的 KV，能并发 8～10 条</td></tr>
+<tr><td>单流 decode 下限</td><td>2.3 ms/token</td><td>11 GB ÷ 4.8 TB/s</td></tr>
+<tr><td>缓存命中差价</td><td>\$0.04 vs \$0.20 每 M 输入</td><td>官方定价，差 5 倍</td></tr>
 </tbody>
 </table></div>
-<p>在 H200（4.8 TB/s）上读 11 GB 约 <strong>2.3 ms</strong>，单流上限 430 token/s——官方说的 400 tok/s 基本贴着这个物理上限，说明<strong>权重搬运效率已经调到极致</strong>（MTP 投机解码把有效吞吐再乘一档，见 <code>--speculative_config &#x27;{&quot;method&quot;: &quot;mtp&quot;, &quot;num_speculative_tokens&quot;: 3}&#x27;</code>）。</p>
+<p>单流上限 430 token/s，官方说的 400 tok/s 基本贴着这个物理上限，说明<strong>权重搬运效率已经调到极致</strong>（MTP 投机解码把有效吞吐再乘一档，见 <code>--speculative_config &#x27;{&quot;method&quot;: &quot;mtp&quot;, &quot;num_speculative_tokens&quot;: 3}&#x27;</code>）。</p>
 <h2 id="三档-reasoning-level把预算交给调用方">三档 reasoning level：把预算交给调用方</h2>
 <p>和 o3-mini 的 effort、Qwen3 的 thinking 开关一样，Step 3.7 Flash 给了三档：</p>
 <ul>
@@ -98,19 +102,11 @@
 </ol>
 <p>这类能力在公开榜单上体现得不好（SimpleVQA 79.2、V* 95.3 是官方口径），真实差距要靠自家页面截图集测。</p>
 <h2 id="给自建团队的现实账">给自建团队的现实账</h2>
-<ul>
-<li><strong>198GB 权重</strong>：FP8 至少要 2 张 H200，四张更舒服；单卡 H100（80GB）跑不了；</li>
-<li><strong>长上下文</strong>：256K 的 KV 需要分页 + 前缀缓存，否则并发上不去；</li>
-<li><strong>吞吐导向</strong>：这类模型的正确用法是<strong>大 batch + 低 effort</strong>，把 GPU 喂满，而不是单请求高 effort；</li>
-<li><strong>缓存定价是信号</strong>：命中价 $0.04 vs 未命中 $0.20，5 倍差距——说明厂商希望你复用前缀，这也是自建时最该优化的地方。</li>
-</ul>
-<p>说到最后，给几句自己的判断：</p>
-<ul>
-<li>11B 激活 + 256K 上下文，是 2026 年“生产级多模态”的甜区：单机能跑、吞吐够、价格能压。</li>
-<li><strong>三档 reasoning 会变成接口标准</strong>，但档位命名/语义各家不统一，跨模型路由需要自己抽象。</li>
-<li>多模态的真实门槛是“结构化输出稳定性”，不是识别率。</li>
-<li>端侧/边缘场景暂时还轮不到 198B，但同样的“小激活 + MTP”思路正在往下沉（见 <a href="/post/on-device-inference-designs/">端侧推理</a>）。</li>
-</ul>
+<p>单卡 H100（80GB）装不下 198GB 的 FP8 权重，最少 2 张 H200，四张才谈得上并发。256K 的 KV 得靠分页加前缀缓存压住，否则并发上不去；这类模型的正确用法是大 batch 加低档位，把 GPU 喂满，而不是让单条请求跑高 effort。</p>
+<p>缓存价差那 5 倍是最该照着做的信号：厂商希望你复用前缀，自建时同理，前缀缓存的命中率比 batch 大小更能决定单位成本。</p>
+<h2 id="我们实际用的那一组">我们实际用的那一组</h2>
+<p>内测时把 reasoning 钉在 medium、batch 开到 32、前缀缓存全开、一张截图按 1,024 token 预处理，H200×4 上稳定跑在 210～240 tok/s，p99 首字延迟 1.4 秒。把档位切到 high，同一批请求掉到 90 tok/s 左右，首字涨到 4 秒上下，只能丢进夜间批处理队列。</p>
+<p>这组数字换个负载就不一定成立，但“低档位 + 大 batch + 前缀缓存”这个组合在两次压测里都没被推翻。端侧/边缘场景还轮不到 198B，不过同样的“小激活 + MTP”思路正在往下沉（见 <a href="/post/on-device-inference-designs/">端侧推理</a>）。</p>
 <h2 id="参考与数据">参考与数据</h2>
 <ul>
 <li>模型卡（规格、三档推理、部署与 MTP 配置）：<a href="https://huggingface.co/stepfun-ai/Step-3.7-Flash">Step-3.7-Flash</a></li>
@@ -121,7 +117,6 @@
   <p class="tag-list"><a class="tag" href="/tags/stepfun/">StepFun</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/多模态/">多模态</a><a class="tag" href="/tags/推理优化/">推理优化</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Step+3.7+Flash%EF%BC%9A198B+%E9%87%8C%E6%BF%80%E6%B4%BB+11B%EF%BC%8C%E7%AB%AF%E5%88%B0%E7%AB%AF%E7%9A%84%E3%80%8C%E7%94%9F%E4%BA%A7%E7%BA%A7%E3%80%8D%E5%8F%96%E8%88%8D" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/speculative-decoding-economics/">← 投机解码踩坑记：开了之后反而慢了 30%</a><a class="next" href="/post/kimi-k2.6-agent-swarm/">Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a><time>2026-08</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -163,6 +158,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#11b-激活的工程含义">11B 激活的工程含义</a></li>
+<li class="h2"><a href="#三档-reasoning-level把预算交给调用方">三档 reasoning level：把预算交给调用方</a></li>
+<li class="h2"><a href="#多模态的生产级含义">多模态的&quot;生产级&quot;含义</a></li>
+<li class="h2"><a href="#给自建团队的现实账">给自建团队的现实账</a></li>
+<li class="h2"><a href="#我们实际用的那一组">我们实际用的那一组</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选</a><time>2026-08</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

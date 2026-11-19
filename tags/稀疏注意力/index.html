@@ -33,7 +33,9 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/" class="active">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <h1 class="page-title">标签：稀疏注意力 <span class="count">9 篇</span></h1>
 <article class="card">
   <h2><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></h2>
@@ -42,21 +44,21 @@
   <a class="more" href="/post/inference-stack-2026-review/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a></h2>
+  <h2><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</a></h2>
   <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
-  <p class="excerpt">2026 年 1M 上下文成了标配，但实现有五种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。</p>
+  <p class="excerpt">2026 年 1M 上下文成了标配，但实现有六种流派。把它们的索引方式、KV 压缩比、gather 模式和 kernel 依赖摆在一张表里，能看清各自的代价。</p>
   <a class="more" href="/post/sparse-attention-shootout/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</a></h2>
   <p class="meta"><time datetime="2026-09-10T22:10:00">2026-09-10</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。</p>
+  <p class="excerpt">552B 主干、1M 上下文、MIT。CED 让 prefill 只激活 8B，FP4 主 KV 把每 token 的 KV 压到 890 字节。</p>
   <a class="more" href="/post/deepseek-v4.1-flash-kv-compression/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/hy4-preview-gated-dsa/">Hy4 preview：770B/49B，把「抄作业」做成了体系</a></h2>
   <p class="meta"><time datetime="2026-08-28T22:20:00">2026-08-28</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">770B/49B、78 层（1 层 dense + 77 层 MoE，每层 256 路由专家 + 1 共享专家，top-8）、内置 10B/0.7B 的 MTP 层、Gated DSA + IndexCache、iHC 残差。Apache 2.0。</p>
+  <p class="excerpt">770B/49B、78 层、内置 MTP、Gated DSA + IndexCache、iHC，Apache 2.0。</p>
   <a class="more" href="/post/hy4-preview-gated-dsa/">阅读全文 →</a>
 </article>
 <article class="card">
@@ -74,13 +76,13 @@
 <article class="card">
   <h2><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a></h2>
   <p class="meta"><time datetime="2026-02-13T09:40:00">2026-02-13</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。</p>
+  <p class="excerpt">744B/40B、28.5T token、MIT，集成 DSA。SWE-bench 77.8%，定位是长程 agent 任务。</p>
   <a class="more" href="/post/glm-5-744b-dsa/">阅读全文 →</a>
 </article>
 <article class="card">
   <h2><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a></h2>
   <p class="meta"><time datetime="2025-12-02T22:40:00">2025-12-02</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">12 月 1 日 V3.2 发布：DSA 稀疏注意力 + 大规模 RL + agentic 数据合成三件套，把「推理」和「工具调用」焊在一起；同期的高算力版本 Speciale 在官方口径里已经摸到 GPT-5 的水平。</p>
+  <p class="excerpt">12 月 1 日 V3.2 发布：DSA、大规模 RL、agentic 数据合成，把推理和工具调用焊在一起；高算力变体用来说明上限。</p>
   <a class="more" href="/post/deepseek-v3.2-thinking-with-tools/">阅读全文 →</a>
 </article>
 <article class="card">
@@ -89,6 +91,8 @@
   <p class="excerpt">V3.2-Exp 不是新能力版本，而是一次架构验证：用 DeepSeek Sparse Attention 把长上下文的训练与推理成本打下来，并故意保持与上一版完全一致的训练配置，让对比可信。</p>
   <a class="more" href="/post/deepseek-v3.2-exp-sparse-attention/">阅读全文 →</a>
 </article>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

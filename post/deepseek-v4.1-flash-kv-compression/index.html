@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B - farfood</title>
-<meta name="description" content="552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。">
+<meta name="description" content="552B 主干、1M 上下文、MIT。CED 让 prefill 只激活 8B，FP4 主 KV 把每 token 的 KV 压到 890 字节。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B", "description": "552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。", "datePublished": "2026-09-10T22:10:00+08:00", "dateModified": "2026-09-10T22:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 开源模型, KV缓存, 稀疏注意力, 量化"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B", "description": "552B 主干、1M 上下文、MIT。CED 让 prefill 只激活 8B，FP4 主 KV 把每 token 的 KV 压到 890 字节。", "datePublished": "2026-09-10T22:10:00+08:00", "dateModified": "2026-09-10T22:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 开源模型, KV缓存, 稀疏注意力, 量化"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B - farfood">
-<meta property="og:description" content="552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。">
+<meta property="og:description" content="552B 主干、1M 上下文、MIT。CED 让 prefill 只激活 8B，FP4 主 KV 把每 token 的 KV 压到 890 字节。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B - farfood">
-<meta name="twitter:description" content="552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。">
+<meta name="twitter:description" content="552B 主干、1M 上下文、MIT。CED 让 prefill 只激活 8B，FP4 主 KV 把每 token 的 KV 压到 890 字节。">
 <meta property="article:published_time" content="2026-09-10T22:10:00+08:00">
 <meta name="keywords" content="DeepSeek, 开源模型, KV缓存, 稀疏注意力, 量化">
 </head>
@@ -37,19 +37,21 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</h1>
-    <p class="meta"><time datetime="2026-09-10T22:10:00">2026-09-10</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2191 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-09-10T22:10:00">2026-09-10</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2258 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#ced把-decode-的-kv-从编码器投影出来">CED：把 decode 的 KV 从编码器&quot;投影&quot;出来</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#ced把-decode-的-kv-从编码器投影出来">CED：把 decode 的 KV 从编码器&quot;投影&quot;出来</a></li>
 <li class="h2"><a href="#swa-bounded-replay不落盘也能重建-kv">SWA Bounded Replay：不落盘也能重建 KV</a></li>
 <li class="h2"><a href="#kv-压到-890-字节token">KV 压到 890 字节/token</a></li>
 <li class="h2"><a href="#数据怎么搬谁在搬省了多少">数据怎么搬：谁在搬，省了多少</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>9 月 10 日，DeepSeek 放出 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">V4.1-Flash</a>（MIT）：552B 主干、1M 上下文、原生多模态。标题很直白——<strong>“Pushing the Limits of KV Cache Compression&quot;</strong>。</p>
+<p>9 月 10 日，DeepSeek 放出 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">V4.1-Flash</a>（MIT）：552B 主干、1M 上下文、原生多模态。标题很直白：<strong>“Pushing the Limits of KV Cache Compression&quot;</strong>。</p>
 <p>这篇的每个设计都是冲着“字节数”去的，值得逐条拆。</p>
 <h2 id="ced把-decode-的-kv-从编码器投影出来">CED：把 decode 的 KV 从编码器“投影”出来</h2>
 <p>传统 decoder-only 模型里，每一层都有自己的 KV。CED（Causal Encoder-Decoder）把它拆成：</p>
@@ -67,10 +69,10 @@
 <tr><td>decode</td><td>16B</td><td>解码器需要更多计算</td></tr>
 </tbody>
 </table></div>
-<p>对“输入很重、输出很短”的 agent 负载（读 50 万 token 文档、输出 2K 摘要），这是极大的成本优化——<strong>prefill 的成本从“552B 模型”降到“8B 模型”的量级</strong>。</p>
+<p>对“输入很重、输出很短”的 agent 负载（读 50 万 token 文档、输出 2K 摘要），这是极大的成本优化，<strong>prefill 的成本从“552B 模型”降到“8B 模型”的量级</strong>。</p>
 <h2 id="swa-bounded-replay不落盘也能重建-kv">SWA Bounded Replay：不落盘也能重建 KV</h2>
 <p>滑动窗口注意力（SWA）只保留最近 <code>n_win</code> 个 token 的 KV。问题是：多轮对话回退时，旧窗口的 KV 已经没了。</p>
-<p>常见解法是把 SWA KV 持久化到 SSD——IO 成本高、延迟大。V4.1-Flash 的做法是 <strong>Bounded Replay</strong>：需要时用最近 <code>n_win</code> 个 token 重放，重建缺失状态。</p>
+<p>常见解法是把 SWA KV 持久化到 SSD，IO 成本高、延迟大。V4.1-Flash 的做法是 <strong>Bounded Replay</strong>：需要时用最近 <code>n_win</code> 个 token 重放，重建缺失状态。</p>
 <pre data-lang="text"><code class="language-text">need history from turn k -&gt; replay last n_win tokens -&gt; rebuild SWA state
 (replay cost ~ prefill of n_win, far below reading from SSD)</code></pre>
 <p>官方说这让<strong>持久化 KV 的体积降到 V4-Flash 的 1/8</strong>。</p>
@@ -101,7 +103,7 @@
 <tr><td><strong>V4.1-Flash</strong></td><td><strong>890 B</strong></td><td><strong>0.89 GB</strong></td></tr>
 </tbody>
 </table></div>
-<p><strong>1M 上下文的 KV 不到 1GB</strong>——这是 2026 年最激进的一条数字。</p>
+<p><strong>1M 上下文的 KV 不到 1GB</strong>，这是 2026 年最激进的一条数字。</p>
 <h2 id="数据怎么搬谁在搬省了多少">数据怎么搬：谁在搬，省了多少</h2>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -121,15 +123,14 @@
 <ol>
 <li><strong>长上下文的显存瓶颈几乎消失</strong>——1M 上下文不到 1GB KV，意味着单机能挂上百条长请求（受 prefill 算力限制，不是显存）。</li>
 <li><strong>prefill 变成主要成本</strong>，且已被压到 8B 级；这就是“输入重的 agent 负载”最需要的优化。</li>
-<li><strong>精度风险集中在 FP4 KV</strong>：E2M1 只有 4 位尾数，长上下文里的注意力分数分布要仔细校准，官方用 per-16-channel scale 缓解。</li>
+<li><strong>精度风险集中在 FP4 KV</strong>：E2M1 一共 4 个 bit（1 符号 + 2 指数 + 1 尾数），能表示的尾数只有 1 位，长上下文里的注意力分数分布要仔细校准，官方用 per-16-channel scale 缓解。</li>
 </ol>
-<p>落到工程上，我的判断是这样：</p>
-<ul>
-<li>KV 压缩是 2026 年最“划算”的优化方向，不改变模型能力，直接改成本结构。</li>
-<li><strong>prefill/decode 不对称（8B vs 16B）会成为新常态</strong>，因为真实负载本身就是“输入重、输出轻”。</li>
-<li>重放（replay）替代持久化，是个聪明的交换：用算力换 IO，在 KV 便宜的场景下更划算。</li>
-<li>自建的话：<strong>先量你的输入输出比</strong>。如果输入占比 &gt;80%，这类结构能省下一个数量级；反之（长生成）收益有限。</li>
-</ul>
+<p>这些数字乘起来就是部署容量：</p>
+<pre data-lang="text"><code class="language-text">单卡 H200（141GB）:
+  权重 552GB -&gt; 4 卡起步, 每卡 138GB
+  剩余给 KV: 每卡约 3GB -&gt; 3GB / 0.89GB(1M) ≈ 3 条满长上下文请求
+  实际跑 32K 平均: 0.89GB × 32/1000 ≈ 28MB/条 -&gt; 上百条并发</code></pre>
+<p>也就是说 1M 上下文的极端请求单机能同时挂 3 条，这才是“不到 1GB/token 总量”的真实含义：它换来的是“不必为最坏情况预留整机显存”，而不是“1M 上下文免费”。要不要为这条路径改架构，取决于你的 32K/1M 请求比例，那个比例只能从日志里数出来。</p>
 <h2 id="来源">来源</h2>
 <ul>
 <li>模型卡（CED、SWA Bounded Replay、CSA2、FP4 KV）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">DeepSeek-V4.1-Flash</a></li>
@@ -139,8 +140,7 @@
   </div>
   <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/kv缓存/">KV缓存</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/量化/">量化</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=V4.1-Flash%EF%BC%9AKV+%E5%8E%8B%E5%88%B0+890+%E5%AD%97%E8%8A%82%2Ftoken%EF%BC%8Cprefill+%E5%8F%AA%E6%BF%80%E6%B4%BB+8B" target="_blank" rel="noopener">分享到 X</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/sparse-attention-shootout/">← 五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><a class="next" href="/post/hy4-preview-gated-dsa/">Hy4 preview：770B/49B，把「抄作业」做成了体系 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li></ul></aside>
+  <nav class="post-nav"><a class="prev" href="/post/sparse-attention-shootout/">← 六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</a><a class="next" href="/post/hy4-preview-gated-dsa/">Hy4 preview：770B/49B，把「抄作业」做成了体系 →</a></nav>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -182,6 +182,12 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#ced把-decode-的-kv-从编码器投影出来">CED：把 decode 的 KV 从编码器&quot;投影&quot;出来</a></li>
+<li class="h2"><a href="#swa-bounded-replay不落盘也能重建-kv">SWA Bounded Replay：不落盘也能重建 KV</a></li>
+<li class="h2"><a href="#kv-压到-890-字节token">KV 压到 890 字节/token</a></li>
+<li class="h2"><a href="#数据怎么搬谁在搬省了多少">数据怎么搬：谁在搬，省了多少</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeepSeek-R1-0528：多想 11K token，涨 17 分 - farfood</title>
-<meta name="description" content="小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。">
+<meta name="description" content="AIME 2025 从 70.0 到 87.5，靠的是思考从 12K 变 23K；8B 蒸馏模型追平 235B。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-R1-0528：多想 11K token，涨 17 分", "description": "小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。", "datePublished": "2025-05-29T22:40:00+08:00", "dateModified": "2025-05-29T22:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 推理模型, 强化学习, 蒸馏"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "DeepSeek-R1-0528：多想 11K token，涨 17 分", "description": "AIME 2025 从 70.0 到 87.5，靠的是思考从 12K 变 23K；8B 蒸馏模型追平 235B。", "datePublished": "2025-05-29T22:40:00+08:00", "dateModified": "2025-05-29T22:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 推理模型, 强化学习, 蒸馏"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="DeepSeek-R1-0528：多想 11K token，涨 17 分 - farfood">
-<meta property="og:description" content="小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。">
+<meta property="og:description" content="AIME 2025 从 70.0 到 87.5，靠的是思考从 12K 变 23K；8B 蒸馏模型追平 235B。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/deepseek-r1-0528-more-thinking/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="DeepSeek-R1-0528：多想 11K token，涨 17 分 - farfood">
-<meta name="twitter:description" content="小版本更新，AIME 2025 从 70.0 涨到 87.5，平均思考长度从 12K 涨到 23K。同一套架构、同一份底座，只靠后训练和更长思考。附带的 8B 蒸馏模型在 AIME 上追平 235B。">
+<meta name="twitter:description" content="AIME 2025 从 70.0 到 87.5，靠的是思考从 12K 变 23K；8B 蒸馏模型追平 235B。">
 <meta property="article:published_time" content="2025-05-29T22:40:00+08:00">
 <meta name="keywords" content="DeepSeek, 推理模型, 强化学习, 蒸馏">
 </head>
@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-R1-0528：多想 11K token，涨 17 分</h1>
-    <p class="meta"><time datetime="2025-05-29T22:40:00">2025-05-29</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2244 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-05-29T22:40:00">2025-05-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2183 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#多想本身就是一种缩放">&quot;多想&quot;本身就是一种缩放</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#多想本身就是一种缩放">&quot;多想&quot;本身就是一种缩放</a></li>
 <li class="h2"><a href="#后训练配方变了什么">后训练配方变了什么</a></li>
+<li class="h2"><a href="#8b-蒸馏追平-235b">8B 蒸馏追平 235B</a></li>
 <li class="h2"><a href="#推理模型的选型矩阵">推理模型的选型矩阵</a></li>
-<li class="h2"><a href="#最后说三句">最后说三句</a></li>
+<li class="h2"><a href="#上线前先确认三件事">上线前先确认三件事</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
 <p>5 月 28 日，DeepSeek 更新了 R1，标签是 <code>0528</code>。<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">模型卡</a>的第一段就给了核心数字：</p>
@@ -66,8 +69,8 @@
 <p>而这些提升的来源被写得很直白：<strong>思考更长</strong>（<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">模型卡</a>）。同一批 AIME 题，旧版平均用 12K token，新版用 23K。</p>
 <h2 id="多想本身就是一种缩放">“多想”本身就是一种缩放</h2>
 <p>这是 2025 年上半年最实在的一条经验：<strong>test-time compute 的曲线还在有效区间</strong>。</p>
-<pre><code>平均思考 12K → 23K   （×1.9）
-AIME 2025 70.0 → 87.5 （+17.5）</code></pre>
+<pre data-lang="text"><code class="language-text">平均思考 12K → 23K      （×1.9）
+AIME 2025 70.0 → 87.5   （+17.5）</code></pre>
 <p>粗糙地换算：每多 1K 思考 token，AIME 涨约 1.6 分。当然这不是线性关系，越往后边际收益越低，但至少在这个区间还没饱和。</p>
 <p>代价同样线性：</p>
 <ul>
@@ -84,7 +87,7 @@ AIME 2025 70.0 → 87.5 （+17.5）</code></pre>
 <li><strong>工具调用补上了</strong>。模型卡把 Tool 类基准单列，这一版开始正经支持函数调用——1 月的 R1 在这一块基本是空白。</li>
 </ol>
 <p>第 3 点很重要：R1 最初是“推理专家”，不是“agent 底座”。0528 让它具备了当 agent 脑子的基本条件。</p>
-<p>再往下看，8B 蒸馏追平 235B：真正值得琢磨的是：</p>
+<h2 id="8b-蒸馏追平-235b">8B 蒸馏追平 235B</h2>
 <p>同一份模型卡里还有一个小模型：</p>
 <blockquote><p>把 R1-0528 的 CoT 蒸馏到 Qwen3-8B Base，得到 R1-0528-Qwen3-8B，AIME 2024 超过 Qwen3-8B 10 分，<strong>追平 Qwen3-235B-thinking</strong>。</p></blockquote>
 <p>这句话的分量：</p>
@@ -113,13 +116,13 @@ vllm serve deepseek-ai/DeepSeek-R1-0528-Qwen3-8B \
 </tbody>
 </table></div>
 <p>“推理”不再是模型属性，而是<strong>一次调用里要不要打开的策略</strong>。</p>
-<h2 id="最后说三句">最后说三句</h2>
-<ul>
-<li>“更长思考”还能继续涨分，但商业上快到头了。23K token 的思考意味着单次请求几十秒，只有离线/异步场景能吃。</li>
-<li><strong>蒸馏依然是性价比之王</strong>。8B 追平 235B 这件事，会在下半年被各家反复复制（Qwen、Kimi、GLM 都会出小尺寸推理模型）。</li>
-<li>R1 系列的天花板是非推理能力，写代码能过测试，但不懂业务上下文；做数学能拿高分，但不会查资料。下一代要解决的是“推理 + 工具 + 记忆”的组合，而不是继续加长 CoT。</li>
-<li>对使用者的实际建议：<strong>别迷信最大思考长度</strong>。把 effort 做成可配置项，按请求难度分档，成本能省 3～5 倍，分数只掉 1～2 分。</li>
-</ul>
+<h2 id="上线前先确认三件事">上线前先确认三件事</h2>
+<ol>
+<li><strong>思考预算封顶给多少</strong>：23K 是这一版的平均值，不是上限；按 4 倍留（约 90K），128K 窗口才不会被思考撑爆。</li>
+<li><strong>单题成本按什么记</strong>：\$0.05/题的量级下，日 1 万题就是 \$500/天，先确认这笔钱从哪个账单出。</li>
+<li><strong>链路能不能等 30 秒</strong>：交互式入口放长思考等于放弃首字体验，先确认有没有异步队列和回填机制。</li>
+</ol>
+<p>这三点里最容易被忽略的是第二条：思考长度是模型行为，不是调用参数，账单涨的时候往往先怀疑上游流量。</p>
 <h2 id="参考与数据">参考与数据</h2>
 <ul>
 <li>模型卡（基准、蒸馏说明、使用建议）：<a href="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528">DeepSeek-R1-0528</a></li>
@@ -131,7 +134,6 @@ vllm serve deepseek-ai/DeepSeek-R1-0528-Qwen3-8B \
   <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/强化学习/">强化学习</a><a class="tag" href="/tags/蒸馏/">蒸馏</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-R1-0528%EF%BC%9A%E5%A4%9A%E6%83%B3+11K+token%EF%BC%8C%E6%B6%A8+17+%E5%88%86" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/o3-pro-minute-scale-reasoning/">← o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><a class="next" href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -173,6 +175,13 @@ vllm serve deepseek-ai/DeepSeek-R1-0528-Qwen3-8B \
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#多想本身就是一种缩放">&quot;多想&quot;本身就是一种缩放</a></li>
+<li class="h2"><a href="#后训练配方变了什么">后训练配方变了什么</a></li>
+<li class="h2"><a href="#8b-蒸馏追平-235b">8B 蒸馏追平 235B</a></li>
+<li class="h2"><a href="#推理模型的选型矩阵">推理模型的选型矩阵</a></li>
+<li class="h2"><a href="#上线前先确认三件事">上线前先确认三件事</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

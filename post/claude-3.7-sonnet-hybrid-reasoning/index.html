@@ -37,18 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</h1>
-    <p class="meta"><time datetime="2025-02-25T08:40:00">2025-02-25</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2667 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-02-25T08:40:00">2025-02-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合推理一个-checkpoint两种行为">混合推理：一个 checkpoint，两种行为</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合推理一个-checkpoint两种行为">混合推理：一个 checkpoint，两种行为</a></li>
 <li class="h2"><a href="#思考预算是一个整数参数">思考预算是一个整数参数</a></li>
 <li class="h2"><a href="#数字赢在-agent-任务">数字：赢在 agent 任务</a></li>
 <li class="h2"><a href="#claude-code-才是重点">Claude Code 才是重点</a></li>
 <li class="h2"><a href="#混合模式的工程代价">混合模式的工程代价</a></li>
-<li class="h2"><a href="#最后说三句">最后说三句</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
 <p>2 月 24 日，Anthropic 同时发了 <a href="https://www.anthropic.com/news/claude-3-7-sonnet">Claude 3.7 Sonnet 和 Claude Code</a>。前者是市面上第一个<strong>混合推理</strong>（hybrid reasoning）商用模型，后者是一个跑在终端里的 agentic coding 工具（当时是 limited research preview）。</p>
@@ -101,30 +102,23 @@
 <h2 id="混合模式的工程代价">混合模式的工程代价</h2>
 <p>站在自建推理服务一侧，混合模式不是免费的：</p>
 <ol>
-<li><strong>KV cache 复用变差。</strong> 思考段落的长度不确定，前缀缓存命中率下降；同一模型两种长度分布，batch 里长尾更明显。</li>
-<li><strong>训练侧要两种分布都见。</strong> 只训长 CoT 会让普通模式变慢变啰嗦，只训短回答又学不会长推理。混合训练的数据配比是个新变量。</li>
-<li><strong>评测要分模式。</strong> 同一个模型在“开思考”和“不开思考”下是两个产品，对外只报一个分数很容易误导。</li>
+<li><strong>KV cache 复用变差。</strong> 思考段落的长度不确定，前缀缓存命中率下降；同一模型两种长度分布，batch 的长尾更明显。</li>
+<li><strong>训练侧要两种分布都见。</strong> 只训长 CoT 会让普通模式变慢变啰嗦，只训短回答又学不会长推理，配比成了新变量。</li>
+<li><strong>评测要分模式。</strong> 同一个模型开与不开思考是两个产品。</li>
 </ol>
-<p>反过来说，混合模式省掉了维护两条模型线的成本：一套权重、一套安全评估、一套部署。对供应商来说这是笔划算的买卖，我猜这会是后续主流——<strong>不是“推理模型”，而是“带思考开关的模型”</strong>。</p>
-<h2 id="最后说三句">最后说三句</h2>
-<ul>
-<li>混合推理会成为默认形态，独立推理模型线更像过渡方案；</li>
-<li><strong>思考预算参数化</strong>（o3-mini 的 effort、3.7 的 budget_tokens）是 2025 年最重要的 API 设计变化，它把“要不要多想”从模型选择降级成调用参数；</li>
-<li>真正的分水岭不是 AIME，而是<strong>长任务的工具使用可靠性</strong>；SWE-bench 和 TAU-bench 这类基准的分量会越来越重；</li>
-<li>定价不涨是个信号：推理的边际成本在快速下降，靠“贵”维持高端定位的策略撑不了多久。</li>
-</ul>
+<p>反过来说，混合模式省掉了维护两条模型线的成本：一套权重、一套安全评估、一套部署。对供应商是笔划算的买卖：<strong>思考从“选模型”变成“传参数”</strong>，独立推理模型线更像过渡方案。</p>
+<p>判据只有一条：同一个 checkpoint 在两种模式下的分数必须分开报，合报会把这个变量藏进产品文档里——SWE-bench 63.7% 和 70.3% 是同一个权重在两个 scaffold 下的结果，对外只写一个数就是误导。</p>
 <h2 id="参考与数据">参考与数据</h2>
 <ul>
 <li>发布公告：<a href="https://www.anthropic.com/news/claude-3-7-sonnet">Claude 3.7 Sonnet and Claude Code</a></li>
 <li>extended thinking 参数说明：<a href="https://docs.claude.com/en/docs/build-with-claude/extended-thinking">docs.claude.com</a></li>
 <li>模型规格与上下文：<a href="https://docs.claude.com/en/docs/about-claude/models/overview">Models overview</a></li>
-<li>版本沿革：<a href="https://en.wikipedia.org/wiki/Claude_(language_model">Wikipedia: Claude (language model)</a>)</li>
+<li>计费口径（思考 token 按输出计）：<a href="https://docs.claude.com/en/docs/about-claude/pricing">Pricing</a></li>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/anthropic/">Anthropic</a><a class="tag" href="/tags/claude/">Claude</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Claude+3.7+Sonnet%EF%BC%9A%E4%B8%80%E4%B8%AA%E6%A8%A1%E5%9E%8B%E4%B8%A4%E7%A7%8D%E6%A8%A1%E5%BC%8F%EF%BC%8C%E5%A4%96%E5%8A%A0%E4%B8%80%E4%B8%AA%E7%BB%88%E7%AB%AF+agent" target="_blank" rel="noopener">分享到 X</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/gemini-2.5-thinking-by-default/">← Gemini 2.5 Pro：把「思考」设成默认行为</a><a class="next" href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」</a><time>2025-05</time></li><li><a href="/post/claude-sonnet-4.5-swe-bench-77/">Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</a><time>2025-09</time></li><li><a href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</a><time>2025-10</time></li></ul></aside>
+  <nav class="post-nav"><a class="prev" href="/post/gemini-2.5-thinking-by-default/">← Gemini 2.5 Pro：把「思考」设成默认行为</a><a class="next" href="/post/o3-mini-reasoning-effort/">o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍 →</a></nav>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -166,6 +160,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#混合推理一个-checkpoint两种行为">混合推理：一个 checkpoint，两种行为</a></li>
+<li class="h2"><a href="#思考预算是一个整数参数">思考预算是一个整数参数</a></li>
+<li class="h2"><a href="#数字赢在-agent-任务">数字：赢在 agent 任务</a></li>
+<li class="h2"><a href="#claude-code-才是重点">Claude Code 才是重点</a></li>
+<li class="h2"><a href="#混合模式的工程代价">混合模式的工程代价</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」</a><time>2025-05</time></li><li><a href="/post/claude-sonnet-4.5-swe-bench-77/">Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</a><time>2025-09</time></li><li><a href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</a><time>2025-10</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

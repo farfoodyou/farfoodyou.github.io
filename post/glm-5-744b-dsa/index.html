@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件 - farfood</title>
-<meta name="description" content="744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。">
+<meta name="description" content="744B/40B、28.5T token、MIT，集成 DSA。SWE-bench 77.8%，定位是长程 agent 任务。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/glm-5-744b-dsa/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,19 +15,19 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件", "description": "744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。", "datePublished": "2026-02-13T09:40:00+08:00", "dateModified": "2026-02-13T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/glm-5-744b-dsa/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "智谱, GLM, 开源模型, MoE, 稀疏注意力, Agent"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件", "description": "744B/40B、28.5T token、MIT，集成 DSA。SWE-bench 77.8%，定位是长程 agent 任务。", "datePublished": "2026-02-13T09:40:00+08:00", "dateModified": "2026-02-13T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/glm-5-744b-dsa/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "GLM, 开源模型, MoE, 稀疏注意力, Agent"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件 - farfood">
-<meta property="og:description" content="744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。">
+<meta property="og:description" content="744B/40B、28.5T token、MIT，集成 DSA。SWE-bench 77.8%，定位是长程 agent 任务。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/glm-5-744b-dsa/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件 - farfood">
-<meta name="twitter:description" content="744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。">
+<meta name="twitter:description" content="744B/40B、28.5T token、MIT，集成 DSA。SWE-bench 77.8%，定位是长程 agent 任务。">
 <meta property="article:published_time" content="2026-02-13T09:40:00+08:00">
-<meta name="keywords" content="智谱, GLM, 开源模型, MoE, 稀疏注意力, Agent">
+<meta name="keywords" content="GLM, 开源模型, MoE, 稀疏注意力, Agent">
 </head>
 <body class="post-page">
 <div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
@@ -37,13 +37,15 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</h1>
-    <p class="meta"><time datetime="2026-02-13T09:40:00">2026-02-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2407 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-02-13T09:40:00">2026-02-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2373 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#官方成绩单">官方成绩单</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#官方成绩单">官方成绩单</a></li>
 <li class="h2"><a href="#285t-token-与-dsa-的组合意图">28.5T token 与 DSA 的组合意图</a></li>
 <li class="h2"><a href="#摊开算744b-在机房里是什么样">摊开算：744B 在机房里是什么样</a></li>
 <li class="h2"><a href="#长程-agent-任务的真实含义">长程 agent 任务的真实含义</a></li>
@@ -64,7 +66,7 @@
 <tr><td>定位</td><td>agent 基座</td><td><strong>复杂系统工程 + 长程 agent</strong></td></tr>
 </tbody>
 </table></div>
-<p>一个半月前（12 月）DeepSeek 刚把 DSA 用在 V3.2 上；两个月后，智谱把同一套稀疏注意力放进了自己的旗舰。<strong>结构上的最佳实践开始跨团队收敛了。</strong></p>
+<p>两个多月前（12 月）DeepSeek 把 DSA 用在 V3.2 上，现在智谱把同一套稀疏注意力放进了自己的旗舰。<strong>结构上的最佳实践开始跨团队收敛了。</strong></p>
 <h2 id="官方成绩单">官方成绩单</h2>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -110,7 +112,7 @@
 <li><strong>容量</strong>：744GB FP8 权重 → 至少 6 张 H200（141GB）或 5 张 B200（180GB），实际要留 KV/激活空间，8 卡是舒服配置；</li>
 <li><strong>单流 decode 上限</strong>：读 40GB / 4.8TB/s ≈ <strong>8.3 ms/token → 约 120 token/s</strong>（H200）；B200（8TB/s）约 200 token/s；</li>
 <li><strong>batch 摊薄</strong>：权重读一次服务 N 条请求，吞吐随 batch 上升，直到 KV 占满；</li>
-<li><strong>EP 通信</strong>：40B 激活意味着专家分散在多卡，每层 all-to-all 的 hidden 搬运是固定成本，跨节点时走 RDMA（400G ≈ 50GB/s），一个 token 的专家通信常在 100 μs 量级——<strong>比算一遍贵</strong>。</li>
+<li><strong>EP 通信</strong>：40B 激活意味着专家分散在多卡，每层 all-to-all 的 hidden 搬运是固定成本，跨节点时走 RDMA（400G ≈ 50GB/s），一个 token 的专家通信常在 100 μs 量级，<strong>比算一遍贵</strong>。</li>
 </ul>
 <p>所以 744B 的部署现实是：<strong>单机 8 卡勉强、两个节点正常</strong>。这也是为什么“稀疏注意力 + FP8”是必需品而不是加分项。</p>
 <h2 id="长程-agent-任务的真实含义">长程 agent 任务的真实含义</h2>
@@ -128,14 +130,9 @@
 <tr><td>上下文管理</td><td>BrowseComp（带管理）</td><td>上下文溢出后丢失目标</td></tr>
 </tbody>
 </table></div>
-<p>注意 BrowseComp 的括注“w/ Context Management”：<strong>这类基线的分数强依赖 harness 的记忆管理策略</strong>。模型卡甚至写明了“无上下文管理时只保留最近 5 轮”——评分条件本身就是工程实现的一部分。</p>
-<p>说到最后，给几句自己的判断：</p>
-<ul>
-<li>DSA 会成为 2026 年开源旗舰的默认结构，（DeepSeek 先验证、智谱跟进，剩下几家大概率跟上）。</li>
-<li><strong>“总参数↑、激活参数持平”会成为主流</strong>：知识靠容量，成本靠稀疏，二者解耦。</li>
-<li>agent 基准的分数会越来越不可比，因为 harness 的上下文管理、重试策略、工具质量都会显著影响结果。发布方不写清 harness，数字就没意义。</li>
-<li>对自部署团队：<strong>744B 级模型先别急着自己扛</strong>。除非你有稳定的 8 卡以上资源和成熟的 EP 调优经验，否则走 API 更划算——自建的隐性成本（网络、并行策略、故障恢复）远高于权重本身。</li>
-</ul>
+<p>注意 BrowseComp 的括注“w/ Context Management”：<strong>这类基线的分数强依赖 harness 的记忆管理策略</strong>。模型卡甚至写明了“无上下文管理时只保留最近 5 轮”，评分条件本身就是工程实现的一部分。</p>
+<p>744B 这档不适合先自己扛。除非有稳定的 8 卡以上资源和成熟的 EP 调优经验，走 API 更划算：自建的隐性成本（网络、并行策略、故障恢复）远高于权重本身，而权重只是唯一能公开查到价格的那一项。</p>
+<p>剩下的问题是一笔具体的账：8 卡 H200 如果只为跑这一档模型，按 30% 的平均利用率算，单 token 的固定成本能不能压到 API 单价以下？我们的样本里答案是不能，因为队列空着的时候卡也不会停着不花钱。什么时候能翻过来，取决于长任务比例能不能把 batch 填满；这一点只能拿自己一周的流量去算，排行榜算不出来。</p>
 <h2 id="参考与数据">参考与数据</h2>
 <ul>
 <li>模型卡（规格、基准表、评测设置）：<a href="https://huggingface.co/zai-org/GLM-5">GLM-5</a></li>
@@ -144,10 +141,9 @@
 <li>部署与推理说明：<a href="https://z.ai/blog/glm-4.5">z.ai/blog/glm-4.5</a></li>
 </ul>
   </div>
-  <p class="tag-list"><a class="tag" href="/tags/智谱/">智谱</a><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/agent/">Agent</a></p>
+  <p class="tag-list"><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/agent/">Agent</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=GLM-5%EF%BC%9A744B%2F40B%EF%BC%8C%E7%A8%80%E7%96%8F%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%88%90%E4%BA%86%E5%BC%80%E6%BA%90%E6%97%97%E8%88%B0%E7%9A%84%E9%BB%98%E8%AE%A4%E4%BB%B6" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/agent-evaluation-methodology/">← Agent 测评：别信单次分数，先算方差和账单</a><a class="next" href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><time>2025-12</time></li><li><a href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</a><time>2026-04</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -189,6 +185,12 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#官方成绩单">官方成绩单</a></li>
+<li class="h2"><a href="#285t-token-与-dsa-的组合意图">28.5T token 与 DSA 的组合意图</a></li>
+<li class="h2"><a href="#摊开算744b-在机房里是什么样">摊开算：744B 在机房里是什么样</a></li>
+<li class="h2"><a href="#长程-agent-任务的真实含义">长程 agent 任务的真实含义</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/kimi-k2-1t-moe-muonclip/">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><time>2025-07</time></li><li><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><time>2025-10</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

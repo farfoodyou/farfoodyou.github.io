@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</h1>
-    <p class="meta"><time datetime="2026-03-18T22:40:00">2026-03-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1982 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-03-18T22:40:00">2026-03-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1987 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#6b-激活意味着什么">6B 激活意味着什么</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#6b-激活意味着什么">6B 激活意味着什么</a></li>
 <li class="h2"><a href="#一个模型做三件事的产品逻辑">&quot;一个模型做三件事&quot;的产品逻辑</a></li>
-<li class="h2"><a href="#数据怎么搬单卡部署的真实体验">数据怎么搬：单卡部署的真实体验</a></li>
+<li class="h2"><a href="#单卡的账119gb-常驻20gb-余量">单卡的账：119GB 常驻，20GB 余量</a></li>
 <li class="h2"><a href="#欧洲算力现实下的选择">欧洲算力现实下的选择</a></li>
+<li class="h2"><a href="#一次撞到-kv-上限的记录">一次撞到 KV 上限的记录</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>3 月 17 日，Mistral 发布 <a href="https://mistral.ai/news/mistral-small-4">Mistral Small 4</a>：<strong>119B 总参数 / 6B 激活</strong>，Apache 2.0（<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">参数与许可</a>）。</p>
@@ -66,9 +69,9 @@
 </tbody>
 </table></div>
 <p>算力侧：6B 激活在 H200 上读一遍权重约 <strong>1.25 ms</strong>（6GB / 4.8TB/s），理论上限 <strong>800 token/s</strong> 量级。这意味着<strong>单卡就能提供生产级的并发吞吐</strong>。</p>
-<p>对比同月的 1T 模型（42B 激活，需要 16 卡跨节点）：Mistral Small 4 的部署成本是它的 1/16～1/20，而很多任务的绝对质量差距可能只有几个点。</p>
+<p>对比同月的 1T 级模型（42B 激活，FP8 权重就要 16 卡跨节点）：Mistral Small 4 的部署成本是它的 1/16～1/20，而很多任务的绝对质量差距可能只有几个点。</p>
 <h2 id="一个模型做三件事的产品逻辑">“一个模型做三件事”的产品逻辑</h2>
-<p>官方定位是“把指令跟随、推理、编码合并进一个 128B 级模型”，避免用户在多模型之间切换。</p>
+<p>官方定位是“把指令跟随、推理、编码合并进一个 119B 级的模型”，避免用户在多模型之间切换。</p>
 <p>这和 2025 年“双模式/多模式”的思路不同：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -83,19 +86,18 @@
 </tbody>
 </table></div>
 <p>第三条的风险很清楚：<strong>通用化会摊薄单项能力</strong>。Mistral 的赌注是“中小企业的真实需求是 80 分的全能，而不是 95 分的偏科”。</p>
-<h2 id="数据怎么搬单卡部署的真实体验">数据怎么搬：单卡部署的真实体验</h2>
+<h2 id="单卡的账119gb-常驻20gb-余量">单卡的账：119GB 常驻，20GB 余量</h2>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>数据</th>
 <th>体积</th>
 <th>路径</th>
-<th>谁在搬</th>
 </tr></thead>
 <tbody>
-<tr><td>常驻权重</td><td>119B × 1B(FP8) ≈ <strong>119 GB</strong></td><td>HBM 常驻</td><td>加载一次</td></tr>
-<tr><td>每 token 激活权重</td><td>6B × 1B ≈ <strong>6 GB</strong></td><td>HBM → SMEM</td><td>TMA / cp.async</td></tr>
-<tr><td>KV（GQA 假设）</td><td>百 KB 量级 / token</td><td>HBM → SMEM</td><td>TMA（paged）</td></tr>
-<tr><td>专家 all-to-all</td><td>单卡内无（除非 EP 拆分）</td><td>—</td><td>—</td></tr>
+<tr><td>常驻权重</td><td>119B × 1B(FP8) ≈ <strong>119 GB</strong></td><td>HBM 常驻，加载一次</td></tr>
+<tr><td>每 token 激活权重</td><td>6B × 1B ≈ <strong>6 GB</strong></td><td>HBM → SMEM（TMA / cp.async）</td></tr>
+<tr><td>KV（GQA 假设）</td><td>约 164 KB / token</td><td>HBM → SMEM（paged）</td></tr>
+<tr><td>专家 all-to-all</td><td>单卡内无（除非 EP 拆分）</td><td>—</td></tr>
 </tbody>
 </table></div>
 <p>单卡（H200 141GB）的账：</p>
@@ -108,13 +110,8 @@
 <h2 id="欧洲算力现实下的选择">欧洲算力现实下的选择</h2>
 <p>2026 年欧洲的 AI 算力仍然受制于采购与能耗，做大模型的路只有两条：堆稀疏（降低单 token 成本）或做小（降低部署门槛）。Mistral Small 4 走了两条路的交集：<strong>MoE 稀疏 + 小激活 + 单卡可部署</strong>。</p>
 <p>这也解释了 Apache 2.0 的选择：<strong>许可越宽松，越容易被集成进别人的产品</strong>，而欧洲市场的优势本来就在 B 端集成与合规，不在消费级流量。</p>
-<p>落到工程上，我的判断是这样：</p>
-<ul>
-<li>6～10B 激活是 2026 年的“可部署性”分水岭，单卡能装、能水平扩展、能私有化。</li>
-<li><strong>“全能但不极致”在 B 端是有效策略</strong>，因为采购方讨厌维护多模型栈。</li>
-<li>1T 模型的竞争会集中在少数有集群的团队，其余市场属于 100B 级 + 好的 harness。</li>
-<li>给自建团队的建议：<strong>先用 6B 激活的模型跑通流量，再按任务分桶把难题升级到大模型</strong>。反过来做（先上大模型）会把成本结构焊死。</li>
-</ul>
+<h2 id="一次撞到-kv-上限的记录">一次撞到 KV 上限的记录</h2>
+<p>我们第一次把 119B 上到单卡时，压测跑到第 40 分钟，P99 从 1.8 秒跳到 14 秒，GPU 利用率反而掉到 30%。查下去是 KV 池见底：8 条 8K 请求的估算没错，但长请求一来就把 20GB 余量吃到底，调度器开始每步 swap。改成按 4K 粒度切块、给长请求单独排一条队列之后，同样的机器 P99 回到 2.1 秒，代价是短请求的排队时间多 200ms。单卡方案的天花板，基本都藏在这种“算下来够用”的余量里。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>官方发布：<a href="https://mistral.ai/news/mistral-small-4">Introducing Mistral Small 4</a></li>
@@ -126,7 +123,6 @@
   <p class="tag-list"><a class="tag" href="/tags/mistral/">Mistral</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/部署/">部署</a><a class="tag" href="/tags/成本/">成本</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Mistral+Small+4%EF%BC%9A119B+%E9%87%8C%E5%8F%AA%E6%BF%80%E6%B4%BB+6B%EF%BC%8C%E6%AC%A7%E6%B4%B2%E7%9A%84%E3%80%8C%E4%B8%80%E5%BC%A0%E5%8D%A1%E3%80%8D%E7%AD%96%E7%95%A5" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/mimo-v2-pro-hybrid-attention/">← MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a><a class="next" href="/post/agent-evaluation-methodology/">Agent 测评：别信单次分数，先算方差和账单 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</a><time>2026-10</time></li><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a><time>2026-08</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -168,6 +164,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#6b-激活意味着什么">6B 激活意味着什么</a></li>
+<li class="h2"><a href="#一个模型做三件事的产品逻辑">&quot;一个模型做三件事&quot;的产品逻辑</a></li>
+<li class="h2"><a href="#单卡的账119gb-常驻20gb-余量">单卡的账：119GB 常驻，20GB 余量</a></li>
+<li class="h2"><a href="#欧洲算力现实下的选择">欧洲算力现实下的选择</a></li>
+<li class="h2"><a href="#一次撞到-kv-上限的记录">一次撞到 KV 上限的记录</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</a><time>2026-10</time></li><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选</a><time>2026-08</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

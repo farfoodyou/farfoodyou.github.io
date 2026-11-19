@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</h1>
-    <p class="meta"><time datetime="2026-06-17T09:20:00">2026-06-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1955 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-06-17T09:20:00">2026-06-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1952 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#稀疏注意力的隐藏账单索引器">稀疏注意力的隐藏账单：索引器</a></li>
-<li class="h2"><a href="#为什么solid-1m值得单列">为什么&quot;solid 1M&quot;值得单列</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#稀疏注意力的隐藏账单索引器">稀疏注意力的隐藏账单：索引器</a></li>
+<li class="h2"><a href="#solid-这个词怎么验">&quot;solid&quot; 这个词怎么验</a></li>
 <li class="h2"><a href="#摊开算1m-上下文的字节账">摊开算：1M 上下文的字节账</a></li>
 <li class="h2"><a href="#benchmark-与横向位置">benchmark 与横向位置</a></li>
+<li class="h2"><a href="#一个可以被证伪的预测">一个可以被证伪的预测</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>6 月 16 日，智谱开源 <a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2</a>（MIT）。参数没动（744B 总 / 40B 激活、28.5T token），改的是两处“效率件”：</p>
@@ -68,8 +71,8 @@
   index cost ~ 61 x O(L) projection + scoring
   -&gt; the quadratic term saved by sparsity is partly returned as linear cost</code></pre>
 <p>IndexShare 的思路很直接：<strong>索引器本身也是冗余的</strong>。相邻几层的注意力模式高度相关，没必要每层都算一遍——每 4 层共享一次索引，其余层直接复用。</p>
-<p>省下来的量级：官方说 1M 上下文下每 token FLOPs 降到 <strong>1/2.9</strong>。这不是小优化，它把“稀疏注意力的索引税”从 60% 量级压到 20% 量级。</p>
-<h2 id="为什么solid-1m值得单列">为什么“solid 1M”值得单列</h2>
+<p>省下来的量级：官方说 1M 上下文下每 token FLOPs 降到 <strong>1/2.9</strong>。这个数字能反推出索引税原来有多重：设索引占原 FLOPs 的比例为 x，共享后索引降到 1/4，总 FLOPs 变成 1 - 0.75x；要等于 1/2.9，解出 x ≈ 0.87。也就是说 1M 上下文下索引本来吃掉近九成算力，共享后剩两成出头。短上下文上看不出收益，正是因为 L 小的时候索引本来就不占大头。</p>
+<h2 id="solid-这个词怎么验">“solid&quot; 这个词怎么验</h2>
 <p>2025 年很多模型标 1M 上下文，实际可用区间只有 100～200K：再长注意力质量下降、显存爆、延迟不可接受。GLM-5.2 的措辞是 “a solid 1M-token context that stably sustains long-horizon work”，强调<strong>稳定性</strong>而不是上限。</p>
 <p>判断真假 1M 的三个实测口径：</p>
 <div class="table-wrap"><table>
@@ -99,17 +102,12 @@
 <tr><td>prefill</td><td>数十秒 / 1M</td><td>必须配前缀缓存</td></tr>
 </tbody>
 </table></div>
-<p>工程结论：<strong>1M 上下文的可行性由“索引 + KV”决定，不是由参数量决定</strong>。GLM-5.2 和 DeepSeek-V4 系列在同一个月都在做同一件事（<a href="/post/deepseek-v4-hybrid-attention/">V4 的 CSA/HCA</a>），说明这条技术路线已经收敛。</p>
+<p>工程结论：<strong>1M 上下文的可行性由“索引 + KV”决定，不是由参数量决定</strong>。DSA 的分层压缩和 IndexShare 是同一个方向上的两种减法：一个减少要读的 token，一个减少要算的索引。</p>
 <h2 id="benchmark-与横向位置">benchmark 与横向位置</h2>
 <p>官方表里几个关键项：SWE-bench Pro <strong>62.1</strong>、IMOAnswerBench <strong>91.0</strong>、Terminal-Bench 2.1 用 Claude Code harness 测。对比同表里的 Qwen3.7-Max（60.6）、MiniMax M3（59.0）、DeepSeek-V4-Pro（55.4）、Opus 4.8（69.2）。</p>
 <p>读法：<strong>开源第一梯队已经摸到闭源旗舰的 90%</strong>，且成本模型完全不同（自建 vs API）。</p>
-<p>落到工程上，我的判断是这样：</p>
-<ul>
-<li>“索引器共享”会被广泛抄走，因为它是稀疏注意力里最后一块明显的冗余。</li>
-<li><strong>1M 上下文的竞争点从“能塞”转到“能稳”</strong>，指标会变成“长程任务成功率”而不是“最大长度”。</li>
-<li>MTP + 稀疏注意力是 2026 年的双默认，两者叠加时要注意 KV 带宽（投机解码会放大 KV 读取）。</li>
-<li>自建团队：1M 上下文的真实成本还是 prefill，<strong>前缀缓存命中率决定这个功能是“可用”还是“不可用”</strong>。</li>
-</ul>
+<h2 id="一个可以被证伪的预测">一个可以被证伪的预测</h2>
+<p>到 2026 年底，如果除 GLM 之外没有第二家把“每 4 层共享索引器”写进默认架构，那 2.9× 就该打问号：它可能来自这一家的 kernel 实现和层数配比，而不是索引器冗余这件事本身。验证方法不难，看别家的 1M 上下文档里有没有独立的“索引 FLOPs 占比”这一项就行。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>模型卡（IndexShare、MTP、基准表）：<a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2</a></li>
@@ -121,7 +119,6 @@
   <p class="tag-list"><a class="tag" href="/tags/智谱/">智谱</a><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/开源模型/">开源模型</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=GLM-5.2%EF%BC%9AIndexShare+%E6%8A%8A+1M+%E4%B8%8A%E4%B8%8B%E6%96%87%E7%9A%84%E7%B4%A2%E5%BC%95%E5%BC%80%E9%94%80%E7%A0%8D%E5%88%B0+1%2F2.9" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/longcat-2.0-asic-superpod/">← LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</a><a class="next" href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30% →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><time>2025-12</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -163,6 +160,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#稀疏注意力的隐藏账单索引器">稀疏注意力的隐藏账单：索引器</a></li>
+<li class="h2"><a href="#solid-这个词怎么验">&quot;solid&quot; 这个词怎么验</a></li>
+<li class="h2"><a href="#摊开算1m-上下文的字节账">摊开算：1M 上下文的字节账</a></li>
+<li class="h2"><a href="#benchmark-与横向位置">benchmark 与横向位置</a></li>
+<li class="h2"><a href="#一个可以被证伪的预测">一个可以被证伪的预测</a></li>
+<li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><time>2025-12</time></li><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

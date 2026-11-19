@@ -37,19 +37,21 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Agent 测评：别信单次分数，先算方差和账单</h1>
-    <p class="meta"><time datetime="2026-02-24T22:30:00">2026-02-24</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2811 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-02-24T22:30:00">2026-02-24</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2754 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#agent-分数是四元函数">agent 分数是四元函数</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#agent-分数是四元函数">agent 分数是四元函数</a></li>
 <li class="h2"><a href="#passk-与-passk两个方向相反的指标">pass@k 与 pass^k：两个方向相反的指标</a></li>
 <li class="h2"><a href="#方差为什么-10-次不够">方差：为什么 10 次不够</a></li>
 <li class="h2"><a href="#成本必须进报表">成本必须进报表</a></li>
 <li class="h2"><a href="#长任务看曲线不看一个点">长任务：看曲线，不看一个点</a></li>
 <li class="h2"><a href="#落地清单">落地清单</a></li>
-<li class="h2"><a href="#结论以及我还不敢说的">结论，以及我还不敢说的</a></li>
+<li class="h2"><a href="#该报哪个指标一张判据表">该报哪个指标：一张判据表</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
 <p>2025 年下半年开始，模型发布会的重心从 AIME 换成了 SWE-bench、Terminal-Bench、BrowseComp、OSWorld。但绝大多数团队照着榜单选完模型，上手后会发现“没那么神”。</p>
@@ -75,10 +77,11 @@
 <tr><td>pass^k</td><td>k 次全部成功才算成功</td><td>必须无人值守（如 CI 自动修复）</td></tr>
 </tbody>
 </table></div>
-<p>两者的差距随任务步数指数放大。假设单步成功率 0.98，走 30 步：</p>
-<pre data-lang="text"><code class="language-text">pass^1 = 0.98^30 ≈ 55%
-pass^30（任一次全通）会显著更高，但那不代表可靠</code></pre>
-<p><strong>agent 场景要报 pass^k，尤其 k=1 的裸成功率。</strong> 但也别走极端：<code>pass^8</code> 的评测成本是单次的 8 倍，得配合分层抽样。</p>
+<p>两者的差距随任务步数指数放大。设 30 步任务、单步成功率 0.98，单次全通 p = 0.98^30 ≈ 55%：</p>
+<pre data-lang="text"><code class="language-text">pass^1 = p          ≈ 55%     # 一次就全通
+pass^5 = p^5        ≈ 5%      # 5 次全部全通
+pass@5 = 1-(1-p)^5  ≈ 98%     # 5 次里有一次全通就算</code></pre>
+<p>pass^k 随 k 指数下降，pass@k 随 k 上升趋近 1，同一份结果按两种口径能差 20 倍。<strong>agent 场景要报 pass^k，尤其 k=1 的裸成功率。</strong> 但也别走极端：<code>pass^8</code> 的评测成本是单次的 8 倍，得配合分层抽样。</p>
 <h2 id="方差为什么-10-次不够">方差：为什么 10 次不够</h2>
 <p>Anthropic 在 Sonnet 4.5 报 SWE-bench 用 <strong>10 次平均</strong>，Haiku 4.5 用 <strong>50 次平均</strong>（<a href="https://www.anthropic.com/news/claude-haiku-4-5">公告</a>）。这不是随手写的：</p>
 <ul>
@@ -89,7 +92,7 @@ pass^30（任一次全通）会显著更高，但那不代表可靠</code></pre>
 <pre data-lang="text"><code class="language-text">SE = sqrt(p(1-p)/n)
 500 题、p=0.77  → SE ≈ 1.9%，95% CI ≈ ±3.7%
 50  题、p=0.77  → SE ≈ 6.0%，95% CI ≈ ±11.7%</code></pre>
-<p><strong>只有 50 题的基准，2 分的差距在统计上毫无意义。</strong> 这就是为什么很多“我们领先 X 分”的说法经不起推敲。</p>
+<p><strong>只有 50 题的基准，2 分的差距在统计上毫无意义。</strong></p>
 <h2 id="成本必须进报表">成本必须进报表</h2>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -131,8 +134,6 @@ pass^30（任一次全通）会显著更高，但那不代表可靠</code></pre>
 <tbody>
 <tr><td>每题步数</td><td>10～50 步</td><td>每步一次模型调用</td></tr>
 <tr><td>每题 token</td><td>10K～200K</td><td>含上下文重复读取</td></tr>
-<tr><td>总调用数</td><td>5K～25K 次</td><td>单模型单次评测</td></tr>
-<tr><td>沙箱</td><td>500 个容器</td><td>并行需要配额</td></tr>
 <tr><td>KV/前缀复用</td><td>命中率 30%～70%</td><td>同仓库任务可复用</td></tr>
 </tbody>
 </table></div>
@@ -149,33 +150,37 @@ pass^30（任一次全通）会显著更高，但那不代表可靠</code></pre>
 <li>固定 harness 版本（打 tag），评的是“模型 + 固定 harness”这个整体；</li>
 <li>每题跑 ≥5 次（小模型 ≥20 次），报均值 + 标准差；</li>
 <li>至少报 <code>pass@1</code>、<code>pass^5</code> 两个指标；</li>
-<li>按步数/难度分桶报结果；</li>
-<li>记录每任务的 token、工具调用、墙钟、成本；</li>
-<li>保留 20% 题目做留出集，防止 prompt 过拟合；</li>
-<li>每季度重跑，因为供应商会静默更新路由与权重。</li>
+<li>按步数/难度分桶，并记录每任务的 token、工具调用、墙钟、成本；</li>
+<li>留 20% 题目做留出集，防止 prompt 过拟合，也防题目进了公开仓库后被下一代模型“见过”；</li>
+<li>每季度重跑，供应商会静默更新路由与权重。</li>
 </ol>
-<h2 id="结论以及我还不敢说的">结论，以及我还不敢说的</h2>
-<ul>
-<li>公开榜单的作用正在从“选型依据”退化为“排除依据”，榜尾的可以直接排除，榜前几名还得自己测。</li>
-<li><strong><code>pass^k</code> + 成本曲线会成为 2026 年的采购语言</strong>，比“某某基准第一”实用得多。</li>
-<li>评测 harness 会像 CI 一样成为基础设施，需要版本化、可复现、可审计。</li>
-<li>最容易被忽略的一点：<strong>评测集本身会泄漏</strong>。题目一旦进了公开仓库，下一代模型就会“见过”，所以要定期换题、留出集。</li>
-</ul>
+<h2 id="该报哪个指标一张判据表">该报哪个指标：一张判据表</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>你的场景</th>
+<th>主指标</th>
+<th>辅助</th>
+</tr></thead>
+<tbody>
+<tr><td>代码建议、IDE 补全（人可选）</td><td>pass@1</td><td>采纳率</td></tr>
+<tr><td>CI 自动修复、无人值守</td><td>pass^k（k=5）</td><td>每任务成本</td></tr>
+<tr><td>长程 agent（50 步以上）</td><td>分桶成功率</td><td>步数-成功率斜率</td></tr>
+<tr><td>供应商横向对比</td><td>同 harness 下的 pass^1</td><td>成本与方差</td></tr>
+</tbody>
+</table></div>
+<p>四行共用一条前提：<strong>harness 版本和题目集一起固定</strong>，否则跨行的数字不能比。最容易做假的是第三行：长程任务的分桶边界可以调，换一个分桶分数就能好看一大截。</p>
 <h2 id="参考与数据">参考与数据</h2>
 <ul>
 <li>SWE-bench：<a href="https://arxiv.org/abs/2310.06770">arXiv:2310.06770</a></li>
 <li>τ-bench（工具-用户交互）：<a href="https://arxiv.org/abs/2406.12045">arXiv:2406.12045</a></li>
-<li>GAIA（通用助手）：<a href="https://arxiv.org/abs/2311.12983">arXiv:2311.12983</a></li>
 <li>OSWorld（桌面操作）：<a href="https://arxiv.org/abs/2404.07972">arXiv:2404.07972</a></li>
 <li>BrowseComp（浏览）：<a href="https://arxiv.org/abs/2504.12516">arXiv:2504.12516</a></li>
-<li>WebArena（Web 环境）：<a href="https://arxiv.org/abs/2307.13854">arXiv:2307.13854</a></li>
 <li>评测口径示例：<a href="https://www.anthropic.com/news/claude-sonnet-4-5">Claude Sonnet 4.5 公告</a>、<a href="https://www.anthropic.com/news/claude-haiku-4-5">Claude Haiku 4.5 公告</a></li>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/评测/">评测</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/方法论/">方法论</a><a class="tag" href="/tags/统计/">统计</a><a class="tag" href="/tags/成本/">成本</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Agent+%E6%B5%8B%E8%AF%84%EF%BC%9A%E5%88%AB%E4%BF%A1%E5%8D%95%E6%AC%A1%E5%88%86%E6%95%B0%EF%BC%8C%E5%85%88%E7%AE%97%E6%96%B9%E5%B7%AE%E5%92%8C%E8%B4%A6%E5%8D%95" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/mistral-small-4-6b-active/">← Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a><a class="next" href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-sonnet-4.5-swe-bench-77/">Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</a><time>2025-09</time></li><li><a href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</a><time>2025-10</time></li><li><a href="/post/claude-opus-4.5-effort-parameter/">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</a><time>2025-11</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -217,6 +222,15 @@ pass^30（任一次全通）会显著更高，但那不代表可靠</code></pre>
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#agent-分数是四元函数">agent 分数是四元函数</a></li>
+<li class="h2"><a href="#passk-与-passk两个方向相反的指标">pass@k 与 pass^k：两个方向相反的指标</a></li>
+<li class="h2"><a href="#方差为什么-10-次不够">方差：为什么 10 次不够</a></li>
+<li class="h2"><a href="#成本必须进报表">成本必须进报表</a></li>
+<li class="h2"><a href="#长任务看曲线不看一个点">长任务：看曲线，不看一个点</a></li>
+<li class="h2"><a href="#落地清单">落地清单</a></li>
+<li class="h2"><a href="#该报哪个指标一张判据表">该报哪个指标：一张判据表</a></li>
+<li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-sonnet-4.5-swe-bench-77/">Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</a><time>2025-09</time></li><li><a href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</a><time>2025-10</time></li><li><a href="/post/claude-opus-4.5-effort-parameter/">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</a><time>2025-11</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

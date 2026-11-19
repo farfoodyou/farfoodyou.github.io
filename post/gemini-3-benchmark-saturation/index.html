@@ -37,16 +37,19 @@
     <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
-<main class="wrap">
+<main class="wrap layout">
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Gemini 3：1501 Elo 之后，评测本身成了问题</h1>
-    <p class="meta"><time datetime="2025-11-19T23:30:00">2025-11-19</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1874 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-11-19T23:30:00">2025-11-19</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1921 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#1501-elo-意味着什么">1501 Elo 意味着什么</a></li>
+  <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#1501-elo-意味着什么">1501 Elo 意味着什么</a></li>
 <li class="h2"><a href="#gpqa-919-已经接近天花板">GPQA 91.9% 已经接近天花板</a></li>
-<li class="h2"><a href="#swe-bench-762编码是唯一还在涨的维度">SWE-bench 76.2%：编码是唯一还在涨的维度</a></li>
+<li class="h2"><a href="#swe-bench-762编码挤在窄带里不再拉差距">SWE-bench 76.2%：编码挤在窄带里，不再拉差距</a></li>
 <li class="h2"><a href="#多模态才是这次的差异点">多模态才是这次的差异点</a></li>
+<li class="h2"><a href="#想分出-3-分的差距要投多少票">想分出 3 分的差距，要投多少票</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>11 月 18 日，<a href="https://blog.google/products/gemini/gemini-3/">Gemini 3</a> 发布。官方给的几个数字：</p>
@@ -74,7 +77,7 @@
 </ul>
 <p>当一个模型的胜率对同代对手达到 65%～75%，要再提高 5 个百分点，需要的样本量会指数上升。<strong>1501 这个数字的可信区间，可能已经覆盖了前三名的差距。</strong></p>
 <h2 id="gpqa-919-已经接近天花板">GPQA 91.9% 已经接近天花板</h2>
-<p>GPQA Diamond 是“博士级科学问答”，448 道四选一。人类专家（同领域 PhD）大约 65%～80%，非专家高学历者约 34%。</p>
+<p>GPQA Diamond 是“博士级科学问答”里最难的一档，198 道四选一（GPQA 全集是 448 道，Diamond 只留了其中公认无争议的部分）。人类专家（同领域 PhD）大约 65%～80%，非专家高学历者约 34%。</p>
 <p>91.9% 意味着：</p>
 <ul>
 <li><strong>高于该领域人类专家</strong>；</li>
@@ -82,7 +85,7 @@
 <li>这个基准对前沿模型的区分度基本耗尽。</li>
 </ul>
 <p>接下来的科学推理评测会转向“开放性可验证任务”（HLE、MathArena Apex 这类），但它们的样本量小、噪声大，单次分数波动可能有 ±5 分。</p>
-<h2 id="swe-bench-762编码是唯一还在涨的维度">SWE-bench 76.2%：编码是唯一还在涨的维度</h2>
+<h2 id="swe-bench-762编码挤在窄带里不再拉差距">SWE-bench 76.2%：编码挤在窄带里，不再拉差距</h2>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>模型</th>
@@ -95,7 +98,7 @@
 <tr><td>Gemini 3 Pro</td><td>76.2%</td><td>2025-11</td></tr>
 </tbody>
 </table></div>
-<p>可以看到<strong>编码分数已经挤在 75%～78% 的窄带里</strong>。原因不是模型不行，而是基准的构造方式：SWE-bench 的题目来自真实 PR，很多问题的“正确答案”依赖仓库当时的约定，模型再强也难猜中维护者的偏好。</p>
+<p>表里三条线已经很直白：编码分数挤在 75%～78% 的窄带里，Gemini 3 Pro 的 76.2% 甚至低于六周前 Sonnet 4.5 的 77.2%，这一维度上“更强”的说法不成立。原因不是模型不行，而是基准的构造方式：SWE-bench 的题目来自真实 PR，很多问题的“正确答案”依赖仓库当时的约定，模型再强也难猜中维护者的偏好。</p>
 <p>所以下半年编码评测开始转向：</p>
 <ul>
 <li><strong>SWE-bench Multilingual</strong>（多语言仓库）；</li>
@@ -110,13 +113,8 @@
 <li>图表/表格的数值推理是真实业务里最常见的多模态需求。</li>
 </ul>
 <p>从 2025 年下半年开始，“多模态”从“能描述图片”变成了“能在推理链里用视觉信息”，这是能力性质的改变，不是分数提升。</p>
-<p>说到最后，给几句自己的判断：</p>
-<ul>
-<li>公开榜单正在失去区分度。2026 年的选型会更多依赖自建任务集 + 成本曲线，而不是某个 Arena 分数。</li>
-<li><strong>“无工具”的口径会变重要</strong>。同一个基准，允许搜索/代码执行和不允许，差 10～30 分；发布方不写清就是耍流氓。</li>
-<li>agent 平台和模型一起发，会成为常态（Antigravity 之于 Gemini，就像 Claude Code 之于 Claude）。模型能力要靠 harness 兑现。</li>
-<li>对工程团队：<strong>别再等“最强模型”</strong>。现在同代模型在生产任务上的差距常常小于 prompt 与 harness 的差距。</li>
-</ul>
+<h2 id="想分出-3-分的差距要投多少票">想分出 3 分的差距，要投多少票</h2>
+<p>Bradley–Terry 里 1 Elo 约等于 0.14% 胜率，1501 和 1498 差 3 分，折成胜率差约 0.43%。一对模型打 n 场、胜率在 50% 附近时，胜率标准差是 0.5/√n；要让 0.43% 落在两倍标准差之外，n 得在 5 万场量级（0.5/√54000 ≈ 0.2%）。LMArena 上单个模型累积的有效票数在 10⁴ 量级，所以前三名的排序基本落在噪声里，1501 只能读成“这一档”，读不成“第一”。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>发布公告（基准、Antigravity、Deep Think）：<a href="https://blog.google/products/gemini/gemini-3/">Gemini 3: Introducing the latest Gemini AI model from Google</a></li>
@@ -127,7 +125,6 @@
   <p class="tag-list"><a class="tag" href="/tags/google/">Google</a><a class="tag" href="/tags/gemini/">Gemini</a><a class="tag" href="/tags/评测/">评测</a><a class="tag" href="/tags/多模态/">多模态</a><a class="tag" href="/tags/推理模型/">推理模型</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Gemini+3%EF%BC%9A1501+Elo+%E4%B9%8B%E5%90%8E%EF%BC%8C%E8%AF%84%E6%B5%8B%E6%9C%AC%E8%BA%AB%E6%88%90%E4%BA%86%E9%97%AE%E9%A2%98" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/claude-opus-4.5-effort-parameter/">← Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</a><a class="next" href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/gemini-2.5-thinking-by-default/">Gemini 2.5 Pro：把「思考」设成默认行为</a><time>2025-03</time></li><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li></ul></aside>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
@@ -169,6 +166,13 @@
   })();
   </script>
 </section>
+</div>
+<aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#1501-elo-意味着什么">1501 Elo 意味着什么</a></li>
+<li class="h2"><a href="#gpqa-919-已经接近天花板">GPQA 91.9% 已经接近天花板</a></li>
+<li class="h2"><a href="#swe-bench-762编码挤在窄带里不再拉差距">SWE-bench 76.2%：编码挤在窄带里，不再拉差距</a></li>
+<li class="h2"><a href="#多模态才是这次的差异点">多模态才是这次的差异点</a></li>
+<li class="h2"><a href="#想分出-3-分的差距要投多少票">想分出 3 分的差距，要投多少票</a></li>
+<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/gemini-2.5-thinking-by-default/">Gemini 2.5 Pro：把「思考」设成默认行为</a><time>2025-03</time></li><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

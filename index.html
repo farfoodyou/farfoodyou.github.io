@@ -36,6 +36,12 @@
 <main class="wrap">
 <h1 class="page-title">最新文章</h1>
 <article class="card">
+  <h2><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的</a></h2>
+  <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  <p class="excerpt">Strata / Speedy / NInfer 这类专用引擎能把 125B MoE 塞进 10～32GB 显卡。代价不在显存，而在 DRAM 与 PCIe 带宽。把三份实测摆出来，算清 152 tok/s 是从哪来的、到哪就没法再快。</p>
+  <a class="more" href="/post/small-vram-limits-ninfer-strata/">阅读全文 →</a>
+</article>
+<article class="card">
   <h2><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></h2>
   <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   <p class="excerpt">把这一年推理栈的四条主线结账：前缀缓存从「优化项」变成「准入项」，稀疏注意力吃掉长上下文，PD/EP 把集群拆成异构两层，FP4 从实验走到默认。附一张代价表。</p>
@@ -88,12 +94,6 @@
   <p class="meta"><time datetime="2026-08-14T09:30:00">2026-08-14</time> <a class="cat" href="/categories/模型/">模型</a></p>
   <p class="excerpt">V4-Pro 1.6T/49B、V4-Flash 284B/13B，都是 1M 上下文、MIT、32T token。关键数字：1M 上下文下单 token 推理 FLOPs 只有 V3.2 的 27%，KV cache 只有 10%。核心是 CSA + HCA 的混合注意力。</p>
   <a class="more" href="/post/deepseek-v4-hybrid-attention/">阅读全文 →</a>
-</article>
-<article class="card">
-  <h2><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a></h2>
-  <p class="meta"><time datetime="2026-07-20T22:30:00">2026-07-20</time> <a class="cat" href="/categories/模型/">模型</a></p>
-  <p class="excerpt">7 月 19 日 Qwen3.8-Max 预览上线，2.4T 总参数 / 95B 激活，随后放出 2.4T 与 27B 两档权重。真正的看点是 27B：在单机可部署的尺寸上保留了多少旗舰能力。</p>
-  <a class="more" href="/post/qwen3.8-2.4t-preview/">阅读全文 →</a>
 </article>
 <nav class="pager"><a class="next" href="/page/2/">更早的文章 →</a></nav>
 </main>

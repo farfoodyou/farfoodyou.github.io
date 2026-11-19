@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的 - farfood</title>
-<meta name="description" content="Strata / Speedy / NInfer 这类专用引擎能把 125B MoE 塞进 10～32GB 显卡。代价不在显存，而在 DRAM 与 PCIe 带宽。把三份实测摆出来，算清 152 tok/s 是从哪来的、到哪就没法再快。">
+<title>小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的 - farfood</title>
+<meta name="description" content="Strata 官方下限是 12GB 显存，实测机 RTX 5070 12GB 上 Q2_0 跑 94 tok/s；调优分支把它压到 10GB 3080 上做到 152 tok/s。代价不在显存，而在 DRAM 与 PCIe 带宽。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/small-vram-limits-ninfer-strata/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的", "description": "Strata / Speedy / NInfer 这类专用引擎能把 125B MoE 塞进 10～32GB 显卡。代价不在显存，而在 DRAM 与 PCIe 带宽。把三份实测摆出来，算清 152 tok/s 是从哪来的、到哪就没法再快。", "datePublished": "2026-11-19T22:30:00+08:00", "dateModified": "2026-11-19T22:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/small-vram-limits-ninfer-strata/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "端侧推理, 量化, MoE, 引擎, NInfer, Strata, 带宽"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的", "description": "Strata 官方下限是 12GB 显存，实测机 RTX 5070 12GB 上 Q2_0 跑 94 tok/s；调优分支把它压到 10GB 3080 上做到 152 tok/s。代价不在显存，而在 DRAM 与 PCIe 带宽。", "datePublished": "2026-11-19T22:30:00+08:00", "dateModified": "2026-11-19T22:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/small-vram-limits-ninfer-strata/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "端侧推理, 量化, MoE, 引擎, NInfer, Strata, 带宽"}</script>
 
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的 - farfood">
-<meta property="og:description" content="Strata / Speedy / NInfer 这类专用引擎能把 125B MoE 塞进 10～32GB 显卡。代价不在显存，而在 DRAM 与 PCIe 带宽。把三份实测摆出来，算清 152 tok/s 是从哪来的、到哪就没法再快。">
+<meta property="og:title" content="小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的 - farfood">
+<meta property="og:description" content="Strata 官方下限是 12GB 显存，实测机 RTX 5070 12GB 上 Q2_0 跑 94 tok/s；调优分支把它压到 10GB 3080 上做到 152 tok/s。代价不在显存，而在 DRAM 与 PCIe 带宽。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/small-vram-limits-ninfer-strata/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的 - farfood">
-<meta name="twitter:description" content="Strata / Speedy / NInfer 这类专用引擎能把 125B MoE 塞进 10～32GB 显卡。代价不在显存，而在 DRAM 与 PCIe 带宽。把三份实测摆出来，算清 152 tok/s 是从哪来的、到哪就没法再快。">
+<meta name="twitter:title" content="小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的 - farfood">
+<meta name="twitter:description" content="Strata 官方下限是 12GB 显存，实测机 RTX 5070 12GB 上 Q2_0 跑 94 tok/s；调优分支把它压到 10GB 3080 上做到 152 tok/s。代价不在显存，而在 DRAM 与 PCIe 带宽。">
 <meta property="article:published_time" content="2026-11-19T22:30:00+08:00">
 <meta name="keywords" content="端侧推理, 量化, MoE, 引擎, NInfer, Strata, 带宽">
 </head>
@@ -40,11 +40,11 @@
 <main class="wrap">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的</h1>
-    <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time><span class="sep">·</span>10 分钟<span class="sep">·</span>3971 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <h1 class="post-title">小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的</h1>
+    <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4873 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么-125b-能进-10gb">为什么 125B 能进 10GB</a></li>
-<li class="h2"><a href="#那-152-toks-是从哪来的">那 152 tok/s 是从哪来的</a></li>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么-125b-能进-12gb">为什么 125B 能进 12GB</a></li>
+<li class="h2"><a href="#那-94-152-toks-是从哪来的">那 94 / 152 tok/s 是从哪来的</a></li>
 <li class="h2"><a href="#三层墙一层比一层硬">三层墙，一层比一层硬</a></li>
 <li class="h2"><a href="#投机解码在这里格外值钱">投机解码在这里格外值钱</a></li>
 <li class="h2"><a href="#qsa-与-gated-residual省的是-prefill">QSA 与 Gated Residual：省的是 prefill</a></li>
@@ -53,7 +53,7 @@
 <li class="h2"><a href="#收个尾">收个尾</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>先说结论：<strong>125B 跑在 10GB 卡上不是魔术，是把“权重放哪”这件事重新排了一遍。</strong> 显存不再是容器的下限，带宽才是速度的上限。</p>
+<p>先说结论：<strong>125B 跑在 12GB 卡上不是魔术，是把“权重放哪”这件事重新排了一遍。</strong> 显存不再是容器的下限，带宽才是速度的上限。12GB 是官方下限，10GB 是往下再压一档的调优结果。</p>
 <p>三份公开实测：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -63,13 +63,15 @@
 <th>关键数字</th>
 </tr></thead>
 <tbody>
-<tr><td><a href="https://github.com/DevDock-AI/Speedy">Speedy</a>（Strata 调优分支）</td><td>1× RTX 3080 10GB + 128GB DDR4</td><td>Qwen3.8-Flash-Next 125B（Q2_0）</td><td>decode <strong>152 tok/s</strong>，200K prefill 2562 tok/s，冷读 200K 78s</td></tr>
+<tr><td><a href="https://github.com/Niko1221/Strata">Strata</a>（官方基线）</td><td>1× RTX 5070 <strong>12GB</strong> + 64GB DDR5</td><td>Qwen3.8-Flash-Next 125B（Q2_0）</td><td>decode <strong>94 tok/s</strong>，prefill 2650 tok/s；IQ3_S 53 / 1620（128K 上下文）</td></tr>
+<tr><td><a href="https://github.com/DevDock-AI/Speedy">Speedy</a>（Strata 的非官方调优分支）</td><td>1× RTX 3080 <strong>10GB</strong> + 128GB DDR4</td><td>同上（Q2_0）</td><td>decode <strong>152 tok/s</strong>，200K prefill 2562 tok/s，冷读 200K 78s</td></tr>
 <tr><td><a href="https://github.com/Neroued/ninfer">NInfer</a></td><td>1× DGX Spark（128GB 统一内存）</td><td>Qwen3.8-Flash-Next</td><td>MTP3：<strong>70 tok/s</strong> @C=1，328 tok/s @C=16</td></tr>
 <tr><td>NInfer</td><td>2× DGX Spark（200Gb/s RDMA，TP2）</td><td>同上</td><td><strong>109.5 tok/s</strong> @C=1，811.9 tok/s @C=32</td></tr>
 </tbody>
 </table></div>
+<p>两行消费卡的区别值得先说清：Strata 官方要求 <strong>12GB 显存起</strong>（RTX 20/30/40/50 系或对应 AMD 卡），发布数字全部在 RTX 5070 12GB 上测；Speedy 是第三方针对 10GB 3080 重调 preset 的分支，<strong>10GB 低于官方下限</strong>，属于把每档余量都榨干的做法。两行摆在一起，正好看出显存少 2GB 要付多少速度和工程成本。</p>
 <p>对照组：同一台机器上 NInfer 跑 27B <strong>稠密</strong>模型（RTX 5090，权重 15.9 GiB），decode 84 tok/s、prefill 3300 tok/s。<strong>125B 的 MoE 在小显存机器上比 27B 稠密还快</strong>——这件事值得拆开看。</p>
-<h2 id="为什么-125b-能进-10gb">为什么 125B 能进 10GB</h2>
+<h2 id="为什么-125b-能进-12gb">为什么 125B 能进 12GB</h2>
 <p>Qwen3.8-Flash-Next 的参数量拆得很特别（<a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next">模型卡</a>）：</p>
 <pre data-lang="text"><code class="language-text">125B  主模型（每 token 激活 6B）
  51B  n-gram embedding（二元/三元组查表）
@@ -90,12 +92,13 @@
 </tbody>
 </table></div>
 <p><strong>n-gram embedding 是这代架构最“取巧”的设计</strong>：它用查表代替矩阵乘，参数量可以很大而算力几乎为零，且天然适合 offload——命中就取一行，不命中就跳过。官方措辞是“更易于 offload 而非 MoE”，说的就是这个。</p>
-<p>于是 10GB 显存只需要装“每 token 必读的 6B”，剩下的按需从内存搬。</p>
-<h2 id="那-152-toks-是从哪来的">那 152 tok/s 是从哪来的</h2>
+<p>于是 12GB 显存只需要装“每 token 必读的 6B”，剩下的按需从内存搬。</p>
+<h2 id="那-94-152-toks-是从哪来的">那 94 / 152 tok/s 是从哪来的</h2>
 <p>这里必须算带宽，因为 decode 的每一步都在搬权重。</p>
 <p>假设 Q2_0 量化约 2.4 bit/参数，激活 6B：</p>
 <pre data-lang="text"><code class="language-text">每 token 需读取 ≈ 6B × 2.4/8 ≈ 1.8 GB
-152 tok/s  → 需要 ≈ 274 GB/s 的有效带宽</code></pre>
+94  tok/s  → 需要 ≈ 169 GB/s 的有效带宽   （RTX 5070 12GB，Q2_0）
+152 tok/s  → 需要 ≈ 274 GB/s 的有效带宽   （RTX 3080 10GB，Q2_0）</code></pre>
 <p>对照硬件：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -104,16 +107,18 @@
 <th>实际可用</th>
 </tr></thead>
 <tbody>
-<tr><td>3080 HBM（10GB GDDR6X）</td><td>760 GB/s</td><td>只够装热专家</td></tr>
-<tr><td>DDR4-3200 8 通道</td><td>204.8 GB/s</td><td>实测约 150～190</td></tr>
+<tr><td>RTX 5070 12GB（GDDR7，192-bit）</td><td>672 GB/s</td><td>只够装热专家</td></tr>
+<tr><td>RTX 3080 10GB（GDDR6X，320-bit）</td><td>760 GB/s</td><td>只够装热专家</td></tr>
+<tr><td>DDR5-5600 双通道（5070 那台）</td><td>89.6 GB/s</td><td>实测 70 左右</td></tr>
+<tr><td>DDR4-3200 8 通道（3080 那台）</td><td>204.8 GB/s</td><td>实测约 150～190</td></tr>
 <tr><td>PCIe 4.0 x16</td><td>32 GB/s</td><td>实测 25 左右</td></tr>
 </tbody>
 </table></div>
-<p><strong>274 GB/s 超过了内存带宽</strong>，所以真实机制只能是“热专家常驻显存 + 冷专家走内存 + 部分走 PCIe”三层混合。152 tok/s 是三层叠加后的结果，不是单一路径。</p>
-<p>这也解释了为什么“更多显存 = 更多专家常驻 = 更快”，但 Speedy 的 README 老实写了“more VRAM fits more experts but is unmeasured&quot;——<strong>没测过就不敢承诺</strong>。</p>
+<p><strong>两组需求都超过了各自机器的内存带宽</strong>（169 &gt; 89.6，274 &gt; 204.8），所以真实机制只能是“热专家常驻显存 + 冷专家走内存 + 部分走 PCIe”三层混合。两个数都是三层叠加的结果，不是单一路径：3080 那台能把 152 做出来，一半来自更宽的 DDR4 八通道，一半来自解锁后的 prefill 路径。</p>
+<p>这也解释了为什么“更多显存 = 更多专家常驻 = 更快”，官方 README 直接给了外推（RTX 3090 24GB 大致 100～140 tok/s），Speedy 那边反而老实写了“more VRAM fits more experts but is unmeasured&quot;——<strong>没测过就不敢承诺</strong>。两家对同一件事的态度差异，比数字本身更值得看。</p>
 <h2 id="三层墙一层比一层硬">三层墙，一层比一层硬</h2>
 <p><strong>第一层：容量（可以绕过）</strong> 显存装不下 → 权重量化 + 冷热分离 + 磁盘。绕过成本是“首次加载慢”和“质量下降”。</p>
-<p><strong>第二层：DRAM 带宽（真正的天花板）</strong> 当 6B 激活权重都得从内存流式读取时，速度上限 = 内存带宽 / 每 token 字节数。128GB DDR4 八通道约 200 GB/s，对 1.8GB/token 就是 <strong>110 tok/s 量级</strong>。实测 152 说明热专家缓存起了作用，但<strong>这个天花板抬不动</strong>——除非换成更高带宽的内存（DDR5 十二通道、或统一内存的 LPDDR5x）。</p>
+<p><strong>第二层：DRAM 带宽（真正的天花板）</strong> 当 6B 激活权重都得从内存流式读取时，速度上限 = 内存带宽 / 每 token 字节数。128GB DDR4 八通道约 200 GB/s，对 1.8GB/token 就是 <strong>110 tok/s 量级</strong>；换到 12GB 那台的 DDR5 双通道（约 90 GB/s），同样算法只有 50 tok/s 量级。实测 94 和 152 都高于这条线，说明热专家缓存起了作用，但<strong>这个天花板抬不动</strong>——除非换成更高带宽的内存（DDR5 十二通道、或统一内存的 LPDDR5x）。</p>
 <p><strong>第三层：PCIe（跨卡/跨机时最疼）</strong> PCIe 4.0 x16 只有 32 GB/s。一旦模型分到两张卡（无 NVLink），每 token 的跨卡流量会成为瓶颈。DGX Spark 双机之所以用 200Gb/s（25 GB/s）RDMA + TP2，就是在这个约束下换“能跑更大模型”，而不是“能跑更快”。</p>
 <p>一个直接对比：</p>
 <div class="table-wrap"><table>
@@ -125,16 +130,17 @@
 </tr></thead>
 <tbody>
 <tr><td>5090 跑 27B 稠密（16GB/token）</td><td>16 GB</td><td>1.79 TB/s（HBM）</td><td>~110 tok/s</td></tr>
-<tr><td>3080 跑 125B MoE（1.8GB/token）</td><td>1.8 GB</td><td>~200 GB/s（DRAM）</td><td>~110 tok/s</td></tr>
+<tr><td>5070 跑 125B MoE（1.8GB/token，全命中）</td><td>1.8 GB</td><td>672 GB/s（HBM）</td><td>~370 tok/s</td></tr>
+<tr><td>3080 跑 125B MoE（1.8GB/token，全命中）</td><td>1.8 GB</td><td>760 GB/s（HBM）</td><td>~420 tok/s</td></tr>
 <tr><td>双 Spark 跑 125B（TP2）</td><td>分摊 + 跨机</td><td>25 GB/s（RDMA）</td><td>~110 tok/s</td></tr>
 </tbody>
 </table></div>
-<p>三行都落在 110 附近，<strong>不是巧合</strong>：它们各自被自己的带宽除以字节数卡住。这就是“极限”。</p>
+<p>HBM 那两行的 370/420 是“全命中”的理想值，实测 94/152 说明真实命中率远达不到——<strong>每少命中一个专家，就多一次内存往返</strong>。同一块卡上换个 router 分布偏一点的 prompt，tok/s 能差两三成，这是整套方案里最不稳定的一环。</p>
 <h2 id="投机解码在这里格外值钱">投机解码在这里格外值钱</h2>
 <p>上表的“110 tok/s”是<strong>每 token 一次前向</strong>的上限。投机解码改变的是“每次前向产出几个 token”：</p>
 <ul>
 <li>NInfer 在单 Spark 上开 MTP3（K=3）做到 70 tok/s @C=1，关掉会更低；</li>
-<li>Speedy 的 decode 数字全部是“with MTP speculative decoding”；</li>
+<li>Speedy 的 decode 数字全部是“with MTP speculative decoding”（官方那 94 tok/s 同样带投机，关掉后 Q2_0 掉到 60 出头）；</li>
 <li>而 acceptance 高的任务（代码、结构化输出）能吃满，开放式写作就打折。</li>
 </ul>
 <p>换句话说：<strong>当带宽被锁死时，唯一还能涨的杠杆是“一次前向多吐几个 token&quot;</strong>。这也是今年所有端侧引擎都在做 MTP/DFlash 的原因。</p>
@@ -162,19 +168,19 @@
 </ul>
 <h2 id="收个尾">收个尾</h2>
 <p>我对这波“小显存跑大模型”的看法是：<strong>它是带宽工程，不是模型魔法。</strong></p>
-<p>125B 能进 10GB，靠的是把参数量拆成“必读的 6B + 稀疏的专家 + 查表的 51B”；能跑到 150 tok/s，靠的是热专家常驻显存加投机解码。一旦你换一个每 token 要读 16GB 的稠密模型，同样的机器立刻回到个位数 tok/s——<strong>架构决定了你在哪堵墙前面</strong>。</p>
+<p>125B 能进 12GB（官方下限，调优分支甚至压到 10GB），靠的是把参数量拆成“必读的 6B + 稀疏的专家 + 查表的 51B”；能跑到 94～150 tok/s，靠的是热专家常驻显存加投机解码。一旦你换一个每 token 要读 16GB 的稠密模型，同样的机器立刻回到个位数 tok/s——<strong>架构决定了你在哪堵墙前面</strong>。</p>
 <p>想看更细的账，NInfer 的性能文档把每个 run 的配置、KV 容量、接受长度全列了出来（<a href="https://github.com/Neroued/ninfer/tree/master/docs/performance">performance 目录</a>），是我今年见过最诚实的推理性能披露之一。</p>
 <h2 id="来源">来源</h2>
 <ul>
-<li>Strata（125B 消费级硬件一键部署）：&lt;https://github.com/Niko1221/Strata&gt;</li>
-<li>Speedy（3080 10GB ×1/×2 实测）：&lt;https://github.com/DevDock-AI/Speedy&gt;</li>
+<li>Strata（125B 消费级硬件一键部署，官方要求 12GB 显存起）：&lt;https://github.com/Niko1221/Strata&gt;</li>
+<li>Speedy（Strata 的 10GB 3080 调优分支，×1/×2 实测）：&lt;https://github.com/DevDock-AI/Speedy&gt;</li>
 <li>NInfer（5090 / DGX Spark，含性能文档）：&lt;https://github.com/Neroued/ninfer&gt;</li>
 <li>NInfer 性能明细：&lt;https://github.com/Neroued/ninfer/tree/master/docs/performance&gt;</li>
 <li>Qwen3.8-Flash-Next 模型卡（125B / 6B 激活 / 51B n-gram / QSA）：&lt;https://huggingface.co/Qwen/Qwen3.8-Flash-Next&gt;</li>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/端侧推理/">端侧推理</a><a class="tag" href="/tags/量化/">量化</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/引擎/">引擎</a><a class="tag" href="/tags/ninfer/">NInfer</a><a class="tag" href="/tags/strata/">Strata</a><a class="tag" href="/tags/带宽/">带宽</a></p>
-  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%B0%8F%E6%98%BE%E5%AD%98%E7%9A%84%E6%9E%81%E9%99%90%EF%BC%9A125B+%E8%B7%91%E5%9C%A8+10GB+%E6%98%BE%E5%8D%A1%E4%B8%8A%EF%BC%8C%E8%B4%A6%E6%98%AF%E6%80%8E%E4%B9%88%E7%AE%97%E7%9A%84" target="_blank" rel="noopener">分享到 X</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%B0%8F%E6%98%BE%E5%AD%98%E7%9A%84%E6%9E%81%E9%99%90%EF%BC%9A125B+%E8%B7%91%E5%9C%A8+12GB+%E6%98%BE%E5%8D%A1%E4%B8%8A%EF%BC%8C%E8%B4%A6%E6%98%AF%E6%80%8E%E4%B9%88%E7%AE%97%E7%9A%84" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><span></span><a class="next" href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B</a><time>2026-10</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a><time>2026-11</time></li></ul></aside>
 </article>

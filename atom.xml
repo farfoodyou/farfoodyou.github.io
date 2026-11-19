@@ -7,11 +7,11 @@
   <id>https://farfoodyou.github.io/</id>
   <author><name>farfood</name><email>farfoodyou@gmail.com</email></author>
   <entry>
-    <title>小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的</title>
+    <title>小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的</title>
     <link href="https://farfoodyou.github.io/post/small-vram-limits-ninfer-strata/"/>
     <id>https://farfoodyou.github.io/post/small-vram-limits-ninfer-strata/</id>
     <updated>2026-11-19T22:30:00+08:00</updated>
-    <summary>Strata / Speedy / NInfer 这类专用引擎能把 125B MoE 塞进 10～32GB 显卡。代价不在显存，而在 DRAM 与 PCIe 带宽。把三份实测摆出来，算清 152 tok/s 是从哪来的、到哪就没法再快。</summary>
+    <summary>Strata 官方下限是 12GB 显存，实测机 RTX 5070 12GB 上 Q2_0 跑 94 tok/s；调优分支把它压到 10GB 3080 上做到 152 tok/s。代价不在显存，而在 DRAM 与 PCIe 带宽。</summary>
   </entry>
   <entry>
     <title>2026 推理栈答卷：缓存、稀疏、并行、量化</title>

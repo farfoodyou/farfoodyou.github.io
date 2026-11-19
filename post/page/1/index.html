@@ -36,9 +36,9 @@
 <main class="wrap">
 <p class="site-stats">364 个标签 / 分类 · 最近更新 2026-11-19</p><h1 class="page-title">全部文章</h1>
 <article class="card">
-  <h2><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的</a></h2>
+  <h2><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的</a></h2>
   <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
-  <p class="excerpt">Strata / Speedy / NInfer 这类专用引擎能把 125B MoE 塞进 10～32GB 显卡。代价不在显存，而在 DRAM 与 PCIe 带宽。把三份实测摆出来，算清 152 tok/s 是从哪来的、到哪就没法再快。</p>
+  <p class="excerpt">Strata 官方下限是 12GB 显存，实测机 RTX 5070 12GB 上 Q2_0 跑 94 tok/s；调优分支把它压到 10GB 3080 上做到 152 tok/s。代价不在显存，而在 DRAM 与 PCIe 带宽。</p>
   <a class="more" href="/post/small-vram-limits-ninfer-strata/">阅读全文 →</a>
 </article>
 <article class="card">

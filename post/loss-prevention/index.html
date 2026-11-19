@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">营销资损的四层防线</h1>
-    <p class="meta"><time datetime="2021-12-01T10:40:00">2021-12-01</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2473 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2021-12-01T10:40:00">2021-12-01</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2525 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#定位判断与扣减不是同一个操作">定位：判断与扣减不是同一个操作</a></li>
 <li class="h2"><a href="#四层防线各自拦什么">四层防线，各自拦什么</a></li>
@@ -108,7 +108,7 @@ UPDATE activity_budget
 <p>限额这一层，指标从「次数」换成「金额 + 次数」同时限，并用滑动窗口。固定窗口在边界能放过两倍的量，活动开场那一秒是致命的。</p>
 <p>风控的超时降级方向改成 fail-close，但只对大额生效：单笔超过阈值的请求风控不可用就拒，小额放行。全 fail-close 会把超时率变成业务失败率，全 fail-open 等于没风控。</p>
 <h2 id="对账要能算预算不只是算发放和核销">对账要能算「预算」，不只是算「发放和核销」</h2>
-<p>原来的对账只对「发放明细 vs 核销明细」，这个口径下超发是看不出来的：发出去的券和核销掉的券完全能对上，只是多发了。</p>
+<p>原来的对账只对「发放明细 vs 核销明细」，这个口径下超发是看不出来的：发出去的券和核销掉的券完全能对上，只是多发了。对账本身的基本做法（差集、冲正、容忍阈值）见<a href="/post/reconciliation/">对账那篇</a>。</p>
 <p>加了第二条线，分钟级增量跑：预算消耗、发放成功金额、订单优惠金额三个数做差集。差集的绝对值超过活动预算的千分之一就报警，超过千分之五自动停发。千分之一这个阈值是按历史抖动定的，不是拍的：正常波动来自在途请求和消息延迟，量级就在万分之几。</p>
 <p>停发做成自动的。那天从「归零」到「人工叫停」隔了五分钟，这五分钟是纯损失。自动化之后同样异常大概 40 秒内触发停发，误停的代价是手动恢复一次，比继续发钱便宜得多。</p>
 <h2 id="剩下的边界">剩下的边界</h2>

@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">2026 推理栈答卷：缓存、稀疏、并行、量化</h1>
-    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2263 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2401 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#前缀缓存从优化项变成准入项">前缀缓存：从优化项变成准入项</a></li>
 <li class="h2"><a href="#稀疏注意力吃掉长上下文">稀疏注意力：吃掉长上下文</a></li>
@@ -83,12 +83,12 @@
 <th>2026</th>
 </tr></thead>
 <tbody>
-<tr><td>1M 上下文的 KV</td><td>35 GB（MLA）</td><td><strong>0.89 GB</strong>（CSA2 + FP4）</td></tr>
+<tr><td>1M 上下文的 KV</td><td>35 GB（MLA）</td><td><strong><a href="/post/deepseek-v4.1-flash-kv-compression/">0.89 GB</a></strong>（CSA2 + FP4）</td></tr>
 <tr><td>索引开销</td><td>每层 O(L)</td><td>每 4 层一次 / 分层候选池</td></tr>
-<tr><td>单 token FLOPs @1M</td><td>基线</td><td><strong>27%</strong>（V4 vs V3.2）</td></tr>
+<tr><td>单 token FLOPs @1M</td><td>基线</td><td><strong><a href="/post/deepseek-v4-hybrid-attention/">27%</a></strong>（V4 vs V3.2）</td></tr>
 </tbody>
 </table></div>
-<p>结论：<strong>“长上下文”从“能不能”变成“多少钱”</strong>。100 万 token 的请求在 2026 年可以做到不到 1GB 的 KV、几秒的 prefill（配缓存）。</p>
+<p>结论：<strong>“长上下文”从“能不能”变成“多少钱”</strong>。100 万 token 的请求在 2026 年可以做到不到 1GB 的 KV、几秒的 prefill（配缓存）。六种实现的逐项横比见<a href="/post/sparse-attention-shootout/">稀疏注意力横评</a>。</p>
 <h2 id="并行集群被拆成两层">并行：集群被拆成两层</h2>
 <p>2026 年的标准部署形态：</p>
 <pre data-lang="text"><code class="language-text">prefill pool (compute-bound) --KV over RDMA--&gt; decode pool (memory-bound, big batch)

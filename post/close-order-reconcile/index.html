@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">一次「关单」引发的对账</h1>
-    <p class="meta"><time datetime="2021-04-22T09:50:00">2021-04-22</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2494 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2021-04-22T09:50:00">2021-04-22</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2538 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#关单为什么必然出问题">关单为什么必然出问题</a></li>
 <li class="h2"><a href="#中间态和它的推进者">中间态和它的推进者</a></li>
@@ -54,7 +54,7 @@
 <p>日报里有一列不容易看懂的数：本地标记「已关闭」、渠道侧仍是「待支付」的订单，每天几十笔，占当日关单量的十万分之几。比值可以忽略，绝对数不能——每一笔后面都可能站着一个在渠道页面上付了钱的用户，而本地没有任何记录。</p>
 <p>追下去发现关单的写法太干净：任务扫出超时未支付的单，先把本地改成已关闭，再调渠道撤单接口，超时就打日志等下一次重跑。问题是重跑按「本地还是待支付」扫，已关闭的单永远不会被再扫到，渠道那边没撤成功的部分就此没人管。</p>
 <p>更麻烦的是顺序：本地先关、渠道后关，中间有一个窗口，本地已终态而渠道还活着，用户在窗口里付了钱，钱到了渠道却进不了账。这类单在文件里表现为「渠道有本地无」，最难解释。</p>
-<p>结论：关单不是一个本地状态值，而是跨两个系统的一次决议，必须有显式的中间态把它暴露出来，再由补偿任务推进到终态。至于「是不是真收敛了」，只有 T+1 的集合差能回答，自证不算。</p>
+<p>结论：关单不是一个本地状态值（状态机的写法见<a href="/post/order-state-machine/">订单状态机</a>），而是跨两个系统的一次决议，必须有显式的中间态把它暴露出来，再由补偿任务推进到终态。至于「是不是真收敛了」，只有 T+1 的集合差能回答，自证不算。</p>
 <h2 id="关单为什么必然出问题">关单为什么必然出问题</h2>
 <p>两个系统各自维护终态，中间没有共同事务，只可能有三种局面：都关了、都没关、一个关了一个没关。第三种是常态——调用超时的时候你不知道对方执行了没有，这是分布式调用绕不开的模糊态，只能靠「再查一次」消掉。</p>
 <p>所以这里不再区分「关单成功」和「关单失败」，而是区分<strong>有结论</strong>和<strong>没结论</strong>。有结论就落终态，没结论就停在中间态等下一次查。中间态存在的唯一目的，是让「正在关」这件事有地方待着，而不是被硬塞进一个终态。</p>

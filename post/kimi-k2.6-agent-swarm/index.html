@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</h1>
-    <p class="meta"><time datetime="2026-04-21T22:20:00">2026-04-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1950 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-04-21T22:20:00">2026-04-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1984 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#swarm-是横向-scaling">swarm 是&quot;横向 scaling&quot;</a></li>
 <li class="h2"><a href="#300-个子-agent-意味着什么">300 个子 agent 意味着什么</a></li>
@@ -52,7 +52,7 @@
 <li class="h2"><a href="#一条不等式">一条不等式</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>4 月 20 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K2.6">Kimi K2.6</a>（Modified MIT）。规格延续 K2 家族：<strong>1T 总参数 / 32B 激活、256K 上下文、原生多模态</strong>。</p>
+<p>4 月 20 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K2.6">Kimi K2.6</a>（Modified MIT）。规格延续 <a href="/post/kimi-k2-1t-moe-muonclip/">K2 家族</a>：<strong>1T 总参数 / 32B 激活、256K 上下文、原生多模态</strong>。</p>
 <p>但它的卖点已经不在模型本体，而在<strong>编排</strong>：</p>
 <blockquote><p>横向扩展到 300 个子 agent、执行 4000 步协同，把任务动态拆成并行的、领域特化的子任务。</p></blockquote>
 <h2 id="swarm-是横向-scaling">swarm 是“横向 scaling&quot;</h2>

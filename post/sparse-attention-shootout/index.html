@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</h1>
-    <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2446 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2674 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#索引成本才是分水岭">索引成本才是分水岭</a></li>
 <li class="h2"><a href="#kv-压缩比的真实差距">KV 压缩比的真实差距</a></li>
@@ -61,12 +61,12 @@
 <th>索引成本</th>
 </tr></thead>
 <tbody>
-<tr><td>DSA</td><td>DeepSeek V3.2</td><td>每 query 选 top-k token</td><td>中</td><td>O(L) 每层</td></tr>
-<tr><td><strong>IndexShare/IndexCache</strong></td><td>GLM-5.2、Hy4</td><td>每 4 层共享索引器</td><td>中</td><td>O(L)/4</td></tr>
-<tr><td><strong>CSA + HCA</strong></td><td>DeepSeek V4</td><td>稀疏精读 + 极端压缩全局</td><td>高</td><td>分层</td></tr>
-<tr><td><strong>CSA2</strong></td><td>V4.1-Flash</td><td>跨层共享主 KV + 分层候选池</td><td>极高（890 B/token）</td><td>与长度解耦</td></tr>
+<tr><td>DSA</td><td><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek V3.2</a></td><td>每 query 选 top-k token</td><td>中</td><td>O(L) 每层</td></tr>
+<tr><td><strong>IndexShare/IndexCache</strong></td><td><a href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2</a>、<a href="/post/hy4-preview-gated-dsa/">Hy4</a></td><td>每 4 层共享索引器</td><td>中</td><td>O(L)/4</td></tr>
+<tr><td><strong>CSA + HCA</strong></td><td><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek V4</a></td><td>稀疏精读 + 极端压缩全局</td><td>高</td><td>分层</td></tr>
+<tr><td><strong>CSA2</strong></td><td><a href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash</a></td><td>跨层共享主 KV + 分层候选池</td><td>极高（890 B/token）</td><td>与长度解耦</td></tr>
 <tr><td><strong>MSA</strong></td><td>MiniMax M3</td><td>稀疏算子（替代 GQA）</td><td>高</td><td>算子内</td></tr>
-<tr><td><strong>KDA</strong></td><td>Kimi K3</td><td>线性状态（delta 规则）</td><td>常数</td><td>无索引</td></tr>
+<tr><td><strong>KDA</strong></td><td><a href="/post/kimi-k3-2.8t-kda/">Kimi K3</a></td><td>线性状态（delta 规则）</td><td>常数</td><td>无索引</td></tr>
 </tbody>
 </table></div>
 <h2 id="索引成本才是分水岭">索引成本才是分水岭</h2>

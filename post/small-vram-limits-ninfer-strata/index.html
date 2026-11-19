@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">小显存的极限：125B 跑在 12GB 显卡上，账是怎么算的</h1>
-    <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4967 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time><span class="sep">·</span>13 分钟<span class="sep">·</span>5028 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么-125b-能进-12gb">为什么 125B 能进 12GB</a></li>
 <li class="h2"><a href="#那-94-152-toks-是从哪来的">那 94 / 152 tok/s 是从哪来的</a></li>
@@ -144,7 +144,7 @@
 <li>Speedy 的 decode 数字全部是“with MTP speculative decoding”（官方那 94 tok/s 同样带投机，关掉后 Q2_0 掉到 60 出头）；</li>
 <li>而 acceptance 高的任务（代码、结构化输出）能吃满，开放式写作就打折。</li>
 </ul>
-<p>换句话说：<strong>当带宽被锁死时，唯一还能涨的杠杆是“一次前向多吐几个 token&quot;</strong>。这也是今年所有端侧引擎都在做 MTP/DFlash 的原因。</p>
+<p>换句话说：<strong>当带宽被锁死时，唯一还能涨的杠杆是“一次前向多吐几个 token&quot;</strong>。这也是今年所有端侧引擎都在做 MTP/DFlash 的原因；投机的收益边界和退化条件见<a href="/post/speculative-decoding-economics/">投机解码的账</a>。</p>
 <h2 id="qsa-与-gated-residual省的是-prefill">QSA 与 Gated Residual：省的是 prefill</h2>
 <p>decode 被带宽锁死，prefill 却是算力活。Qwen3.8-Flash-Next 的两个结构改动都冲着长上下文 prefill 去：</p>
 <ul>

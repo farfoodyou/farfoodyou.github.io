@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</h1>
-    <p class="meta"><time datetime="2026-05-29T09:30:00">2026-05-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1854 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-05-29T09:30:00">2026-05-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1873 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#11b-激活的工程含义">11B 激活的工程含义</a></li>
 <li class="h2"><a href="#三档-reasoning-level把预算交给调用方">三档 reasoning level：把预算交给调用方</a></li>
@@ -106,7 +106,7 @@
 <p>缓存价差那 5 倍是最该照着做的信号：厂商希望你复用前缀，自建时同理，前缀缓存的命中率比 batch 大小更能决定单位成本。</p>
 <h2 id="一组参考压测口径">一组参考压测口径</h2>
 <p>把 reasoning 钉在 medium、batch 开到 32、前缀缓存全开、一张截图按 1,024 token 预处理，H200×4 上是 210～240 tok/s 的区间，p99 首字延迟 1.4 秒量级。把档位切到 high，同一批请求掉到 90 tok/s 左右，首字涨到 4 秒上下，只能丢进夜间批处理队列。</p>
-<p>这组数字换个负载就不一定成立，但“低档位 + 大 batch + 前缀缓存”这个组合在不同负载下都没被推翻。端侧/边缘场景还轮不到 198B，不过同样的“小激活 + MTP”思路正在往下沉（见 <a href="/post/on-device-inference-designs/">端侧推理</a>）。</p>
+<p>这组数字换个负载就不一定成立，但“低档位 + 大 batch + 前缀缓存”这个组合在不同负载下都没被推翻。端侧/边缘场景还轮不到 198B，不过同样的“小激活 + MTP”思路已经在往下沉（<a href="/post/mistral-small-4-6b-active/">Mistral Small 4</a> 是 119B/6B 的另一档）。</p>
 <h2 id="参考与数据">参考与数据</h2>
 <ul>
 <li>模型卡（规格、三档推理、部署与 MTP 配置）：<a href="https://huggingface.co/stepfun-ai/Step-3.7-Flash">Step-3.7-Flash</a></li>

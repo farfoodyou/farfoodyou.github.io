@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">把 YARA 接进产品：编译、性能、误报</h1>
-    <p class="meta"><time datetime="2022-08-09T09:35:00">2022-08-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2470 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2022-08-09T09:35:00">2022-08-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2518 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#编译一次几秒但不该发生在请求路径上">编译：一次几秒，但不该发生在请求路径上</a></li>
 <li class="h2"><a href="#扫描代价由三件事决定">扫描：代价由三件事决定</a></li>
@@ -53,7 +53,7 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>编译一条规则时，引擎先做一件多数写规则的人不知道的事：把每条字符串拆成若干 4 字节的 atom，塞进一个多模式匹配的自动机。扫描时先跑自动机，只有 atom 落在数据里，才回到原始字符串做完整比对。</p>
-<p>这条设计决定了它在产品里的全部性能特征：提不出独特 atom 的规则退化成对整块数据逐字节过一遍，atom 挑得好，几千条规则扫 2MB 也还是毫秒级。下面顺着数据流走：规则文本进去，判定出来，每步的代价和坑。</p>
+<p>这条设计决定了它在产品里的全部性能特征：提不出独特 atom 的规则退化成对整块数据逐字节过一遍，atom 挑得好，几千条规则扫 2MB 也还是毫秒级。下面顺着数据流走：规则文本进去，判定出来，每步的代价和坑。它在检测分层里的位置见<a href="/post/why-signature-still/">签名检测那篇</a>。</p>
 <h2 id="编译一次几秒但不该发生在请求路径上">编译：一次几秒，但不该发生在请求路径上</h2>
 <p>编译是重活。规则集 800 条左右（示例口径），约 40 条带通配 hex，4 核机器上编译一次 1.8 秒、峰值几百 MB。放在启动阶段无所谓，放进上传请求路径就是灾难。</p>
 <p>所以产品里的做法是编译一次、序列化落盘、进程启动时加载：</p>

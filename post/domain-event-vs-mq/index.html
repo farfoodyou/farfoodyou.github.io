@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 351,732 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">领域事件不是消息队列</h1>
-    <p class="meta"><time datetime="2020-12-08T10:05:00">2020-12-08</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2493 字 <a class="cat" href="/categories/架构/">架构</a></p>
+    <p class="meta"><time datetime="2020-12-08T10:05:00">2020-12-08</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2541 字 <a class="cat" href="/categories/架构/">架构</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#事实和消息的区别">事实和消息的区别</a></li>
 <li class="h2"><a href="#事务边界发布必须在提交之后">事务边界：发布必须在提交之后</a></li>
@@ -54,7 +54,7 @@
   <div class="post-content">
 <p>订单服务第一次加「订单已支付」事件，做法很自然：在发消息处把整个订单对象序列化进去——主单、明细、用户快照、优惠明细，12–40 KB（明细 5–20 行）。</p>
 <p>半年后攒出三个问题：消费方大多只用其中两个字段，但事件结构一改就要全量回归；有消费方依赖了一个从没承诺过的中间字段，订单侧想删不敢删；最严重的一次，事件在事务提交前发出，事务回滚了，下游已经按「已支付」发了货。</p>
-<p>结论：<strong>领域事件回答「领域里发生了什么」，消息队列回答「字节怎么送到别处」。</strong>把它们当同一件事，会同时丢掉语义和事务正确性。</p>
+<p>结论：<strong>领域事件回答「领域里发生了什么」，消息队列回答「字节怎么送到别处」。</strong>把它们当同一件事，会同时丢掉语义和事务正确性。不变式与事务边界的写法见<a href="/post/aggregate-invariant/">聚合根那篇</a>。</p>
 <h2 id="事实和消息的区别">事实和消息的区别</h2>
 <div class="table-wrap"><table>
 <thead><tr>

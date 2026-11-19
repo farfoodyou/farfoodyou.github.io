@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -128,6 +128,7 @@ text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/qwen/">Qwen</a><a class="tag" href="/tags/阿里/">阿里</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/推理模型/">推理模型</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Qwen3%EF%BC%9A%E6%8A%8A+thinking+%E5%BC%80%E5%85%B3%E5%81%9A%E8%BF%9B%E5%BC%80%E6%BA%90%E6%9D%83%E9%87%8D" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/claude-4-long-horizon-agents/">← Claude 4：长时间自主任务，和被重新定义的「上下文」</a><a class="next" href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.6-35b-a3b-architecture/">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</a><time>2026-04</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a><time>2026-08</time></li></ul></aside>
 </article>
@@ -162,6 +163,21 @@ text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -176,6 +192,14 @@ text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

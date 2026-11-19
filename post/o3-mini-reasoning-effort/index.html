@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -115,6 +115,7 @@ debug / math / code_review -&gt; high   (~8% of traffic)</code></pre>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/openai/">OpenAI</a><a class="tag" href="/tags/推理模型/">推理模型</a><a class="tag" href="/tags/api/">API</a><a class="tag" href="/tags/成本/">成本</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=o3-mini+%E4%B8%8A%E7%BA%BF%E9%82%A3%E5%91%A8%EF%BC%8C%E6%88%91%E4%BB%AC%E6%8A%8A+effort+%E4%BB%8E+high+%E6%94%B9%E6%88%90+low+%E7%9C%81%E4%BA%86+71%25+%E7%9A%84%E9%92%B1" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/claude-3.7-sonnet-hybrid-reasoning/">← Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><a class="next" href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-o4-mini-tools-in-thinking/">o3 与 o4-mini：在思考过程里调用工具</a><time>2025-04</time></li><li><a href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><time>2025-06</time></li><li><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><time>2025-01</time></li></ul></aside>
 </article>
@@ -149,6 +150,21 @@ debug / math / code_review -&gt; high   (~8% of traffic)</code></pre>
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -163,6 +179,14 @@ debug / math / code_review -&gt; high   (~8% of traffic)</code></pre>
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

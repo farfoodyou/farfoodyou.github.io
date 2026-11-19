@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -196,6 +196,7 @@ S     = S + beta * outer(delta, k)   # write only the error</code></pre>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/qwen/">Qwen</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/线性注意力/">线性注意力</a><a class="tag" href="/tags/架构/">架构</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8A%8A+Qwen3.6-35B-A3B+%E6%8B%86%E5%BC%80%E7%9C%8B%EF%BC%9A3B+%E6%BF%80%E6%B4%BB%E6%98%AF%E6%80%8E%E4%B9%88%E8%A3%85%E4%B8%8B+35B+%E7%9A%84" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kimi-k2.6-agent-swarm/">← Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</a><a class="next" href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/qwen3.8-2.4t-preview/">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</a><time>2026-07</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：同代两种身材，怎么选</a><time>2026-08</time></li></ul></aside>
 </article>
@@ -230,6 +231,21 @@ S     = S + beta * outer(delta, k)   # write only the error</code></pre>
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -244,6 +260,14 @@ S     = S + beta * outer(delta, k)   # write only the error</code></pre>
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

@@ -30,11 +30,11 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/" class="active">首页</a><a href="/archives/">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/" class="active">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
-<h1 class="page-title">最新文章</h1>
+<p class="site-stats">62 篇 · 128,212 字 · 90 个标签 · 更新于 2026-11-19</p><h1 class="page-title">最新文章</h1>
 <article class="card">
   <h2><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 10GB 显卡上，账是怎么算的</a></h2>
   <p class="meta"><time datetime="2026-11-19T22:30:00">2026-11-19</time> <a class="cat" href="/categories/推理系统/">推理系统</a></p>
@@ -127,6 +127,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -141,6 +156,14 @@
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

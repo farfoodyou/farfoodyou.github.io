@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -185,6 +185,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/端侧推理/">端侧推理</a><a class="tag" href="/tags/量化/">量化</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/引擎/">引擎</a><a class="tag" href="/tags/ninfer/">NInfer</a><a class="tag" href="/tags/strata/">Strata</a><a class="tag" href="/tags/带宽/">带宽</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%B0%8F%E6%98%BE%E5%AD%98%E7%9A%84%E6%9E%81%E9%99%90%EF%BC%9A125B+%E8%B7%91%E5%9C%A8+10GB+%E6%98%BE%E5%8D%A1%E4%B8%8A%EF%BC%8C%E8%B4%A6%E6%98%AF%E6%80%8E%E4%B9%88%E7%AE%97%E7%9A%84" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><span></span><a class="next" href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B</a><time>2026-10</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a><time>2026-11</time></li></ul></aside>
 </article>
@@ -219,6 +220,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -233,6 +249,14 @@
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

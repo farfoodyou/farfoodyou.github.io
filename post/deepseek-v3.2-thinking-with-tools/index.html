@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -154,6 +154,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/强化学习/">强化学习</a><a class="tag" href="/tags/开源模型/">开源模型</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-V3.2%EF%BC%9A%E4%BB%8E%E3%80%8C%E7%9C%81%E7%AE%97%E5%8A%9B%E3%80%8D%E5%88%B0%E3%80%8Cthinking+with+tools%E3%80%8D" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/glm-4.7-thinking-before-acting/">← GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><a class="next" href="/post/claude-opus-4.5-effort-parameter/">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.1-hybrid-fp8/">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</a><time>2025-08</time></li><li><a href="/post/glm-5-744b-dsa/">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><time>2026-02</time></li><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li></ul></aside>
 </article>
@@ -188,6 +189,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -202,6 +218,14 @@
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

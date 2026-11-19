@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -146,6 +146,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/minimax/">MiniMax</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/强化学习/">强化学习</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=MiniMax-M1%EF%BC%9A1M+%E4%B8%8A%E4%B8%8B%E6%96%87+%2B+%E7%BA%BF%E6%80%A7%E6%B3%A8%E6%84%8F%E5%8A%9B%EF%BC%8C%E6%8A%8A%E9%95%BF%E6%80%9D%E8%80%83%E7%9A%84%E8%B4%A6%E5%8D%95%E6%89%93%E4%B8%8B%E6%9D%A5" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kimi-k2-1t-moe-muonclip/">← Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</a><a class="next" href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/minimax-m2-10b-active-agents/">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><time>2025-10</time></li><li><a href="/post/mimo-v2-pro-hybrid-attention/">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</a><time>2026-03</time></li><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li></ul></aside>
 </article>
@@ -180,6 +181,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -194,6 +210,14 @@
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

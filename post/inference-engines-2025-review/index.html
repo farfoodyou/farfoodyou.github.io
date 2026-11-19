@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -138,6 +138,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/vllm/">vLLM</a><a class="tag" href="/tags/sglang/">SGLang</a><a class="tag" href="/tags/推理引擎/">推理引擎</a><a class="tag" href="/tags/系统/">系统</a><a class="tag" href="/tags/kv缓存/">KV缓存</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=2025+%E6%8E%A8%E7%90%86%E5%BC%95%E6%93%8E%E5%A4%8D%E7%9B%98%EF%BC%9AvLLM+%E6%8D%A2%E4%BA%86%E5%86%85%E6%A0%B8%EF%BC%8CSGLang+%E5%BC%80%E5%A7%8B%E5%81%9A%E7%BD%91%E5%85%B3" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kv-cache-ledger-128k/">← 手算一遍：128K 上下文的 KV 到底占多少显存</a><a class="next" href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li></ul></aside>
 </article>
@@ -172,6 +173,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -186,6 +202,14 @@
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

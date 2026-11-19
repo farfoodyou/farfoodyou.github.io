@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -137,6 +137,7 @@ def route(prompt: str) -&gt; dict:
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/后训练/">后训练</a><a class="tag" href="/tags/moe/">MoE</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-V3-0324%EF%BC%9A%E4%B8%80%E6%AC%A1%E3%80%8C%E7%82%B9%E7%89%88%E6%9C%AC%E3%80%8D%E6%9B%B4%E6%96%B0%E6%9A%B4%E9%9C%B2%E7%9A%84%E6%96%B9%E6%B3%95%E8%AE%BA" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/o3-o4-mini-tools-in-thinking/">← o3 与 o4-mini：在思考过程里调用工具</a><a class="next" href="/post/gemini-2.5-thinking-by-default/">Gemini 2.5 Pro：把「思考」设成默认行为 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4-hybrid-attention/">DeepSeek-V4：1M 上下文只要 V3.2 的 27% FLOPs，怎么做到的</a><time>2026-08</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li></ul></aside>
 </article>
@@ -171,6 +172,21 @@ def route(prompt: str) -&gt; dict:
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -185,6 +201,14 @@ def route(prompt: str) -&gt; dict:
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

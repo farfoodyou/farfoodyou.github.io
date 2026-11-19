@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -195,6 +195,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/llm/">LLM</a><a class="tag" href="/tags/强化学习/">强化学习</a><a class="tag" href="/tags/deepseek/">DeepSeek</a><a class="tag" href="/tags/推理模型/">推理模型</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=DeepSeek-R1%EF%BC%9A%E7%BA%AF+RL+%E6%8A%8A%E6%8E%A8%E7%90%86%E8%83%BD%E5%8A%9B%E3%80%8C%E9%80%BC%E3%80%8D%E5%87%BA%E6%9D%A5" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kimi-k1.5-long-context-rl/">← Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><a class="next" href="/post/2019-03-23/">从现在开始, 记录成长 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a><time>2025-01</time></li><li><a href="/post/deepseek-r1-0528-more-thinking/">DeepSeek-R1-0528：多想 11K token，涨 17 分</a><time>2025-05</time></li><li><a href="/post/deepseek-v3.2-thinking-with-tools/">DeepSeek-V3.2：从「省算力」到「thinking with tools」</a><time>2025-12</time></li></ul></aside>
 </article>
@@ -229,6 +230,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -243,6 +259,14 @@
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

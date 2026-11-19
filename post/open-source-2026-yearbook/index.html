@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -143,6 +143,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/年表/">年表</a><a class="tag" href="/tags/回顾/">回顾</a><a class="tag" href="/tags/架构/">架构</a><a class="tag" href="/tags/综述/">综述</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=2026+%E5%BC%80%E6%BA%90%E5%B9%B4%E8%A1%A8%EF%BC%9A%E4%BB%8E+1T+%E5%88%B0+3T%EF%BC%8C%E4%BB%8E+128K+%E5%88%B0+1M" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/inference-stack-2026-review/">← 2026 推理栈答卷：缓存、稀疏、并行、量化</a><a class="next" href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3.6-35b-a3b-architecture/">把 Qwen3.6-35B-A3B 拆开看：3B 激活是怎么装下 35B 的</a><time>2026-04</time></li><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li></ul></aside>
 </article>
@@ -177,6 +178,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -191,6 +207,14 @@
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

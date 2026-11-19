@@ -45,7 +45,7 @@
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -138,6 +138,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/anthropic/">Anthropic</a><a class="tag" href="/tags/claude/">Claude</a><a class="tag" href="/tags/成本/">成本</a><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/编码/">编码</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Claude+Haiku+4.5%EF%BC%9A%E5%B0%8F%E6%A8%A1%E5%9E%8B%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%AE%A9%E4%BA%BA%E8%AE%A4%E7%9C%9F%E8%80%83%E8%99%91%E3%80%8C%E5%A4%9F%E7%94%A8%E3%80%8D" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/minimax-m2-10b-active-agents/">← MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</a><a class="next" href="/post/claude-sonnet-4.5-swe-bench-77/">Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/claude-opus-4.5-effort-parameter/">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</a><time>2025-11</time></li><li><a href="/post/claude-3.7-sonnet-hybrid-reasoning/">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</a><time>2025-02</time></li><li><a href="/post/claude-4-long-horizon-agents/">Claude 4：长时间自主任务，和被重新定义的「上下文」</a><time>2025-05</time></li></ul></aside>
 </article>
@@ -172,6 +173,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
   }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
@@ -186,6 +202,14 @@
     pre.appendChild(b);
   });
 })();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
 </script>
 </body>
 </html>

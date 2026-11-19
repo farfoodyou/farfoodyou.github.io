@@ -514,3 +514,75 @@ html[data-theme="light"] code { color: #b3194a; }
 .search-results li time { font: 400 .75rem/1 var(--mono); color: var(--muted); margin-left: .6rem; }
 .search-results li p { margin: .3rem 0 0; font-size: .88rem; color: var(--muted); }
 .search-results .empty { color: var(--muted); font-family: var(--mono); font-size: .85rem; }
+
+/* ------------------------------------------------------------- calendar / heatmap */
+.site-stats {
+  font: 400 .78rem/1.8 var(--mono); color: var(--muted);
+  margin: 0 0 1.6rem; padding: 0 0 1rem; border-bottom: 1px dashed var(--line);
+}
+.cal-stats { font: 400 .8rem/1.8 var(--mono); color: var(--muted); margin: 0 0 1.2rem; }
+
+.heatmap {
+  display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 12px);
+  gap: 3px; overflow-x: auto; padding: .3rem 0 1.6rem;
+  border-bottom: 1px solid var(--line); margin-bottom: 1.6rem;
+}
+.hm { width: 12px; height: 12px; border-radius: 3px; background: var(--panel-2); display: block; }
+a.hm { transition: transform .12s, box-shadow .12s; }
+a.hm:hover { transform: scale(1.35); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
+.hm.l1 { background: color-mix(in srgb, var(--accent) 25%, var(--panel-2)); }
+.hm.l2 { background: color-mix(in srgb, var(--accent) 45%, var(--panel-2)); }
+.hm.l3 { background: color-mix(in srgb, var(--accent) 70%, var(--panel-2)); }
+.hm.l4 { background: var(--accent); }
+
+.cal-weeks { display: grid; gap: 1.6rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.cal-month h2 {
+  font: 600 .85rem/1.4 var(--mono); color: var(--fg-strong); margin: 0 0 .6rem;
+  display: flex; align-items: center; gap: .4rem;
+}
+.cal-month h2::before { content: "▸"; color: var(--accent); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-grid > * { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font: 400 .68rem/1 var(--mono); border-radius: 4px; }
+.cal-day { color: var(--muted); background: var(--bg-soft); }
+.cal-day.has {
+  color: #06210c; background: var(--accent); text-decoration: none; font-weight: 700;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.cal-day.has:hover { transform: scale(1.08); }
+.cal-pad { background: transparent; }
+
+/* ------------------------------------------------------------- misc: share / to-top / archive list */
+.share { display: flex; gap: .6rem; margin: 2rem 0 0; flex-wrap: wrap; }
+.share button, .share a {
+  font: 400 .78rem/1 var(--mono); color: var(--muted);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  padding: .45rem .7rem; cursor: pointer; text-decoration: none;
+  transition: color .18s, border-color .18s;
+}
+.share button:hover, .share a:hover { color: var(--accent); border-color: var(--accent); }
+
+#to-top {
+  position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 40;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--panel); color: var(--muted);
+  border: 1px solid var(--line); cursor: pointer;
+  font: 400 1rem/1 var(--mono);
+  opacity: 0; pointer-events: none; transition: opacity .2s, color .2s, border-color .2s;
+}
+#to-top.show { opacity: 1; pointer-events: auto; }
+#to-top:hover { color: var(--accent); border-color: var(--accent); }
+
+.archive-list { list-style: none; margin: 0; padding: 0; }
+.archive-list li { display: flex; gap: 1rem; align-items: baseline; padding: .45rem 0; border-bottom: 1px dashed var(--line-soft); }
+.archive-list time { font: 400 .8rem/1 var(--mono); color: var(--muted); min-width: 3.4rem; }
+.archive-list a { color: var(--fg); text-decoration: none; }
+.archive-list a:hover { color: var(--accent); }
+
+.big-link { font: 500 1.1rem/1.6 var(--mono); color: var(--accent-2); text-decoration: none; border-bottom: 1px solid currentColor; }
+.big-link:hover { color: var(--accent); }
+
+@media print {
+  .site-header, .site-footer, .toc, .share, .comments, .related, .post-nav, #to-top, #progress { display: none !important; }
+  body { background: #fff; color: #000; }
+  .post-content a { color: #000; }
+}

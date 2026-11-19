@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,698 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">支付幂等的三层防线</h1>
-    <p class="meta"><time datetime="2021-03-16T10:20:00">2021-03-16</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2492 字 <a class="cat" href="/categories/后端/">后端</a></p>
+    <p class="meta"><time datetime="2021-03-16T10:20:00">2021-03-16</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2600 字 <a class="cat" href="/categories/后端/">后端</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三层各挡什么">三层各挡什么</a></li>
 <li class="h2"><a href="#第一层唯一索引是仲裁者缓存只是前缀">第一层：唯一索引是仲裁者，缓存只是前缀</a></li>
@@ -52,8 +52,9 @@
 <li class="h2"><a href="#数字与几个坑">数字与几个坑</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>「加个 SETNX 就幂等了」这话我在评审里听过不止一次。实际发生过的两次重复扣款，一次是缓存主从切换丢了去重记录，一次是状态机允许同一笔单被推进两次。</p>
-<p>共同点是：我们以为幂等是入口上的一个判断，实际它是贯穿一次交易全过程的性质。入口挡的是「同一个请求进来两次」，挡不住「一次请求在中间被执行了两次」。</p>
+<p>对账那天差了 11 笔，点开看全是同一笔订单扣了两次：两条流水号不同，request_no 相同。去重表里只有一条记录——主从切换那一刻这条 INSERT 还没同步过去，客户端重试正好打在新主库上。</p>
+<p>半年后又出了一次，形态完全不一样：单子只有一个，金额也只扣了一次，但状态从「处理中」被推进了两遍，第二遍来自一条迟到的补偿任务回调，它拿着三天前的快照又跑了一次。</p>
+<p>两次都不是「没加 SETNX」造成的。幂等在入口上是一个判断，在整条交易链路上却是一种性质：入口挡的是「同一个请求进来两次」，挡不住「一次请求在中间被执行了两次」。</p>
 <h2 id="三层各挡什么">三层各挡什么</h2>
 <p>把链路切开看，能重复执行的位置有三段，挡法不一样，代价也不一样：</p>
 <div class="table-wrap"><table>

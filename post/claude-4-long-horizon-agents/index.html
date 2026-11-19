@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude 4：长时间自主任务，和被重新定义的「上下文」</h1>
-    <p class="meta"><time datetime="2025-05-23T08:30:00">2025-05-23</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2097 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-05-23T08:30:00">2025-05-23</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2101 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#swe-bench-与-terminal-bench-的区别">SWE-bench 与 Terminal-bench 的区别</a></li>
 <li class="h2"><a href="#官方说的三个新能力">官方说的三个新能力</a></li>
 <li class="h2"><a href="#定价没涨是这一轮最狠的地方">定价没涨，是这一轮最狠的地方</a></li>
 <li class="h2"><a href="#多步可靠性的工程手段">多步可靠性的工程手段</a></li>
-<li class="h2"><a href="#写到这里的判断">写到这里的判断</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
 <p>5 月 22 日，<a href="https://www.anthropic.com/news/claude-4">Claude 4</a> 发布：Opus 4 和 Sonnet 4 两个型号同时上，接管 3.7 的位置。官方给的两个数字很有指向性——<strong>SWE-bench <a href="https://www.anthropic.com/news/claude-4">72.5%</a>、Terminal-bench <a href="https://www.anthropic.com/news/claude-4">43.2%</a></strong>，配合一句“能连续工作数小时、执行上千步”。</p>
@@ -108,9 +107,9 @@ memory/
 <li><strong>可回放</strong>：记录每步的输入输出，出问题能定位到“哪一步开始跑偏”。</li>
 </ol>
 <p>这四条和模型本身无关，但决定了“能不能托管”。2025 年下半年各种 coding agent 的差距，很大一部分其实在这里。</p>
-<h2 id="写到这里的判断">写到这里的判断</h2>
+<p>说到最后，给几句自己的判断：</p>
 <ul>
-<li>agent 能力的分水岭是“多步成功率”，不是单步分数，。看到新模型发榜，先找 Terminal-bench / SWE-bench 这类多步任务，AIME 只能当参考。</li>
+<li>agent 能力的分水岭是“多步成功率”，不是单步分数。看到新模型发榜，先找 Terminal-bench / SWE-bench 这类多步任务，AIME 只能当参考。</li>
 <li><strong>并行工具调用被低估</strong>。它同时改善了延迟和上下文占用，是性价比最高的一项工程优化。</li>
 <li>模型自己写记忆，会成为标配，随之而来的是权限与审计问题：agent 写的文件要不要 review？谁能改？</li>
 <li><strong>价格战会持续到 2025 年底</strong>。真正稀缺的不是模型，而是“能可靠跑长任务的 harness”。</li>

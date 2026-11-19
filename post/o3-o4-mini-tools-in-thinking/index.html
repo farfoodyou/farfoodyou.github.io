@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">o3 与 o4-mini：在思考过程里调用工具</h1>
-    <p class="meta"><time datetime="2025-04-17T09:50:00">2025-04-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2144 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-04-17T09:50:00">2025-04-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2149 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#从串行到思考内工具">从&quot;串行&quot;到&quot;思考内工具&quot;</a></li>
 <li class="h2"><a href="#视觉进了推理链">视觉进了推理链</a></li>
 <li class="h2"><a href="#o3-和-o4-mini-怎么分工">o3 和 o4-mini 怎么分工</a></li>
 <li class="h2"><a href="#工程上的连锁反应">工程上的连锁反应</a></li>
-<li class="h2"><a href="#最后说三句">最后说三句</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>4 月 16 日，<a href="https://openai.com/index/introducing-o3-and-o4-mini/">o3 和 o4-mini</a> 同时发布。榜单之外，真正值得记的是那句描述：<strong>模型能在思考过程中使用工具</strong>——搜索、跑 Python、分析图片，都是在 CoT 内部发生，而不是“先想完再调工具”。</p>
@@ -105,11 +104,11 @@ resp = client.responses.create(
     input=messages,
 )</code></pre>
 <p><code>max_tool_calls</code> 这类参数在 2025 年会成为标配——<strong>没有硬上限的 agent 就是一个会自己烧钱的进程</strong>。</p>
-<h2 id="最后说三句">最后说三句</h2>
+<p>说到最后，给几句自己的判断：</p>
 <ul>
-<li>“思考 + 工具”是 2025 年最重要的范式变化，，比上下文长度、比 MoE 结构都更影响实际可用性。纯语言模型的推理天花板，很大程度上是“没有外部输入”造成的。</li>
+<li>“思考 + 工具”是 2025 年最重要的范式变化，比上下文长度、比 MoE 结构都更影响实际可用性。纯语言模型的推理天花板，很大程度上是“没有外部输入”造成的。</li>
 <li><strong>成本可预测性下降</strong>是这个范式的最大障碍。企业采购要的是“每千次请求多少钱”的稳定区间，而带工具的 agent 给出的是长尾分布。</li>
-<li>o3 系列真正的用户是 agent 框架，，不是聊天窗口。个人用户感知不到“思考里调工具”的价值，Harness（Claude Code、Codex CLI 那一类）才吃得到。</li>
+<li>o3 系列真正的用户是 agent 框架，不是聊天窗口。个人用户感知不到“思考里调工具”的价值，Harness（Claude Code、Codex CLI 那一类）才吃得到。</li>
 <li>评测方向会变：SWE-bench 这类“有环境、有反馈”的基准会取代静态题库，成为能力的主度量。</li>
 </ul>
 <h2 id="出处">出处</h2>

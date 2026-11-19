@@ -91,11 +91,11 @@
     <summary>744B/40B 不变，两个改动：IndexShare 让每四层稀疏注意力复用同一个索引器（1M 上下文下每 token FLOPs 降 2.9×），MTP 接受长度 +20%。SWE-bench Pro 62.1，MIT。</summary>
   </entry>
   <entry>
-    <title>投机解码账本：接受率每掉 10 个点，收益就归零</title>
+    <title>投机解码踩坑记：开了之后反而慢了 30%</title>
     <link href="https://farfoodyou.github.io/post/speculative-decoding-economics/"/>
     <id>https://farfoodyou.github.io/post/speculative-decoding-economics/</id>
     <updated>2026-05-30T22:15:00+08:00</updated>
-    <summary>2026 年不开投机解码的部署基本等于浪费 GPU。但收益完全取决于接受率：算清 draft 成本、验证成本、接受长度三者的关系，才知道该开几档、什么时候该关。</summary>
+    <summary>一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。</summary>
   </entry>
   <entry>
     <title>Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍</title>
@@ -147,11 +147,11 @@
     <summary>744B 总参数 / 40B 激活、28.5T token、MIT 协议，并直接集成 DeepSeek Sparse Attention。SWE-bench 77.8%、Terminal-Bench 2.0 56.2%，官方定位是「复杂系统工程与长程 agent 任务」。</summary>
   </entry>
   <entry>
-    <title>KV cache 账本：128K 上下文到底要多少张卡</title>
+    <title>手算一遍：128K 上下文的 KV 到底占多少显存</title>
     <link href="https://farfoodyou.github.io/post/kv-cache-ledger-128k/"/>
     <id>https://farfoodyou.github.io/post/kv-cache-ledger-128k/</id>
     <updated>2026-01-20T22:10:00+08:00</updated>
-    <summary>把「长上下文」换算成显存和带宽：MHA/GQA/MLA 每 token 各占多少、128K 与 1M 分别需要多少卡、分页与量化能省多少、以及这些字节在机器上由谁搬。</summary>
+    <summary>不用表格，直接拿纸笔算：80 层、head_dim 128、FP16，MHA/GQA/MLA 各占多少，128K 和 1M 分别要几张卡，以及分页和量化能砍掉多少。</summary>
   </entry>
   <entry>
     <title>2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</title>

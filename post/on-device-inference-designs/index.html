@@ -52,14 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">端侧推理的几种设计：从 30B 本地模型到手机上的 1B</h1>
-    <p class="meta"><time datetime="2026-10-28T22:30:00">2026-10-28</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2016 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-10-28T22:30:00">2026-10-28</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2026 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三重墙">三重墙</a></li>
 <li class="h2"><a href="#后端选择谁在搬数据">后端选择：谁在搬数据</a></li>
 <li class="h2"><a href="#量化端侧的第一性选择">量化：端侧的&quot;第一性&quot;选择</a></li>
-<li class="h2"><a href="#kv-cache-在端侧的特殊性">KV cache 在端侧的特殊性</a></li>
 <li class="h2"><a href="#30b-本地模型是什么体验">30B 本地模型是什么体验</a></li>
-<li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>2026 年端侧模型有两个明显变化：一是<strong>30B 级的本地模型开始可用</strong>（如 8 月的 Muse Glimmer 30B，Apache 2.0、面向本地运行），二是<strong>手机端 1～3B 模型成为系统组件</strong>。</p>
@@ -114,7 +112,7 @@
 </tbody>
 </table></div>
 <p>端侧量化和云端量化的目标不同：云端省的是<strong>带宽</strong>（吞吐），端侧省的是<strong>能不能装下</strong>（可行性）。所以端侧更激进，也更依赖“混合精度”（关键层 Q6、其余 Q4）。</p>
-<h2 id="kv-cache-在端侧的特殊性">KV cache 在端侧的特殊性</h2>
+<p>再往下看，KV cache 在端侧的特殊性：</p>
 <p>手机端跑长对话时，KV cache 会迅速成为主要内存占用：</p>
 <pre data-lang="text"><code class="language-text">8B 模型、GQA(8)、FP16：327 B/token/layer × 层数 ≈ 百 KB/token
 4K 上下文 ≈ 0.5 GB；32K 上下文 ≈ 4 GB → 直接 OOM</code></pre>
@@ -140,11 +138,11 @@
 </tbody>
 </table></div>
 <p>所以“30B 本地跑”目前是<strong>高端笔记本/工作站</strong>的体验，不是手机。手机端的现实区间仍是 1～4B。</p>
-<h2 id="几句判断">几句判断</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
-<li>端侧的瓶颈会长期是带宽，，量化与结构（GQA/线性注意力）比“模型规模”更决定体验。</li>
+<li>端侧的瓶颈会长期是带宽，量化与结构（GQA/线性注意力）比“模型规模”更决定体验。</li>
 <li><strong>统一内存架构是端侧推理的天然赢家</strong>（省一次拷贝），这也是 Apple/部分 SoC 的优势所在。</li>
-<li>NPU 的瓶颈是算子覆盖，，不是算力：模型不改造就只能在 CPU/GPU 上跑。</li>
+<li>NPU 的瓶颈是算子覆盖，不是算力：模型不改造就只能在 CPU/GPU 上跑。</li>
 <li>做端侧产品：<strong>先把 4B/INT4 + 8K KV 调到 20 tok/s</strong>，再考虑更大的模型；否则用户在等第一个字的时候就走了。</li>
 </ul>
 <h2 id="来源">来源</h2>

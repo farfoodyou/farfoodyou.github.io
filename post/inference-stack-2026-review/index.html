@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">2026 推理栈答卷：缓存、稀疏、并行、量化</h1>
-    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2101 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2100 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#前缀缓存从优化项变成准入项">前缀缓存：从优化项变成准入项</a></li>
 <li class="h2"><a href="#稀疏注意力吃掉长上下文">稀疏注意力：吃掉长上下文</a></li>
@@ -148,7 +148,7 @@
 </table></div>
 <h2 id="最后说三句">最后说三句</h2>
 <ul>
-<li>2026 年的性能提升，一半来自结构（稀疏/压缩），一半来自系统（缓存/并行），，纯粹靠硬件的比例在下降。</li>
+<li>2026 年的性能提升，一半来自结构（稀疏/压缩），一半来自系统（缓存/并行），纯粹靠硬件的比例在下降。</li>
 <li><strong>“每 token 读取字节数”会成为最重要的部署指标</strong>，比参数量、比榜单都更能预测成本和延迟。</li>
 <li>PD 分离会在 KV 压缩普及后变得普遍，（传输成本从 GB 级降到 MB 级）。</li>
 <li>给团队的一张顺序表：<strong>先缓存 → 再量化 → 再稀疏结构 → 最后才 PD/EP</strong>。前两步几乎无风险，后两步要重训或重部署。</li>

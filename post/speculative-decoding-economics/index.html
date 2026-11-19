@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>投机解码账本：接受率每掉 10 个点，收益就归零 - farfood</title>
-<meta name="description" content="2026 年不开投机解码的部署基本等于浪费 GPU。但收益完全取决于接受率：算清 draft 成本、验证成本、接受长度三者的关系，才知道该开几档、什么时候该关。">
+<title>投机解码踩坑记：开了之后反而慢了 30% - farfood</title>
+<meta name="description" content="一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/speculative-decoding-economics/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,7 +15,7 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "投机解码账本：接受率每掉 10 个点，收益就归零", "description": "2026 年不开投机解码的部署基本等于浪费 GPU。但收益完全取决于接受率：算清 draft 成本、验证成本、接受长度三者的关系，才知道该开几档、什么时候该关。", "datePublished": "2026-05-30T22:15:00+08:00", "dateModified": "2026-05-30T22:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/speculative-decoding-economics/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "投机解码, MTP, 推理优化, vLLM, 引擎"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "投机解码踩坑记：开了之后反而慢了 30%", "description": "一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。", "datePublished": "2026-05-30T22:15:00+08:00", "dateModified": "2026-05-30T22:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/speculative-decoding-economics/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "投机解码, MTP, 推理优化, vLLM, 引擎"}</script>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
   <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
@@ -29,14 +29,14 @@
   </script>
 </section>
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="投机解码账本：接受率每掉 10 个点，收益就归零 - farfood">
-<meta property="og:description" content="2026 年不开投机解码的部署基本等于浪费 GPU。但收益完全取决于接受率：算清 draft 成本、验证成本、接受长度三者的关系，才知道该开几档、什么时候该关。">
+<meta property="og:title" content="投机解码踩坑记：开了之后反而慢了 30% - farfood">
+<meta property="og:description" content="一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/speculative-decoding-economics/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="投机解码账本：接受率每掉 10 个点，收益就归零 - farfood">
-<meta name="twitter:description" content="2026 年不开投机解码的部署基本等于浪费 GPU。但收益完全取决于接受率：算清 draft 成本、验证成本、接受长度三者的关系，才知道该开几档、什么时候该关。">
+<meta name="twitter:title" content="投机解码踩坑记：开了之后反而慢了 30% - farfood">
+<meta name="twitter:description" content="一次真实的上线记录：默认开投机解码，吞吐先涨 1.8 倍，然后在高并发和长上下文下掉回 0.7 倍。最后靠分档开关和接受率监控把它救回来。">
 <meta property="article:published_time" content="2026-05-30T22:15:00+08:00">
 <meta name="keywords" content="投机解码, MTP, 推理优化, vLLM, 引擎">
 </head>
@@ -51,95 +51,104 @@
 <main class="wrap">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">投机解码账本：接受率每掉 10 个点，收益就归零</h1>
-    <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1763 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <h1 class="post-title">投机解码踩坑记：开了之后反而慢了 30%</h1>
+    <p class="meta"><time datetime="2026-05-30T22:15:00">2026-05-30</time><span class="sep">·</span>3 分钟<span class="sep">·</span>1165 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先把账算清楚">先把账算清楚</a></li>
-<li class="h2"><a href="#接受率受什么影响">接受率受什么影响</a></li>
-<li class="h2"><a href="#mtp-与独立-draft-模型">MTP 与独立 draft 模型</a></li>
-<li class="h2"><a href="#带宽视角投机解码动了哪段带宽">带宽视角：投机解码动了哪段带宽</a></li>
-<li class="h2"><a href="#落地清单">落地清单</a></li>
-<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#第一版直接照文档开">第一版：直接照文档开</a></li>
+<li class="h2"><a href="#为什么高并发会退化">为什么高并发会退化</a></li>
+<li class="h2"><a href="#第二个坑长上下文把它彻底干废">第二个坑：长上下文把它彻底干废</a></li>
+<li class="h2"><a href="#第三个坑接受率没人看">第三个坑：接受率没人看</a></li>
+<li class="h2"><a href="#最后的配置">最后的配置</a></li>
+<li class="h2"><a href="#数字复盘">数字复盘</a></li>
+<li class="h2"><a href="#记下来的四条">记下来的四条</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>2026 年的引擎默认都带投机解码：vLLM 的 <code>speculative_config</code>、SGLang 的 EAGLE/MTP、各家模型内置的 MTP 头。但<strong>它并不是“免费加速”</strong>，接受率一低就变成负收益。</p>
-<h2 id="先把账算清楚">先把账算清楚</h2>
-<p>设：</p>
-<ul>
-<li>draft 每步成本 <code>c_d</code>（小模型一次前向，或 MTP 头一次前向）</li>
-<li>目标模型验证一次成本 <code>c_t</code>（一批 k 个 token 并行验证）</li>
-<li>接受长度 <code>a</code>（平均一次验证接受几个 token）</li>
-</ul>
-<p>每生成一个 token 的摊销成本：</p>
-<pre data-lang="text"><code class="language-text">cost_per_token ≈ (c_d + c_t / k) / a</code></pre>
-<p>对比纯 decode 的 <code>c_t</code>（一次前向一个 token），加速比约：</p>
-<pre data-lang="text"><code class="language-text">speedup ≈ a × c_t / (c_d + c_t / k)</code></pre>
-<p>举个具体数：<code>c_d = 0.1 c_t</code>、<code>k = 4</code>、<code>a = 2.5</code></p>
-<pre data-lang="text"><code class="language-text">speedup ≈ 2.5 × 1 / (0.1 + 0.25) ≈ 7.1  → 实际会被带宽/调度吃掉一部分，落地常见 2～3×</code></pre>
-<p><strong>关键结论：<code>a</code> 低于 1.5 时，收益基本被 draft 成本抵消。</strong></p>
-<h2 id="接受率受什么影响">接受率受什么影响</h2>
+<p>先说结论：<strong>投机解码不是“开了就快”，它是一笔浮动的交易。</strong> 这篇是我们上线那两周的踩坑记录。</p>
+<h2 id="第一版直接照文档开">第一版：直接照文档开</h2>
+<p>vLLM 的文档给了 <code>--speculative_config</code>，我们就照抄了一版，draft 用模型自带的 MTP 头，<code>num_speculative_tokens=3</code>。</p>
+<p>压测结果很漂亮：单流从 42 tok/s 涨到 76 tok/s（1.8 倍），P50 延迟降了 40%。当天就上线了。</p>
+<p>第二天报警：<strong>高并发下吞吐反而掉了</strong>。同样 32 并发的吞吐，从 5200 tok/s 掉到 3600 tok/s。</p>
+<h2 id="为什么高并发会退化">为什么高并发会退化</h2>
+<p>把指标拆开看，问题是显存和 batch 的耦合：</p>
 <div class="table-wrap"><table>
 <thead><tr>
-<th>因素</th>
-<th>影响</th>
-<th>工程对策</th>
+<th>项目</th>
+<th>不开投机</th>
+<th>开投机（k=3）</th>
 </tr></thead>
 <tbody>
-<tr><td>任务类型</td><td>代码/结构化输出接受率高（可预测），创意写作低</td><td>按任务分档开关</td></tr>
-<tr><td>采样温度</td><td>高温时分布变平，接受率下降</td><td>高温场景关掉</td></tr>
-<tr><td>draft 与目标的分布距离</td><td>同家族蒸馏 draft 最好</td><td>用模型自带 MTP 头</td></tr>
-<tr><td>上下文长度</td><td>长上下文时验证的 KV 读取变贵</td><td>与大 batch 冲突时关闭</td></tr>
+<tr><td>单请求 KV</td><td>1×</td><td>1×</td></tr>
+<tr><td>验证阶段临时 KV</td><td>—</td><td>要同时容纳 k 个候选位置</td></tr>
+<tr><td>可用 batch</td><td>32</td><td>22（显存先满）</td></tr>
 </tbody>
 </table></div>
-<p>GLM-5.2 的模型卡里有一条很实在的更新：<strong>改进了 MTP 层，把接受长度提升最多 20%</strong>。20% 的接受长度在账本上就是 ~20% 的吞吐，这比抠 kernel 效率容易得多。</p>
-<h2 id="mtp-与独立-draft-模型">MTP 与独立 draft 模型</h2>
+<p>投机解码在验证阶段要一次性算 k 个位置，KV 峰值更高；显存先满，batch 变小，吞吐就被拉下来。<strong>单流快 ≠ 总吞吐高</strong>，这是第一个坑。</p>
+<h2 id="第二个坑长上下文把它彻底干废">第二个坑：长上下文把它彻底干废</h2>
+<p>我们的请求里有约 15% 是长文档（&gt;64K token）。开投机后，这部分请求的 P99 从 18 秒变成 30 秒。</p>
+<p>原因在带宽账上：</p>
+<pre data-lang="text"><code class="language-text">普通 decode：每 token 读一次 KV（64K × 320B ≈ 20MB）
+投机解码：   验证 k=3 要读 3 个位置的 KV → 60MB，只换来约 2 个 token</code></pre>
+<p>当 KV 读取已经超过权重读取时（长上下文），<strong>投机解码是用更贵的那部分资源换更便宜的那部分</strong>——完全反了。</p>
+<h2 id="第三个坑接受率没人看">第三个坑：接受率没人看</h2>
+<p>上线一周后我们才加上接受率监控，发现：</p>
 <div class="table-wrap"><table>
 <thead><tr>
-<th>方案</th>
-<th>draft 成本</th>
-<th>接受率</th>
-<th>部署复杂度</th>
+<th>流量类型</th>
+<th>平均接受长度 a</th>
 </tr></thead>
 <tbody>
-<tr><td>独立小模型（如 0.5B）</td><td>中（要额外显存与一次前向）</td><td>取决于分布匹配</td><td>高（两个模型、两套 KV）</td></tr>
-<tr><td>模型自带 MTP 头</td><td>低（共享主干）</td><td>高（同源）</td><td>低（一个权重文件）</td></tr>
-<tr><td>Medusa/EAGLE 头</td><td>低</td><td>中高</td><td>中（要训练头）</td></tr>
+<tr><td>代码生成（JSON / 单元测试）</td><td>2.6</td></tr>
+<tr><td>结构化抽取</td><td>2.2</td></tr>
+<tr><td>中文长文写作</td><td>1.3</td></tr>
+<tr><td>开放式问答</td><td>1.1</td></tr>
 </tbody>
 </table></div>
-<p>2026 年的趋势明显偏向后两者：<strong>MTP 头内置</strong>（Hy4 preview 直接带一个 10B/0.7B 的 MTP 层，Step 3.7 Flash 也是）——省掉跨模型的 KV 管理，接受率也更稳。</p>
-<h2 id="带宽视角投机解码动了哪段带宽">带宽视角：投机解码动了哪段带宽</h2>
-<p>decode 的瓶颈是权重搬运。投机解码并不能减少权重读取，它减少的是<strong>串行次数</strong>：</p>
+<p><code>a &lt; 1.5</code> 的那些流量，开投机就是纯亏——draft 的成本没被摊掉。而这类流量占了 40%。</p>
+<h2 id="最后的配置">最后的配置</h2>
+<p>改了三件事之后，整体吞吐 1.35 倍、P99 反而降了：</p>
+<pre data-lang="text"><code class="language-text">1) 按请求分档：prompt 命中&quot;代码/结构化&quot;标签才开投机
+2) 长上下文（&gt;32K）强制关闭
+3) 并发 &gt; 24 时降低 k（3 → 2），把显存让给 batch</code></pre>
+<p>配置大概是这样的（示意，不是完整配置）：</p>
+<pre data-lang="yaml"><code class="language-yaml">speculative:
+  method: mtp
+  num_speculative_tokens: 2      # 高并发时下调
+  max_context_for_spec: 32768    # 长上下文直接关
+  enable_when: [code, structured]</code></pre>
+<h2 id="数字复盘">数字复盘</h2>
 <div class="table-wrap"><table>
 <thead><tr>
-<th>阶段</th>
-<th>普通 decode</th>
-<th>投机解码（k=4, a=2.5）</th>
+<th>场景</th>
+<th>不开</th>
+<th>一刀切开</th>
+<th>分档开</th>
 </tr></thead>
 <tbody>
-<tr><td>每 token 权重读取</td><td>1 次</td><td>0.4 次（摊销 d 次验证生成 2.5 token）</td></tr>
-<tr><td>每 token KV 读取</td><td>1 次</td><td>1.6 次（验证时要读 k 个位置的 KV）</td></tr>
-<tr><td>有效吞吐</td><td>1×</td><td>2～3×</td></tr>
+<tr><td>单流（短上下文）</td><td>42 tok/s</td><td>76</td><td>76</td></tr>
+<tr><td>32 并发（混合流量）</td><td>5200 tok/s</td><td>3600</td><td><strong>7000</strong></td></tr>
+<tr><td>长文 P99</td><td>18 s</td><td>30 s</td><td>18 s</td></tr>
+<tr><td>每千 token 成本</td><td>1.0×</td><td>1.1×</td><td><strong>0.82×</strong></td></tr>
 </tbody>
 </table></div>
-<p>所以投机解码的收益是<strong>用多余的 KV 带宽换省下的权重复用</strong>。当上下文很长、KV 读取已经超过权重读取时（见 <a href="/post/kv-cache-ledger-128k/">KV 账本</a>），投机解码的收益会被吃掉——这就是“长上下文 + 高并发”时应该关掉它的原因。</p>
-<h2 id="落地清单">落地清单</h2>
+<h2 id="记下来的四条">记下来的四条</h2>
 <ol>
-<li><strong>先测接受率再开</strong>。在真实流量上采样 1000 条请求，统计 <code>a</code>；</li>
-<li><strong><code>a &lt; 1.5</code> 就别开</strong>，得不偿失；</li>
-<li><strong>按 prompt 类型分档</strong>：代码/JSON 开，创意写作关；</li>
-<li><strong>和大 batch 一起调</strong>：batch 增大后权重读取已经被摊薄，投机解码的相对收益下降；</li>
-<li><strong>监控显存</strong>：draft KV + 验证 KV 会额外占用，长上下文时可能触发 OOM。</li>
+<li><strong>先看接受率再开</strong>，a &lt; 1.5 的流量直接排除；</li>
+<li><strong>长上下文默认关</strong>，KV 读取已经是瓶颈时，投机只会更慢；</li>
+<li><strong>把 k 和 batch 一起调</strong>，显存是共享的，不是免费的；</li>
+<li><strong>单流吞吐和集群吞吐要分开压测</strong>，只看一个指标一定翻车。</li>
 </ol>
-<h2 id="原文在这">原文在这</h2>
+<p>顺带一提，今年几个新模型（GLM-5.2、Hy4、Step 3.7 Flash）都内置了 MTP 层，官方还说把接受长度提升了 10%～20%。内置确实省事——省掉了跨模型的 KV 管理——但“要不要开”这个问题一点没变。</p>
+<h2 id="来源">来源</h2>
 <ul>
-<li>EAGLE 投机解码：<a href="https://arxiv.org/abs/2406.16858">arXiv:2406.16858</a></li>
-<li>vLLM 的 <code>speculative_config</code>：<a href="https://github.com/vllm-project/vllm/releases">vLLM releases</a></li>
-<li>MTP 接受长度改进：<a href="https://huggingface.co/zai-org/GLM-5.2">GLM-5.2 模型卡</a></li>
-<li>内置 MTP 的部署示例：<a href="https://huggingface.co/stepfun-ai/Step-3.7-Flash">Step-3.7-Flash</a></li>
+<li>EAGLE 投机解码：&lt;https://arxiv.org/abs/2406.16858&gt;</li>
+<li>vLLM 的 speculative_config：&lt;https://github.com/vllm-project/vllm/releases&gt;</li>
+<li>MTP 接受长度改进：&lt;https://huggingface.co/zai-org/GLM-5.2&gt;</li>
+<li>内置 MTP 的部署示例：&lt;https://huggingface.co/stepfun-ai/Step-3.7-Flash&gt;</li>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/投机解码/">投机解码</a><a class="tag" href="/tags/mtp/">MTP</a><a class="tag" href="/tags/推理优化/">推理优化</a><a class="tag" href="/tags/vllm/">vLLM</a><a class="tag" href="/tags/引擎/">引擎</a></p>
   <nav class="post-nav"><a class="prev" href="/post/glm-5.2-indexshare-1m-context/">← GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a><a class="next" href="/post/step-3.7-flash-11b-active/">Step 3.7 Flash：198B 里激活 11B，端到端的「生产级」取舍 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a><time>2026-01</time></li><li><a href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡</a><time>2026-01</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li></ul></aside>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a><time>2026-01</time></li><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li></ul></aside>
 </article>
 </main>
 <footer class="site-footer">

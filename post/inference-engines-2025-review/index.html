@@ -52,12 +52,11 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</h1>
-    <p class="meta"><time datetime="2026-01-08T09:30:00">2026-01-08</time><span class="sep">·</span>8 分钟<span class="sep">·</span>3319 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-01-08T09:30:00">2026-01-08</time><span class="sep">·</span>8 分钟<span class="sep">·</span>3303 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#vllm一次真正的内核替换">vLLM：一次真正的内核替换</a></li>
 <li class="h2"><a href="#sglang从-radixattention-到网关">SGLang：从 RadixAttention 到网关</a></li>
 <li class="h2"><a href="#dynamo-llm-d分布式推理成为独立一层">Dynamo / llm-d：分布式推理成为独立一层</a></li>
-<li class="h2"><a href="#算笔账引擎优化的四条主线">算笔账：引擎优化的四条主线</a></li>
 <li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
@@ -107,7 +106,6 @@
 <li><strong>llm-d</strong>（Kubernetes 原生）把同一套思路搬到 K8s 上：用 Gateway API + InferencePool 做路由，用 KV 事件驱动调度。</li>
 </ul>
 <p>它们解决的是同一件事：<strong>单机放不下/不划算时，怎么把 prefill 和 decode 分到不同机器上，并且让 KV 高效地流动。</strong></p>
-<h2 id="算笔账引擎优化的四条主线">算笔账：引擎优化的四条主线</h2>
 <p>把 2025 年所有引擎 PR 归类，其实只有四条主线：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -128,7 +126,7 @@
 <ul>
 <li>引擎的竞争从“支持多少模型”转向“系统层能力”，路由、KV 复用、分离式部署，这些决定集群吞吐，而不是单卡性能。</li>
 <li><strong>网关会继续下沉</strong>。KV-aware routing 需要引擎内部信息，外挂 LB 做不好。</li>
-<li>模型与 kernel 共同设计会成为前沿团队的标配，，通用引擎只能被动跟进。</li>
+<li>模型与 kernel 共同设计会成为前沿团队的标配，通用引擎只能被动跟进。</li>
 <li>如果你自己部署：<strong>先做前缀缓存与路由，再考虑量化</strong>。前者收益快且无精度损失，后者要重新跑评测。</li>
 </ul>
 <h2 id="原文在这">原文在这</h2>
@@ -140,8 +138,8 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/vllm/">vLLM</a><a class="tag" href="/tags/sglang/">SGLang</a><a class="tag" href="/tags/推理引擎/">推理引擎</a><a class="tag" href="/tags/系统/">系统</a><a class="tag" href="/tags/kv缓存/">KV缓存</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/kv-cache-ledger-128k/">← KV cache 账本：128K 上下文到底要多少张卡</a><a class="next" href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡</a><time>2026-01</time></li><li><a href="/post/speculative-decoding-economics/">投机解码账本：接受率每掉 10 个点，收益就归零</a><time>2026-05</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li></ul></aside>
+  <nav class="post-nav"><a class="prev" href="/post/kv-cache-ledger-128k/">← 手算一遍：128K 上下文的 KV 到底占多少显存</a><a class="next" href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li></ul></aside>
 </article>
 </main>
 <footer class="site-footer">

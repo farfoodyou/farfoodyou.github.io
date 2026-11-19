@@ -52,12 +52,11 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">MiMo-V2-Pro：1T 参数 + 1M 上下文，混合注意力的 7:1</h1>
-    <p class="meta"><time datetime="2026-03-19T09:20:00">2026-03-19</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2274 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-03-19T09:20:00">2026-03-19</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2277 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合注意力-71-是什么意思">混合注意力 7:1 是什么意思</a></li>
 <li class="h2"><a href="#mtp一次前向出多个-token">MTP：一次前向出多个 token</a></li>
 <li class="h2"><a href="#带宽视角1t42b-的账">带宽视角：1T/42B 的账</a></li>
-<li class="h2"><a href="#为什么大厂都在做agent-大脑">为什么大厂都在做&quot;agent 大脑&quot;</a></li>
 <li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
@@ -128,7 +127,7 @@ MTP decode：   前向一次 → 主干 token + 投机草案 → 验证 → 一�
 <li><strong>跨节点 EP</strong>：16 卡跨机时，专家并行的 all-to-all 走 RDMA，网络拓扑（rail-optimized）比 FLOPs 更决定吞吐。</li>
 </ul>
 <p>直白点讲：<strong>1T 参数 + 1M 上下文在 2026 年仍然不是“一台机器”的东西。</strong></p>
-<h2 id="为什么大厂都在做agent-大脑">为什么大厂都在做“agent 大脑”</h2>
+<p>再往下看，为什么大厂都在做“agent 大脑”：</p>
 <p>官方定位是“agent 系统的 brain”，官方给的对标也很直白：编码能力超过 Claude Sonnet 4.6，通用 agent（ClawEval）接近 Opus 4.6。</p>
 <p>这背后的判断是：<strong>agent 的价值不在单轮回答，而在长任务里的稳定性</strong>。所以 2026 年旗舰模型的卖点从“知识/推理分数”转向：</p>
 <ul>
@@ -140,7 +139,7 @@ MTP decode：   前向一次 → 主干 token + 投机草案 → 验证 → 一�
 <p>这些能力没有统一榜单，只能靠 ClawEval、Terminal-Bench 这类“带环境”的基准，加上自家任务集。</p>
 <h2 id="不确定的部分">不确定的部分</h2>
 <ul>
-<li>混合注意力会继续往线性侧偏，，7:1 可能还不是终点；代价是检索型任务（长文档精确问答）需要外挂检索，而不是指望注意力。</li>
+<li>混合注意力会继续往线性侧偏，7:1 可能还不是终点；代价是检索型任务（长文档精确问答）需要外挂检索，而不是指望注意力。</li>
 <li><strong>MTP/投机解码会变成引擎默认</strong>，2026 年下半年不开投机解码的部署基本等于浪费 GPU。</li>
 <li>“匿名放权重”会成为发布常态，真实流量比发布会更能验证 agent 能力。</li>
 <li>如果你自己部署：1T 级模型的意义是“能不能私有化”，不是“能不能省 API 费”。评估时先算网络与运维成本，再算 GPU。</li>

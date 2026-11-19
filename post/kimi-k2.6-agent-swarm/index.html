@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling</h1>
-    <p class="meta"><time datetime="2026-04-21T22:20:00">2026-04-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2047 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-04-21T22:20:00">2026-04-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2053 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#swarm-是横向-scaling">swarm 是&quot;横向 scaling&quot;</a></li>
 <li class="h2"><a href="#300-个子-agent-意味着什么">300 个子 agent 意味着什么</a></li>
 <li class="h2"><a href="#数据怎么搬谁在搬搬到哪">数据怎么搬：谁在搬、搬到哪</a></li>
 <li class="h2"><a href="#247-后台-agent产品形态的变化">24/7 后台 agent：产品形态的变化</a></li>
-<li class="h2"><a href="#我的看法">我的看法</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>4 月 20 日，月之暗面开源 <a href="https://huggingface.co/moonshotai/Kimi-K2.6">Kimi K2.6</a>（Modified MIT）。规格延续 K2 家族：<strong>1T 总参数 / 32B 激活、256K 上下文、原生多模态</strong>。</p>
@@ -126,11 +125,11 @@
 <li><strong>审计与权限</strong>：无人值守的 agent 需要最小权限、操作日志、可撤销。</li>
 </ul>
 <p>这两件事在 2026 年还没有标准答案，各家都在自己造。</p>
-<h2 id="我的看法">我的看法</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
-<li>横向 scaling 会成为和长 CoT 并列的一条主线，，但它优化的是延迟而不是单位 token 成本。</li>
+<li>横向 scaling 会成为和长 CoT 并列的一条主线，但它优化的是延迟而不是单位 token 成本。</li>
 <li><strong>“agent 编排”会变成独立的基础设施层</strong>：任务图、共享缓存、冲突解决、结果验证，这些和模型无关。</li>
-<li>开源 1T 模型的实际用途是“私有化编排集群”，，不是单机部署；选型时要按“集群吞吐/成本”算，不是按单卡 tok/s。</li>
+<li>开源 1T 模型的实际用途是“私有化编排集群”，不是单机部署；选型时要按“集群吞吐/成本”算，不是按单卡 tok/s。</li>
 <li>对工程团队的提醒：<strong>先把“共享前缀 + 结果压缩”做对，再谈 300 并发</strong>。否则并行度越高，账单越失控。</li>
 </ul>
 <h2 id="来源">来源</h2>

@@ -52,12 +52,11 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">LongCat-2.0：1.6T 模型，全程在 ASIC 上训完</h1>
-    <p class="meta"><time datetime="2026-06-30T22:40:00">2026-06-30</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1595 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-06-30T22:40:00">2026-06-30</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1598 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#asic-训练意味着什么">ASIC 训练意味着什么</a></li>
 <li class="h2"><a href="#稀疏度越过甜区">稀疏度&quot;越过甜区&quot;</a></li>
 <li class="h2"><a href="#数据怎么搬16t-的机房现实">数据怎么搬：1.6T 的机房现实</a></li>
-<li class="h2"><a href="#开源万亿俱乐部的现状2026-06">开源万亿俱乐部的现状（2026-06）</a></li>
 <li class="h2"><a href="#我的看法">我的看法</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
@@ -117,7 +116,7 @@
 <li><strong>rail-optimized 拓扑比 FLOPs 重要</strong>。跨机 all-to-all 的延迟对拓扑极度敏感，同等 GPU 数量下不同组网能差 2 倍。</li>
 <li><strong>部署成本 &gt;&gt; 训练成本</strong>。训练是一次性的，部署是长期的；1.6T 模型的推理集群需要持续供电与运维。</li>
 </ol>
-<h2 id="开源万亿俱乐部的现状2026-06">开源万亿俱乐部的现状（2026-06）</h2>
+<p>再往下看，开源万亿俱乐部的现状（2026-06）：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>模型</th>
@@ -136,7 +135,7 @@
 <p><strong>开源已经进入“万亿是标配”的阶段</strong>，真正的差异在：许可证、长上下文效率、以及能不能在非 NVIDIA 硬件上跑。</p>
 <h2 id="我的看法">我的看法</h2>
 <ul>
-<li>ASIC 训练跑通是 2026 年最重要的一条产业信号，，它意味着算力供给的多元化开始具备工程可行性。</li>
+<li>ASIC 训练跑通是 2026 年最重要的一条产业信号，它意味着算力供给的多元化开始具备工程可行性。</li>
 <li><strong>稀疏度 3% 是当前甜区的边缘</strong>，再往下要解决路由退化，需要新的训练技巧。</li>
 <li>1M 上下文的语料成本被低估，LongCat 专门用数百 B token 的长文数据训练，这部分数据工程比模型结构更难。</li>
 <li>对使用者：万亿开源模型的真实价值是“议价能力”和“私有化选项”，不是“自己部署”。</li>

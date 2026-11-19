@@ -52,11 +52,10 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</h1>
-    <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2311 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-09-25T09:40:00">2026-09-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2313 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#索引成本才是分水岭">索引成本才是分水岭</a></li>
 <li class="h2"><a href="#kv-压缩比的真实差距">KV 压缩比的真实差距</a></li>
-<li class="h2"><a href="#gather-模式gpu-最讨厌的东西">Gather 模式：GPU 最讨厌的东西</a></li>
 <li class="h2"><a href="#带宽视角一张对照表">带宽视角：一张对照表</a></li>
 <li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
@@ -107,7 +106,7 @@
 </tbody>
 </table></div>
 <p>注意 DSA 的“存储”和“读取”是两件事：<strong>KV 还是要存全量</strong>，只是每次只读 top-k。真正的显存节省来自“压缩存储”（CSA/HCA/FP4），不是“稀疏读取”。这是最常被混淆的一点。</p>
-<h2 id="gather-模式gpu-最讨厌的东西">Gather 模式：GPU 最讨厌的东西</h2>
+<p>再往下看，Gather 模式：GPU 最讨厌的东西：</p>
 <p>稀疏注意力的读取是<strong>不规则的</strong>：</p>
 <pre data-lang="text"><code class="language-text">稠密：读 [0..L) 连续块      → coalesced，带宽利用率 90%+
 稀疏：读 {17, 302, 4901, ...} → 随机 gather，利用率常掉到 40%～60%</code></pre>
@@ -149,9 +148,9 @@
 </ul>
 <h2 id="不确定的部分">不确定的部分</h2>
 <ul>
-<li>“稀疏”这个词已经不够用了，，2026 年要区分“稀疏读取”和“压缩存储”，两者收益差一个数量级。</li>
+<li>“稀疏”这个词已经不够用了，2026 年要区分“稀疏读取”和“压缩存储”，两者收益差一个数量级。</li>
 <li><strong>索引复用是必抄项</strong>（2.9× 不是小数），不做就等于白付索引税。</li>
-<li>FP4 KV 是下一步的确定性收益，，但需要 per-block scale 与校准，长文场景要单独验。</li>
+<li>FP4 KV 是下一步的确定性收益，但需要 per-block scale 与校准，长文场景要单独验。</li>
 <li>评测时务必报告 <strong>KV/token</strong> 和 <strong>每 token 读取字节数</strong>，否则不同实现的“1M”根本不可比。</li>
 </ul>
 <h2 id="原文在这">原文在这</h2>
@@ -165,7 +164,7 @@
   </div>
   <p class="tag-list"><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/长上下文/">长上下文</a><a class="tag" href="/tags/推理优化/">推理优化</a><a class="tag" href="/tags/系统/">系统</a><a class="tag" href="/tags/对比/">对比</a></p>
   <nav class="post-nav"><a class="prev" href="/post/mistral-large-4-1.05t/">← Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</a><a class="next" href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><time>2025-09</time></li><li><a href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡</a><time>2026-01</time></li><li><a href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a><time>2026-06</time></li></ul></aside>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3.2-exp-sparse-attention/">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</a><time>2025-09</time></li><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/glm-5.2-indexshare-1m-context/">GLM-5.2：IndexShare 把 1M 上下文的索引开销砍到 1/2.9</a><time>2026-06</time></li></ul></aside>
 </article>
 </main>
 <footer class="site-footer">

@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</h1>
-    <p class="meta"><time datetime="2026-03-18T22:40:00">2026-03-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1975 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-03-18T22:40:00">2026-03-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1982 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#6b-激活意味着什么">6B 激活意味着什么</a></li>
 <li class="h2"><a href="#一个模型做三件事的产品逻辑">&quot;一个模型做三件事&quot;的产品逻辑</a></li>
 <li class="h2"><a href="#数据怎么搬单卡部署的真实体验">数据怎么搬：单卡部署的真实体验</a></li>
 <li class="h2"><a href="#欧洲算力现实下的选择">欧洲算力现实下的选择</a></li>
-<li class="h2"><a href="#我的看法">我的看法</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>3 月 17 日，Mistral 发布 <a href="https://mistral.ai/news/mistral-small-4">Mistral Small 4</a>：<strong>119B 总参数 / 6B 激活</strong>，Apache 2.0（<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">参数与许可</a>）。</p>
@@ -120,11 +119,11 @@
 <h2 id="欧洲算力现实下的选择">欧洲算力现实下的选择</h2>
 <p>2026 年欧洲的 AI 算力仍然受制于采购与能耗，做大模型的路只有两条：堆稀疏（降低单 token 成本）或做小（降低部署门槛）。Mistral Small 4 走了两条路的交集：<strong>MoE 稀疏 + 小激活 + 单卡可部署</strong>。</p>
 <p>这也解释了 Apache 2.0 的选择：<strong>许可越宽松，越容易被集成进别人的产品</strong>，而欧洲市场的优势本来就在 B 端集成与合规，不在消费级流量。</p>
-<h2 id="我的看法">我的看法</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
 <li>6～10B 激活是 2026 年的“可部署性”分水岭，单卡能装、能水平扩展、能私有化。</li>
 <li><strong>“全能但不极致”在 B 端是有效策略</strong>，因为采购方讨厌维护多模型栈。</li>
-<li>1T 模型的竞争会集中在少数有集群的团队，，其余市场属于 100B 级 + 好的 harness。</li>
+<li>1T 模型的竞争会集中在少数有集群的团队，其余市场属于 100B 级 + 好的 harness。</li>
 <li>给自建团队的建议：<strong>先用 6B 激活的模型跑通流量，再按任务分桶把难题升级到大模型</strong>。反过来做（先上大模型）会把成本结构焊死。</li>
 </ul>
 <h2 id="原文在这">原文在这</h2>

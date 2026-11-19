@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3.2-Exp：稀疏注意力终于进了主线模型</h1>
-    <p class="meta"><time datetime="2025-09-29T23:50:00">2025-09-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2121 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-09-29T23:50:00">2025-09-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2125 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#稀疏注意力到底省了什么">稀疏注意力到底省了什么</a></li>
 <li class="h2"><a href="#为什么细粒度是难点">为什么&quot;细粒度&quot;是难点</a></li>
 <li class="h2"><a href="#对齐训练配置一个值得学的发布方式">对齐训练配置：一个值得学的发布方式</a></li>
 <li class="h2"><a href="#顺带说价格">顺带说价格</a></li>
-<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>9 月 29 日，DeepSeek 放出 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2-Exp">V3.2-Exp</a>。名字里带 Exp，说明它不是“更强”，而是“验证一个结构改动”：</p>
@@ -104,11 +103,11 @@
 <h2 id="顺带说价格">顺带说价格</h2>
 <p>V3.2-Exp 上线时 API 价格同步下调（官方公告口径是大幅降价）。这里不重复具体数字——价格变动频繁，看官方定价页更靠谱： <a href="https://api-docs.deepseek.com/quick_start/pricing">api-docs.deepseek.com/quick_start/pricing</a></p>
 <p>但机制值得记：<strong>稀疏注意力省的是 decode 成本</strong>，所以降价空间主要来自长输出场景。短 prompt、短回答的请求，成本结构变化不大。这也解释了为什么“长思考模型”最先受益于这类优化。</p>
-<h2 id="不确定的部分">不确定的部分</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
-<li>稀疏注意力会在 2026 年成为长上下文模型的默认结构，。softmax 的二次项没法靠 kernel 优化抵消，只能改算法。</li>
+<li>稀疏注意力会在 2026 年成为长上下文模型的默认结构。softmax 的二次项没法靠 kernel 优化抵消，只能改算法。</li>
 <li><strong>“质量不变 + 成本下降”是这一阶段最值钱的进步</strong>。榜单分数已经卷到边际收益很低，成本曲线才是真差距。</li>
-<li>对齐配置的对比方法会被更多人采用，。当所有模型都能刷到 90 分，可信度就成了稀缺品。</li>
+<li>对齐配置的对比方法会被更多人采用。当所有模型都能刷到 90 分，可信度就成了稀缺品。</li>
 <li>给自部署团队的提醒：稀疏注意力的 kernel 支持依赖框架版本，上线前要跑真实长上下文压测，别只看 decode 吞吐的 microbenchmark。</li>
 </ul>
 <h2 id="原文在这">原文在这</h2>

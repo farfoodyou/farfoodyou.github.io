@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KV cache 账本：128K 上下文到底要多少张卡 - farfood</title>
-<meta name="description" content="把「长上下文」换算成显存和带宽：MHA/GQA/MLA 每 token 各占多少、128K 与 1M 分别需要多少卡、分页与量化能省多少、以及这些字节在机器上由谁搬。">
+<title>手算一遍：128K 上下文的 KV 到底占多少显存 - farfood</title>
+<meta name="description" content="不用表格，直接拿纸笔算：80 层、head_dim 128、FP16，MHA/GQA/MLA 各占多少，128K 和 1M 分别要几张卡，以及分页和量化能砍掉多少。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/kv-cache-ledger-128k/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,7 +15,7 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "KV cache 账本：128K 上下文到底要多少张卡", "description": "把「长上下文」换算成显存和带宽：MHA/GQA/MLA 每 token 各占多少、128K 与 1M 分别需要多少卡、分页与量化能省多少、以及这些字节在机器上由谁搬。", "datePublished": "2026-01-20T22:10:00+08:00", "dateModified": "2026-01-20T22:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/kv-cache-ledger-128k/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "KV缓存, 推理优化, 显存, 系统, MLA"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "手算一遍：128K 上下文的 KV 到底占多少显存", "description": "不用表格，直接拿纸笔算：80 层、head_dim 128、FP16，MHA/GQA/MLA 各占多少，128K 和 1M 分别要几张卡，以及分页和量化能砍掉多少。", "datePublished": "2026-01-20T22:10:00+08:00", "dateModified": "2026-01-20T22:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/kv-cache-ledger-128k/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "KV缓存, 推理优化, 显存, 系统, MLA"}</script>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
   <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
@@ -29,14 +29,14 @@
   </script>
 </section>
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="KV cache 账本：128K 上下文到底要多少张卡 - farfood">
-<meta property="og:description" content="把「长上下文」换算成显存和带宽：MHA/GQA/MLA 每 token 各占多少、128K 与 1M 分别需要多少卡、分页与量化能省多少、以及这些字节在机器上由谁搬。">
+<meta property="og:title" content="手算一遍：128K 上下文的 KV 到底占多少显存 - farfood">
+<meta property="og:description" content="不用表格，直接拿纸笔算：80 层、head_dim 128、FP16，MHA/GQA/MLA 各占多少，128K 和 1M 分别要几张卡，以及分页和量化能砍掉多少。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/kv-cache-ledger-128k/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="KV cache 账本：128K 上下文到底要多少张卡 - farfood">
-<meta name="twitter:description" content="把「长上下文」换算成显存和带宽：MHA/GQA/MLA 每 token 各占多少、128K 与 1M 分别需要多少卡、分页与量化能省多少、以及这些字节在机器上由谁搬。">
+<meta name="twitter:title" content="手算一遍：128K 上下文的 KV 到底占多少显存 - farfood">
+<meta name="twitter:description" content="不用表格，直接拿纸笔算：80 层、head_dim 128、FP16，MHA/GQA/MLA 各占多少，128K 和 1M 分别要几张卡，以及分页和量化能砍掉多少。">
 <meta property="article:published_time" content="2026-01-20T22:10:00+08:00">
 <meta name="keywords" content="KV缓存, 推理优化, 显存, 系统, MLA">
 </head>
@@ -51,135 +51,90 @@
 <main class="wrap">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">KV cache 账本：128K 上下文到底要多少张卡</h1>
-    <p class="meta"><time datetime="2026-01-20T22:10:00">2026-01-20</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2671 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <h1 class="post-title">手算一遍：128K 上下文的 KV 到底占多少显存</h1>
+    <p class="meta"><time datetime="2026-01-20T22:10:00">2026-01-20</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1811 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
-  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#每-token-的-kv-有多大">每 token 的 KV 有多大</a></li>
-<li class="h2"><a href="#除了容量还有带宽">除了容量，还有带宽</a></li>
-<li class="h2"><a href="#分页与量化两把确定性很高的刀">分页与量化：两把确定性很高的刀</a></li>
-<li class="h2"><a href="#谁在搬这些字节">谁在搬这些字节</a></li>
-<li class="h2"><a href="#给容量规划的一张表">给容量规划的一张表</a></li>
-<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
-<li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#mha先算一个吓人的">MHA：先算一个吓人的</a></li>
+<li class="h2"><a href="#gqa除以-8-还是不够">GQA：除以 8 还是不够</a></li>
+<li class="h2"><a href="#mla把-kv-存成潜在向量">MLA：把 KV 存成&quot;潜在向量&quot;</a></li>
+<li class="h2"><a href="#再算-1m">再算 1M</a></li>
+<li class="h2"><a href="#分页把浪费的显存还回来">分页：把浪费的显存还回来</a></li>
+<li class="h2"><a href="#带宽别忘了每步都要读一遍">带宽：别忘了每步都要读一遍</a></li>
+<li class="h2"><a href="#容量规划的一个小经验">容量规划的一个小经验</a></li>
+<li class="h2"><a href="#几句实话">几句实话</a></li>
+<li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
-<p>所有关于“长上下文”的宣传，最后都要落成一行算术：</p>
-<pre data-lang="text"><code class="language-text">每 token KV 字节数 × 并发数 × 上下文长度 = 你要买的显存</code></pre>
-<p>这篇把这个账算清楚。模型侧的例子用公开结构（MLA / GQA / MHA），显存参数用 H100/H200/B200 的公开值。</p>
-<h2 id="每-token-的-kv-有多大">每 token 的 KV 有多大</h2>
-<p>公式：</p>
-<pre data-lang="text"><code class="language-text">KV/token = 2 × n_layers × n_kv_heads × head_dim × bytes_per_elem</code></pre>
-<p>以 80 层、head_dim 128、FP16（2B）为例：</p>
+<p>每次看到“支持 128K/1M 上下文”的宣传，我都会做同一件事：算一遍它要多少显存。算法很简单，但很少有人真的算。</p>
+<p>设模型 80 层、head_dim 128、FP16（每元素 2 字节）。KV 的公式是：</p>
+<pre data-lang="text"><code class="language-text">KV/token = 2 × 层数 × KV头数 × head_dim × 字节数</code></pre>
+<h2 id="mha先算一个吓人的">MHA：先算一个吓人的</h2>
+<p>64 个 KV 头（每头都要存 K 和 V）：</p>
+<pre data-lang="text"><code class="language-text">2 × 80 × 64 × 128 × 2 = 2,621,440 字节 ≈ 2.5 MB / token</code></pre>
+<p>2.5MB 一个 token。128K 的请求要 <code>128 × 1024 × 2.5MB ≈ 320 GB</code>。一张 H100 是 80GB——<strong>一条请求就要 4 张卡，还不算权重</strong>。</p>
+<p>这就是为什么 2023 年的长上下文都很“贵”：结构没改，长度翻倍就是显存翻倍。</p>
+<h2 id="gqa除以-8-还是不够">GQA：除以 8 还是不够</h2>
+<p>GQA 把 64 个 KV 头压到 8 个（8 组共享）：</p>
+<pre data-lang="text"><code class="language-text">2 × 80 × 8 × 128 × 2 = 327,680 字节 ≈ 320 KB / token</code></pre>
+<p>128K 一条请求 ≈ <strong>40 GB</strong>。一张 H200（141GB）能装，但装完只剩 100GB 给权重和激活——如果模型激活权重是 30GB，那剩下 70GB 大概能跑 1.7 条 128K 请求。</p>
+<p><strong>“支持 128K”和“能并发跑 128K”是两件事，差别就在这个除法上。</strong></p>
+<h2 id="mla把-kv-存成潜在向量">MLA：把 KV 存成“潜在向量”</h2>
+<p>MLA 不存每头的 K/V，而是存一个压缩后的潜在向量（DeepSeek 系列是 576 维/层）：</p>
+<pre data-lang="text"><code class="language-text">80 层 × 576 × 1 字节（FP8）= 46,080 字节 ≈ 45 KB / token</code></pre>
+<p>128K 一条请求 ≈ <strong>5.6 GB</strong>。同一个模型规模，从 320GB 降到 5.6GB，降了 57 倍。</p>
+<p>我算过好几次才习惯这个差距：<strong>结构选择比量化重要一个数量级</strong>。把 FP16 换成 FP8 只省一半，把 MHA 换成 MLA 省 50 倍。</p>
+<h2 id="再算-1m">再算 1M</h2>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>结构</th>
-<th>KV heads</th>
-<th>每 token KV</th>
-<th>128K 单请求</th>
+<th>KV/token</th>
 <th>1M 单请求</th>
 </tr></thead>
 <tbody>
-<tr><td>MHA（64 heads）</td><td>64</td><td><strong>2.6 MB</strong></td><td>341 GB</td><td>2.7 TB</td></tr>
-<tr><td>GQA（8 heads）</td><td>8</td><td><strong>327 KB</strong></td><td>43 GB</td><td>335 GB</td></tr>
-<tr><td>GQA（4 heads）</td><td>4</td><td>164 KB</td><td>21 GB</td><td>168 GB</td></tr>
-<tr><td>MLA（压缩 576 维）</td><td>—</td><td><strong>35 KB</strong></td><td><strong>4.5 GB</strong></td><td>35 GB</td></tr>
+<tr><td>MHA(64)</td><td>2.5 MB</td><td>2.5 TB（不可行）</td></tr>
+<tr><td>GQA(8)</td><td>320 KB</td><td>320 GB</td></tr>
+<tr><td>MLA</td><td>45 KB</td><td>45 GB</td></tr>
+<tr><td>MLA + FP8 KV + 稀疏（DSA）</td><td>—</td><td>存储仍是 45GB，但每次只读 top-k</td></tr>
 </tbody>
 </table></div>
-<p>三行结论立刻出来：</p>
-<ol>
-<li><strong>MHA 在长上下文下根本没戏</strong>——128K 就要 341GB，比权重还大一个数量级；</li>
-<li><strong>GQA 是“能用但要算”</strong>——128K 单请求 43GB，一张 H100（80GB）只能跑一条半；</li>
-<li><strong>MLA 是当前最省的结构</strong>——35KB/token，128K 只要 4.5GB，这就是 DeepSeek 系列敢标 128K 的底气。</li>
-</ol>
-<p>粗略换算到卡数（H200，141GB，留 30% 余量给权重/激活）：</p>
-<div class="table-wrap"><table>
-<thead><tr>
-<th>场景</th>
-<th>GQA(8)</th>
-<th>MLA</th>
-</tr></thead>
-<tbody>
-<tr><td>128K × 1 并发</td><td>1 张（勉强）</td><td>1 张（轻松）</td></tr>
-<tr><td>128K × 8 并发</td><td>4 张</td><td>1 张</td></tr>
-<tr><td>128K × 64 并发</td><td>32 张</td><td>3 张</td></tr>
-<tr><td>1M × 1 并发</td><td>3 张</td><td>1 张</td></tr>
-</tbody>
-</table></div>
-<p><strong>“支持 1M 上下文”和“能以合理并发跑 1M 上下文”是两件完全不同的事。</strong></p>
-<h2 id="除了容量还有带宽">除了容量，还有带宽</h2>
-<p>KV 不只是占地方，decode 每步都要读一遍：</p>
-<pre data-lang="text"><code class="language-text">每 token 读取字节 ≈ KV/token（当前上下文） + 激活权重</code></pre>
-<p>以 32B 激活参数（FP8，32GB）为例，在 H200（4.8TB/s）上：读权重 6.7ms；若上下文 128K、GQA(8)，KV 43GB → 再 9ms。<strong>KV 读取超过了权重读取</strong>，这就是长上下文慢的直接原因。</p>
-<p>MLA 把 128K 的 KV 压到 4.5GB → 0.9ms，权重重新成为大头。<strong>这就是为什么 MLA 不是“锦上添花”，而是长上下文的准入条件。</strong></p>
-<h2 id="分页与量化两把确定性很高的刀">分页与量化：两把确定性很高的刀</h2>
-<p><strong>分页（PagedAttention）</strong>：把 KV 切成固定大小的 block（如 16 token），用 block table 映射，避免按最大长度预留导致的碎片。论文（<a href="https://arxiv.org/abs/2309.06180">arXiv:2309.06180</a>）报告的收益是吞吐 2～4×——本质是把浪费的显存还给并发。</p>
-<pre data-lang="text"><code class="language-text">连续分配：请求 A 预留 128K → 实际用 3K → 浪费 125K
-分页分配：请求 A 按需拿 block → 峰值占用 = 实际长度</code></pre>
-<p><strong>量化</strong>：KV 从 FP16 → FP8 → FP4，每 token 字节线性下降。代价是精度，尤其是长上下文里的注意力分数分布。实践上：</p>
-<div class="table-wrap"><table>
-<thead><tr>
-<th>方案</th>
-<th>省显存</th>
-<th>风险</th>
-</tr></thead>
-<tbody>
-<tr><td>FP16 → FP8</td><td>50%</td><td>小，主流引擎已支持</td></tr>
-<tr><td>FP16 → FP4</td><td>75%</td><td>需要 per-channel/per-block scale，长文掉点明显</td></tr>
-<tr><td>只量化 K 不量化 V</td><td>25%</td><td>折中方案，效果因模型而异</td></tr>
-</tbody>
-</table></div>
-<h2 id="谁在搬这些字节">谁在搬这些字节</h2>
-<div class="table-wrap"><table>
-<thead><tr>
-<th>路径</th>
-<th>传输方式</th>
-<th>带宽</th>
-<th>什么时候用</th>
-</tr></thead>
-<tbody>
-<tr><td>HBM → SMEM</td><td>TMA / cp.async</td><td>3.35～8 TB/s</td><td>每次 decode</td></tr>
-<tr><td>GPU → GPU（同机）</td><td>NVLink + NCCL kernel</td><td>900 GB/s（H100）</td><td>TP/EP</td></tr>
-<tr><td>节点间</td><td>RDMA（NVSHMEM/IB）</td><td>50 GB/s（400G）</td><td>PD 分离、EP 跨机</td></tr>
-<tr><td>GPU → CPU</td><td>PCIe 5.0 x16 / C2C</td><td>64 GB/s</td><td>KV offload</td></tr>
-<tr><td>CPU → NVMe</td><td>GPUDirect Storage</td><td>7 GB/s（单盘）</td><td>KV 分层</td></tr>
-</tbody>
-</table></div>
-<p>看这张表就明白为什么“把 KV 甩到 CPU 内存”不能随便做：PCIe 只有 64GB/s，比 HBM 慢 50～75 倍。<strong>只有当 KV 命中率足够高（复用 &gt;&gt; 回读）时才划算</strong>——这正是前缀缓存与 KV 分层在 agent 场景效果好的原因：多轮对话的前缀复用率极高。</p>
-<h2 id="给容量规划的一张表">给容量规划的一张表</h2>
-<p>按“每 GB 显存能装多少 token 的 KV”来估最直观（H200 141GB，权重占 X GB）：</p>
-<div class="table-wrap"><table>
-<thead><tr>
-<th>模型</th>
-<th>激活权重(FP8)</th>
-<th>剩余显存</th>
-<th>KV/token</th>
-<th>可容纳 token</th>
-</tr></thead>
-<tbody>
-<tr><td>37B MoE + MLA</td><td>37 GB</td><td>104 GB</td><td>35 KB</td><td><strong>约 3.0M</strong></td></tr>
-<tr><td>37B MoE + GQA(8)</td><td>37 GB</td><td>104 GB</td><td>327 KB</td><td>约 320K</td></tr>
-<tr><td>10B MoE + GQA</td><td>10 GB</td><td>131 GB</td><td>164 KB</td><td>约 800K</td></tr>
-<tr><td>32B MoE + MLA</td><td>32 GB</td><td>109 GB</td><td>35 KB</td><td>约 3.1M</td></tr>
-</tbody>
-</table></div>
-<p>注意最后一行：<strong>3M token 的总 KV 容量，不等于能跑 3M 上下文的单请求</strong>——单请求还要受注意力实现、CUDA Graph 捕获尺寸、beam 宽度限制。容量是必要条件，不是充分条件。</p>
-<h2 id="不确定的部分">不确定的部分</h2>
+<p>注意最后一行：<strong>稀疏注意力省的是“读”，不是“存”</strong>。要真正省显存，得靠压缩存储（CSA/HCA 那类，把 45KB 压到几 KB），而不是 top-k 选择。</p>
+<h2 id="分页把浪费的显存还回来">分页：把浪费的显存还回来</h2>
+<p>连续分配的毛病是“按最大长度预留”。一条实际只用 3K 的请求，如果按 128K 预留，就浪费了 125K 的槽位。PagedAttention（<a href="https://arxiv.org/abs/2309.06180">arXiv:2309.06180</a>）把 KV 切成 16 token 的 block，按需分配，论文报的吞吐提升是 2～4 倍——<strong>收益全部来自“碎片变少了”，不是算得更快</strong>。</p>
+<h2 id="带宽别忘了每步都要读一遍">带宽：别忘了每步都要读一遍</h2>
+<p>容量算完还得算带宽。decode 每生成一个 token，都要把当前 KV 读一遍（除非用线性注意力）。</p>
+<p>设激活权重 30GB、上下文 128K：</p>
+<pre data-lang="text"><code class="language-text">读权重：30 GB / 4.8 TB/s ≈ 6.3 ms
+读 KV(GQA)：40 GB / 4.8 TB/s ≈ 8.3 ms   ← 比权重还贵
+读 KV(MLA)：5.6 GB / 4.8 TB/s ≈ 1.2 ms</code></pre>
+<p>所以长上下文变慢，主要不是“注意力计算多”，而是“KV 读得多”。MLA 之所以重要，是因为它同时解决了容量和带宽两个问题。</p>
+<h2 id="容量规划的一个小经验">容量规划的一个小经验</h2>
+<p>我这边的算法是：<strong>每 GB 显存能装多少 token 的 KV</strong>。</p>
 <ul>
-<li>MLA 类压缩会成为长上下文模型的默认选择，，GQA 只在“短上下文、大并发”场景更划算。</li>
-<li><strong>KV 量化是 2026 年最容易拿到的免费收益</strong>，FP8 KV 基本无损，建议默认开。</li>
-<li>容量规划要按“并发 × 上下文长度”算峰值，，别用平均长度——平均值会骗人，峰值会 OOM。</li>
-<li>对长上下文产品：<strong>先做前缀复用，再做 KV 分层，最后才考虑 NVMe</strong>。三者的性价比是数量级递减的。</li>
+<li>GQA(8)：约 3K token/GB</li>
+<li>MLA：约 22K token/GB</li>
 </ul>
-<h2 id="原文在这">原文在这</h2>
+<p>一个 141GB 的 H200、留 30GB 给权重，剩 111GB：</p>
 <ul>
-<li>分页 KV 管理（PagedAttention）：<a href="https://arxiv.org/abs/2309.06180">arXiv:2309.06180</a></li>
-<li>KV 分层与分离式服务：<a href="https://arxiv.org/abs/2407.00079">Mooncake (arXiv:2407.00079)</a></li>
-<li>MLA 结构来源：<a href="https://arxiv.org/abs/2412.19437">DeepSeek-V3 Technical Report</a></li>
-<li>引擎实现参考：<a href="https://github.com/vllm-project/vllm/releases">vLLM releases</a></li>
+<li>GQA：33 万 token 的总 KV（= 2.5 条 128K，或 320 条 1K）</li>
+<li>MLA：240 万 token（= 18 条 128K）</li>
+</ul>
+<p>这两个数字基本决定了一个部署方案的形态：<strong>GQA 适合短上下文大并发，MLA 适合长上下文小并发</strong>。</p>
+<h2 id="几句实话">几句实话</h2>
+<ol>
+<li>看到“1M 上下文”先问一句：<strong>KV 每 token 多少字节</strong>。答不上来的，大概率没优化过。</li>
+<li><strong>FP8 KV 基本无损</strong>，建议默认开；FP4 KV 要看任务，长文检索会掉点。</li>
+<li>分页不是可选项，是必需项——不做分页，容量规划就是在猜。</li>
+<li>最后一条经验：<strong>峰值并发按最坏情况留 30% 余量</strong>，平均值会骗人，峰值会 OOM。</li>
+</ol>
+<h2 id="来源">来源</h2>
+<ul>
+<li>分页 KV 管理：&lt;https://arxiv.org/abs/2309.06180&gt;</li>
+<li>KV 分层与分离式服务：&lt;https://arxiv.org/abs/2407.00079&gt;</li>
+<li>MLA 出处：&lt;https://arxiv.org/abs/2412.19437&gt;</li>
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/kv缓存/">KV缓存</a><a class="tag" href="/tags/推理优化/">推理优化</a><a class="tag" href="/tags/显存/">显存</a><a class="tag" href="/tags/系统/">系统</a><a class="tag" href="/tags/mla/">MLA</a></p>
   <nav class="post-nav"><a class="prev" href="/post/glm-5-744b-dsa/">← GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</a><a class="next" href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关 →</a></nav>
-  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a><time>2026-01</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li><li><a href="/post/speculative-decoding-economics/">投机解码账本：接受率每掉 10 个点，收益就归零</a><time>2026-05</time></li></ul></aside>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a><time>2026-01</time></li><li><a href="/post/sparse-attention-shootout/">五种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / KDA</a><time>2026-09</time></li><li><a href="/post/speculative-decoding-economics/">投机解码踩坑记：开了之后反而慢了 30%</a><time>2026-05</time></li></ul></aside>
 </article>
 </main>
 <footer class="site-footer">

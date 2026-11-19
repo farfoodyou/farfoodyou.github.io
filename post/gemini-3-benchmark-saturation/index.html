@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Gemini 3：1501 Elo 之后，评测本身成了问题</h1>
-    <p class="meta"><time datetime="2025-11-19T23:30:00">2025-11-19</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1867 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-11-19T23:30:00">2025-11-19</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1874 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#1501-elo-意味着什么">1501 Elo 意味着什么</a></li>
 <li class="h2"><a href="#gpqa-919-已经接近天花板">GPQA 91.9% 已经接近天花板</a></li>
 <li class="h2"><a href="#swe-bench-762编码是唯一还在涨的维度">SWE-bench 76.2%：编码是唯一还在涨的维度</a></li>
 <li class="h2"><a href="#多模态才是这次的差异点">多模态才是这次的差异点</a></li>
-<li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>11 月 18 日，<a href="https://blog.google/products/gemini/gemini-3/">Gemini 3</a> 发布。官方给的几个数字：</p>
@@ -122,9 +121,9 @@
 <li>图表/表格的数值推理是真实业务里最常见的多模态需求。</li>
 </ul>
 <p>从 2025 年下半年开始，“多模态”从“能描述图片”变成了“能在推理链里用视觉信息”，这是能力性质的改变，不是分数提升。</p>
-<h2 id="几句判断">几句判断</h2>
+<p>说到最后，给几句自己的判断：</p>
 <ul>
-<li>公开榜单正在失去区分度，。2026 年的选型会更多依赖自建任务集 + 成本曲线，而不是某个 Arena 分数。</li>
+<li>公开榜单正在失去区分度。2026 年的选型会更多依赖自建任务集 + 成本曲线，而不是某个 Arena 分数。</li>
 <li><strong>“无工具”的口径会变重要</strong>。同一个基准，允许搜索/代码执行和不允许，差 10～30 分；发布方不写清就是耍流氓。</li>
 <li>agent 平台和模型一起发，会成为常态（Antigravity 之于 Gemini，就像 Claude Code 之于 Claude）。模型能力要靠 harness 兑现。</li>
 <li>对工程团队：<strong>别再等“最强模型”</strong>。现在同代模型在生产任务上的差距常常小于 prompt 与 harness 的差距。</li>

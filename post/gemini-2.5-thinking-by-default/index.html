@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Gemini 2.5 Pro：把「思考」设成默认行为</h1>
-    <p class="meta"><time datetime="2025-03-25T23:30:00">2025-03-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2283 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-03-25T23:30:00">2025-03-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2290 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#默认思考意味着什么">默认思考意味着什么</a></li>
 <li class="h2"><a href="#1m-上下文是另一种工程题">1M 上下文是另一种工程题</a></li>
 <li class="h2"><a href="#lmarena-第一说明不了全部">LMArena 第一说明不了全部</a></li>
 <li class="h2"><a href="#和同期模型的横向位置">和同期模型的横向位置</a></li>
-<li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>3 月 25 日，Google 放出 <a href="https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/">Gemini 2.5 Pro 的实验版本</a>。摘要只有三句话值得记住：</p>
@@ -110,9 +109,9 @@ Gemini 2.5   : 默认思考，思考长度由模型自己决定               �
 </tbody>
 </table></div>
 <p>有意思的是，开源侧（R1）还在用“固定长 CoT”，闭源侧已经在做“按需思考”。差距不在模型能力，在<strong>推理服务的调度能力</strong>——能不能根据请求动态分配算力，本质上是一个系统问题。</p>
-<h2 id="几句判断">几句判断</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
-<li>默认思考会成为旗舰模型的标配，，但它要求产品侧重新设计延迟预期，否则用户会觉得“变卡了”。</li>
+<li>默认思考会成为旗舰模型的标配，但它要求产品侧重新设计延迟预期，否则用户会觉得“变卡了”。</li>
 <li><strong>1M 上下文真正的门槛是缓存和价格</strong>，不是模型能不能塞进去。谁的缓存单价低，谁的长上下文才可用。</li>
 <li>对自建服务：先做“按请求难度预估 → 选预算”的路由，比直接上最大思考长度划算得多。这一步的收益通常是 3～5 倍成本差。</li>
 <li>接下来要看的是<strong>思考预算的可控性</strong>：默认开启很好，但当我要 P99 延迟 &lt; 3 秒时，得有办法强制它少想。</li>

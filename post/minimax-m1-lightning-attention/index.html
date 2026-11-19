@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</h1>
-    <p class="meta"><time datetime="2025-06-17T23:20:00">2025-06-17</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2723 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-06-17T23:20:00">2025-06-17</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2722 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#长-cot-的成本结构">长 CoT 的成本结构</a></li>
 <li class="h2"><a href="#cispo只裁重要性权重不裁-token">CISPO：只裁重要性权重，不裁 token</a></li>
@@ -133,7 +133,7 @@
 <p>混合结构（部分层保留 softmax）就是为了补线性注意力在“精确检索”上的弱项——那些层仍然持有真正的 KV，只是层数少，显存可控。</p>
 <h2 id="最后说三句">最后说三句</h2>
 <ul>
-<li>线性/混合注意力会成为长上下文模型的标配，。softmax 的二次项在 100K 以上无法承受，这不是优化问题，是数学问题。</li>
+<li>线性/混合注意力会成为长上下文模型的标配。softmax 的二次项在 100K 以上无法承受，这不是优化问题，是数学问题。</li>
 <li><strong>“1M 上下文”是营销指标，“100K 可用”才是工程指标</strong>。别按标称值设计产品。</li>
 <li>RL 算法的微创新在长序列上很有价值，CISPO 这类改动单看很小，但在 80K 轨迹上的稳定性差异会被放大。</li>
 <li><strong>开源推理模型的竞争维度已经变成“每百万思考 token 的成本”</strong>，而不是榜单分数。M1、R1-0528、Qwen3 的差异更多在账单上，不在 AIME 上。</li>

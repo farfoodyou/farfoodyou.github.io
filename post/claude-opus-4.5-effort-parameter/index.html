@@ -52,11 +52,10 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude Opus 4.5：旗舰降价三分之二，effort 参数成了主角</h1>
-    <p class="meta"><time datetime="2025-11-25T08:50:00">2025-11-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2243 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-11-25T08:50:00">2025-11-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2245 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#旗舰降价背后的三个原因">旗舰降价背后的三个原因</a></li>
 <li class="h2"><a href="#effort-参数为什么重要">effort 参数为什么重要</a></li>
-<li class="h2"><a href="#opus-45-强在哪不是单点是多语言编码">Opus 4.5 强在哪：不是单点，是多语言编码</a></li>
 <li class="h2"><a href="#价格降下来之后架构会怎么变">价格降下来之后，架构会怎么变</a></li>
 <li class="h2"><a href="#最后说三句">最后说三句</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
@@ -98,7 +97,7 @@
     # effort 由服务端按任务复杂度决定，默认 high
     messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;重构这个模块并跑通测试&quot;}],
 )</code></pre>
-<h2 id="opus-45-强在哪不是单点是多语言编码">Opus 4.5 强在哪：不是单点，是多语言编码</h2>
+<p>再往下看，Opus 4.5 强在哪：不是单点，是多语言编码：</p>
 <p>官方强调的领先项是 <strong>SWE-bench Multilingual</strong>——“在 8 种编程语言里 7 种领先”，以及 Aider Polyglot、BrowseComp-Plus、Vending-Bench 等偏 agent 的基准。</p>
 <p>这个选点很说明问题：</p>
 <ul>
@@ -124,9 +123,9 @@
 <p>典型的“规划贵、执行便宜”结构里，规划层通常只占 token 的 5%～10%。<strong>把规划层的价格降 3 倍，整体成本只降 5%～15%，但任务成功率提升可能远超这个比例</strong>——这才是降价的真实杠杆。</p>
 <h2 id="最后说三句">最后说三句</h2>
 <ul>
-<li>旗舰模型的定价会继续向 Sonnet 档靠拢，。2026 年很可能出现“旗舰 = $3/$15 或更低”。</li>
+<li>旗舰模型的定价会继续向 Sonnet 档靠拢。2026 年很可能出现“旗舰 = $3/$15 或更低”。</li>
 <li><strong>effort 参数 + 思考预算的组合会成为标准 API</strong>，模型供应商真正卖的是“预算曲线的形状”。</li>
-<li>评测透明度成为竞争力，。Opus 4.5 的脚注细到“5 次试验”“默认 effort”，这种披露会让后续横评更难糊弄。</li>
+<li>评测透明度成为竞争力。Opus 4.5 的脚注细到“5 次试验”“默认 effort”，这种披露会让后续横评更难糊弄。</li>
 <li>给工程团队的建议：<strong>先把规划层升级，别急着换执行层</strong>。规划错的代价是整轮返工，执行慢的代价只是等待。</li>
 </ul>
 <h2 id="出处">出处</h2>

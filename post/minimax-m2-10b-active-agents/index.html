@@ -52,14 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</h1>
-    <p class="meta"><time datetime="2025-10-28T22:05:00">2025-10-28</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2579 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-10-28T22:05:00">2025-10-28</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2587 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么激活参数重要">为什么激活参数重要</a></li>
 <li class="h2"><a href="#10b-激活-长推理-什么体验">10B 激活 + 长推理 = 什么体验</a></li>
-<li class="h2"><a href="#为-agent-而设计落到具体">&quot;为 agent 而设计&quot;落到具体</a></li>
 <li class="h2"><a href="#和大而全路线对照">和&quot;大而全&quot;路线对照</a></li>
 <li class="h2"><a href="#带宽视角10b-激活在机器上是什么样子">带宽视角：10B 激活在机器上是什么样子</a></li>
-<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>10 月 27 日，MiniMax 开源 <a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">M2</a>：<strong>230B 总参数 / 10B 激活</strong>（<a href="https://huggingface.co/MiniMaxAI/MiniMax-M2">模型卡</a>），MoE，主打 coding 与 agentic workflow，许可证在模型卡里标为 MIT（<code>license_name: modified-mit</code>，使用前建议自己过一遍条款）。</p>
@@ -105,7 +103,7 @@
 <li>同一硬件上并行 8 个任务的吞吐仍然可观。</li>
 </ul>
 <p>对比 32B 激活的模型，同样的硬件吞吐大约减半到三分之一。<strong>在 agent 场景，吞吐就是成本</strong>，因为任务是串行累积的。</p>
-<h2 id="为-agent-而设计落到具体">“为 agent 而设计”落到具体</h2>
+<p>再往下看，“为 agent 而设计”落到具体：</p>
 <p>模型卡强调 end-to-end tool use。这话要落地成可验证的东西，得看三点：</p>
 <ol>
 <li><strong>交错思考</strong>：在工具调用之间穿插推理（而不是先想完再调），失败时能重新规划；</li>
@@ -149,11 +147,11 @@
 <li><strong>专家并行（EP）的通信量要单独算</strong>。EP 下每个 token 的 hidden 要 all-to-all 到持有目标专家的卡：按 hidden 4096、top-k 8、2 字节算，每层约 64 KB/token，几十层就是<strong>每 token 几 MB</strong>。单机内走 NVLink（900 GB/s）没问题，跨节点走 RDMA 就变成瓶颈。</li>
 <li><strong>10B 激活意味着“一张卡能算，两张卡能装”</strong>。230 GB 权重需要 2×H200 或 4×H100——这才是“可自托管”的真实门槛，跟“激活参数只有 10B”是两件事。</li>
 </ol>
-<h2 id="不确定的部分">不确定的部分</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
-<li>开源 MoE 的激活参数会继续下探到 6～10B，，总参数维持在 200～400B。这是“单机可部署 + 接近前沿”的甜区。</li>
+<li>开源 MoE 的激活参数会继续下探到 6～10B，总参数维持在 200～400B。这是“单机可部署 + 接近前沿”的甜区。</li>
 <li><strong>“小而专”会赢下 agent 场景</strong>，通用问答则还是大模型占优。两条线会长期并存。</li>
-<li>部署成本会成为选型第一指标，。2025 年上半年的问题是“能不能做到”，下半年变成了“每百万 token 多少钱、要多大的机器”。</li>
+<li>部署成本会成为选型第一指标。2025 年上半年的问题是“能不能做到”，下半年变成了“每百万 token 多少钱、要多大的机器”。</li>
 <li>对做 agent 产品的团队：<strong>先把单步成本压到 1 分钱以下</strong>，再谈能力。否则再好的规划也会被账单否决。</li>
 </ul>
 <h2 id="来源">来源</h2>

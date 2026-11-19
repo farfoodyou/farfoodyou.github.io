@@ -52,12 +52,11 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</h1>
-    <p class="meta"><time datetime="2025-12-23T21:30:00">2025-12-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2303 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-12-23T21:30:00">2025-12-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2306 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个新概念交错保留轮次级">三个新概念：交错、保留、轮次级</a></li>
 <li class="h2"><a href="#terminal-bench-从-245-到-410-意味着什么">Terminal-Bench 从 24.5 到 41.0 意味着什么</a></li>
 <li class="h2"><a href="#算笔账32b-激活的账">算笔账：32B 激活的账</a></li>
-<li class="h2"><a href="#开源侧的横向位置2025-12">开源侧的横向位置（2025-12）</a></li>
 <li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
@@ -126,7 +125,7 @@
 <p>所以“交错思考”的成本要这么算：</p>
 <pre data-lang="text"><code class="language-text">每步成本 ≈ 权重读取(6.7ms) × 输出 token 数 + 思考 token 数 × 单 token 成本</code></pre>
 <p>思考 token 也是 token，也要过一次权重。<strong>“每次动作前都想想”等于把权重读取的次数乘上步数</strong>——这是 GLM-4.7 类模型真正的账单，也是为什么“轮次级思考”（不该想的轮次不想）很重要。</p>
-<h2 id="开源侧的横向位置2025-12">开源侧的横向位置（2025-12）</h2>
+<p>再往下看，开源侧的横向位置（2025-12）：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>模型</th>
@@ -145,7 +144,7 @@
 <p>到年底，开源第一梯队的编码能力已经进入 <strong>70～75%</strong> 的窄带，和闭源旗舰（77～81%）只差几个点。<strong>差距从“能力”变成“稳定性与成本”</strong>。</p>
 <h2 id="几句判断">几句判断</h2>
 <ul>
-<li>“思考状态”会成为 agent 模型的核心竞争力，，它同时解决成本（少重复推理）和一致性（跨轮不漂移）两个问题。</li>
+<li>“思考状态”会成为 agent 模型的核心竞争力，它同时解决成本（少重复推理）和一致性（跨轮不漂移）两个问题。</li>
 <li><strong>轮次级思考（该想才想）比“一律长思考”更实用</strong>，因为它直接决定 agent 的步均成本。</li>
 <li>MIT 协议 + 32B 激活是当前最优的商业化组合，法务简单、两张卡能跑、能力够用。</li>
 <li>对工程团队：<strong>先把“思考缓存”做进 harness</strong>（把上一轮的思考摘要喂回去），比换更大的模型见效快。</li>

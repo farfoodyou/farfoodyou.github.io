@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</h1>
-    <p class="meta"><time datetime="2025-10-16T09:20:00">2025-10-16</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1796 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-10-16T09:20:00">2025-10-16</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1795 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#口径733-是怎么测的">口径：73.3% 是怎么测的</a></li>
 <li class="h2"><a href="#价格差-3-倍意味着架构可以变">价格差 3 倍意味着架构可以变</a></li>
 <li class="h2"><a href="#小模型的能力边界在哪">&quot;小模型&quot;的能力边界在哪</a></li>
 <li class="h2"><a href="#一个被忽略的收益延迟">一个被忽略的收益：延迟</a></li>
-<li class="h2"><a href="#结论以及我还不敢说的">结论，以及我还不敢说的</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>10 月 15 日，<a href="https://www.anthropic.com/news/claude-haiku-4-5">Claude Haiku 4.5</a> 发布，定价 <strong>\$1 / \$5</strong> 每百万 token（<a href="https://www.anthropic.com/news/claude-haiku-4-5">公告</a>）。同一天的公告里还给了一个很硬的数字：<strong>SWE-bench Verified 73.3%</strong>。</p>
@@ -124,11 +123,11 @@
 <li>对交互式编辑（边写边跑）来说，1 秒和 5 秒是两种产品。</li>
 </ul>
 <p><strong>延迟是功能</strong>，这句话在 agent 时代才真正成立。</p>
-<h2 id="结论以及我还不敢说的">结论，以及我还不敢说的</h2>
+<p>说到最后，给几句自己的判断：</p>
 <ul>
-<li>“够用”会成为 2026 年的主流需求，。企业不需要每个请求都用最强模型，需要的是“这一档任务用这一档模型”。</li>
+<li>“够用”会成为 2026 年的主流需求。企业不需要每个请求都用最强模型，需要的是“这一档任务用这一档模型”。</li>
 <li><strong>分层 agent 会成为默认架构</strong>，配套的是“路由 + 预算 + 验收”三件套。</li>
-<li>小模型的评测会更难做，。方差大、对 prompt 敏感，10 次平均不够，得跑几十次才能看出差异。</li>
+<li>小模型的评测会更难做。方差大、对 prompt 敏感，10 次平均不够，得跑几十次才能看出差异。</li>
 <li>给团队的一条实践：<strong>先把小模型的失败样本收集起来</strong>，别急着全量切换。哪些任务小模型做不了，比它的平均分更有决策价值。</li>
 </ul>
 <h2 id="出处">出处</h2>

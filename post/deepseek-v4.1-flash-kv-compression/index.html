@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</h1>
-    <p class="meta"><time datetime="2026-09-10T22:10:00">2026-09-10</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2095 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-09-10T22:10:00">2026-09-10</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2103 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#ced把-decode-的-kv-从编码器投影出来">CED：把 decode 的 KV 从编码器&quot;投影&quot;出来</a></li>
 <li class="h2"><a href="#swa-bounded-replay不落盘也能重建-kv">SWA Bounded Replay：不落盘也能重建 KV</a></li>
 <li class="h2"><a href="#kv-压到-890-字节token">KV 压到 890 字节/token</a></li>
 <li class="h2"><a href="#数据怎么搬谁在搬省了多少">数据怎么搬：谁在搬，省了多少</a></li>
-<li class="h2"><a href="#我的看法">我的看法</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>9 月 10 日，DeepSeek 放出 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash">V4.1-Flash</a>（MIT）：552B 主干、1M 上下文、原生多模态。标题很直白——<strong>“Pushing the Limits of KV Cache Compression&quot;</strong>。</p>
@@ -135,7 +134,7 @@
 <li><strong>prefill 变成主要成本</strong>，且已被压到 8B 级；这就是“输入重的 agent 负载”最需要的优化。</li>
 <li><strong>精度风险集中在 FP4 KV</strong>：E2M1 只有 4 位尾数，长上下文里的注意力分数分布要仔细校准，官方用 per-16-channel scale 缓解。</li>
 </ol>
-<h2 id="我的看法">我的看法</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
 <li>KV 压缩是 2026 年最“划算”的优化方向，不改变模型能力，直接改成本结构。</li>
 <li><strong>prefill/decode 不对称（8B vs 16B）会成为新常态</strong>，因为真实负载本身就是“输入重、输出轻”。</li>

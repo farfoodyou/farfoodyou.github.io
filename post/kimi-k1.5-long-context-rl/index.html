@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</h1>
-    <p class="meta"><time datetime="2025-01-23T22:10:00">2025-01-23</time><span class="sep">·</span>8 分钟<span class="sep">·</span>3193 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-01-23T22:10:00">2025-01-23</time><span class="sep">·</span>8 分钟<span class="sep">·</span>3201 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#故意不做的那三件事">故意不做的那三件事</a></li>
 <li class="h2"><a href="#长上下文-rl-的两个硬骨头">长上下文 RL 的两个硬骨头</a></li>
@@ -60,7 +60,6 @@
 <li class="h2"><a href="#long2short把长思考的收益搬回短模型">long2short：把长思考的收益搬回短模型</a></li>
 <li class="h2"><a href="#多模态是一起训的">多模态是一起训的</a></li>
 <li class="h2"><a href="#和-r1-对着看">和 R1 对着看</a></li>
-<li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>和 R1 同一天（1 月 20 日），月之暗面发布了 <a href="https://arxiv.org/abs/2501.12599">Kimi k1.5 的技术报告</a>。两个团队独立走到同一个方向：<strong>放弃过程奖励、只用端到端的结果奖励做 RL</strong>。但取舍完全不同。</p>
@@ -148,7 +147,7 @@
 </tbody>
 </table></div>
 <p>两条路都对，气质不同：R1 是“把方法公开，让社区去压成本”；k1.5 是“把工程做厚，先保证线上能跑”。短期看后者变现更快，长期看前者的生态会更大——权重是否开放，决定别人能不能在你之上继续叠。</p>
-<h2 id="几句判断">几句判断</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ol>
 <li><strong>算法上没有神秘配方</strong>：不做 PRM、不做 MCTS 已经成为共识，差异落在数据配比和训练稳定性上。</li>
 <li><strong>长上下文 RL 的瓶颈在 infra，不在 loss。</strong> partial rollout 这类“实现细节”决定 batch 利用率是 30% 还是 80%。</li>

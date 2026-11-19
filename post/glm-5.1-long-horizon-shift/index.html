@@ -52,11 +52,10 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</h1>
-    <p class="meta"><time datetime="2026-04-08T09:10:00">2026-04-08</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2068 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-04-08T09:10:00">2026-04-08</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2056 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#8-小时工作日要解决什么">&quot;8 小时工作日&quot;要解决什么</a></li>
 <li class="h2"><a href="#swe-bench-pro-与-terminal-bench-20-的区别">SWE-Bench Pro 与 Terminal-Bench 2.0 的区别</a></li>
-<li class="h2"><a href="#算笔账长程任务的账">算笔账：长程任务的账</a></li>
 <li class="h2"><a href="#和闭源的差距在哪">和闭源的差距在哪</a></li>
 <li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
@@ -110,7 +109,6 @@
 </tbody>
 </table></div>
 <p>前者考“懂代码”，后者考“会操作机器”。<strong>真实 agent 产品两者都要</strong>：改完代码得会部署、会看日志、会回滚。</p>
-<h2 id="算笔账长程任务的账">算笔账：长程任务的账</h2>
 <p>8 小时 × 每步 500 token 输出 ≈ 数十万 token 的输出量，加上上下文重复读取，一次“班次”的账单结构是：</p>
 <div class="table-wrap"><table>
 <thead><tr>

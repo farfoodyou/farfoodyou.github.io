@@ -52,11 +52,10 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</h1>
-    <p class="meta"><time datetime="2025-03-26T21:15:00">2025-03-26</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2290 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-03-26T21:15:00">2025-03-26</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2292 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#这次更新改了什么">这次更新改了什么</a></li>
 <li class="h2"><a href="#为什么点版本能涨这么多">为什么&quot;点版本&quot;能涨这么多</a></li>
-<li class="h2"><a href="#对开源自部署的三个实际影响">对开源自部署的三个实际影响</a></li>
 <li class="h2"><a href="#和-r1-的关系不是替代是分叉">和 R1 的关系：不是替代，是分叉</a></li>
 <li class="h2"><a href="#写到这里的判断">写到这里的判断</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
@@ -92,7 +91,7 @@
 <li><strong>拒绝采样比 RL 便宜</strong>。给定强教师（R1 或 V3 自己 + 筛选），采样 → 校验 → SFT 的性价比远高于在线 RL；V3-0324 更像“离线蒸馏 + 精选”的产物。</li>
 <li><strong>通用能力不能被 RL 打坏</strong>。只见推理数据的模型会变成“解题机器”，中文写作和多轮对话退化。模型卡强调工具调用与写作，说明数据配比里留了大比例通用样本。</li>
 </ol>
-<h2 id="对开源自部署的三个实际影响">对开源自部署的三个实际影响</h2>
+<p>再往下看，对开源自部署的三个实际影响：</p>
 <ul>
 <li><strong>换了权重就升级，不用改推理栈</strong>：这是开源模型相对闭源 API 的一个隐形优势。闭源升级意味着 prompt 重调、评测重跑、成本重算；开源换个 safetensors 就行（前提是没做激进架构改动）。</li>
 <li><strong>量化版本要重做</strong>：社区量化（GPTQ/AWQ/FP8）随权重更新失效，得等 24～72 小时。生产环境要有“权重版本锁”的意识。</li>
@@ -124,9 +123,9 @@ def route(prompt: str) -&gt; dict:
     return DEEPSEEK_V3_0324</code></pre>
 <h2 id="写到这里的判断">写到这里的判断</h2>
 <ul>
-<li>后训练是 2025 年的主战场，。从零训练的代价（数据 + 万卡）把大多数团队挡在门外，但后训练的收益正在变得可复制。</li>
+<li>后训练是 2025 年的主战场。从零训练的代价（数据 + 万卡）把大多数团队挡在门外，但后训练的收益正在变得可复制。</li>
 <li><strong>“点版本”会成为常态</strong>：同架构反复打磨比换架构更快见效，代价是版本管理变复杂。生产环境需要一个明确的“权重版本 + 评测快照”机制。</li>
-<li>开源模型的迭代节奏正在超过闭源 API 的季度节奏，。V3 → V3-0324 → V3.1 的节奏是月级，闭源旗舰是季度级。对能力敏感的场景，这是选择开源的实际理由。</li>
+<li>开源模型的迭代节奏正在超过闭源 API 的季度节奏。V3 → V3-0324 → V3.1 的节奏是月级，闭源旗舰是季度级。对能力敏感的场景，这是选择开源的实际理由。</li>
 <li>也得承认局限：这种涨分主要发生在<strong>可验证域</strong>。开放式写作、长文档理解、多跳检索的收益要小得多，别指望一次点版本把这些一起解决。</li>
 </ul>
 <h2 id="参考与数据">参考与数据</h2>

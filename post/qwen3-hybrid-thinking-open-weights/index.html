@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Qwen3：把 thinking 开关做进开源权重</h1>
-    <p class="meta"><time datetime="2025-04-29T22:00:00">2025-04-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2168 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-04-29T22:00:00">2025-04-29</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2172 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合思考一个权重两种行为">混合思考：一个权重，两种行为</a></li>
 <li class="h2"><a href="#训练上怎么做出两种模式">训练上怎么做出&quot;两种模式&quot;</a></li>
 <li class="h2"><a href="#规格与现实的落差">规格与现实的落差</a></li>
 <li class="h2"><a href="#开源侧的竞争格局变了">开源侧的竞争格局变了</a></li>
-<li class="h2"><a href="#不确定的部分">不确定的部分</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
   <div class="post-content">
 <p>4 月 29 日，阿里放出 <a href="https://qwen.ai/blog?id=qwen3">Qwen3 全系列</a>：两款 MoE（30B-A3B、235B-A22B）+ 六款 dense（0.6B / 1.7B / 4B / 8B / 14B / 32B），<strong>全部 Apache 2.0</strong>。一次放八个尺寸，本身就是策略：从手机端到机房，一套谱系全覆盖。</p>
@@ -114,11 +113,11 @@ text = tokenizer.apply_chat_template(msgs, tokenize=False, enable_thinking=False
 <li><strong>许可证统一</strong>：Apache 2.0 覆盖全系，法务成本最低。</li>
 </ul>
 <p>这三点的共同指向是<strong>降低迁移成本</strong>。模型能力差几分，团队会选“换起来最省事”的那个。</p>
-<h2 id="不确定的部分">不确定的部分</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
-<li>“思考开关”会成为开源模型的默认接口，，没有这个开关的模型在 2025 年下半年会被当成“只能聊天”。</li>
+<li>“思考开关”会成为开源模型的默认接口，没有这个开关的模型在 2025 年下半年会被当成“只能聊天”。</li>
 <li><strong>dense 小模型被低估</strong>。8B/14B 在 think 模式下能顶很多线上任务，延迟可控、部署简单，比 MoE 更适合“每个业务一个模型”的用法。</li>
-<li>32K 原生上下文是短板，。YaRN 外推在检索类任务上会掉点，长文场景还是得看原生长上下文模型（Gemini 那一类）。</li>
+<li>32K 原生上下文是短板。YaRN 外推在检索类任务上会掉点，长文场景还是得看原生长上下文模型（Gemini 那一类）。</li>
 <li><strong>开源追平的是“可验证能力”，不是“产品能力”</strong>。榜单上 Qwen3-235B 能和一线闭源掰手腕，但工具调用的稳定性、指令跟随的细腻度、拒答的边界感，差距还在。</li>
 </ul>
 <h2 id="原文在这">原文在这</h2>

@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3.2：从「省算力」到「thinking with tools」</h1>
-    <p class="meta"><time datetime="2025-12-02T22:40:00">2025-12-02</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2767 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-12-02T22:40:00">2025-12-02</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2774 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#thinking-with-tools推理与行动不再分两段">thinking with tools：推理与行动不再分两段</a></li>
 <li class="h2"><a href="#agentic-数据合成这是最难的工程">agentic 数据合成：这是最难的工程</a></li>
@@ -60,7 +60,6 @@
 <li class="h2"><a href="#dsa-的延续结构没变效率继续优化">DSA 的延续：结构没变，效率继续优化</a></li>
 <li class="h2"><a href="#自部署要算的三笔账">自部署要算的三笔账</a></li>
 <li class="h2"><a href="#数据怎么搬稀疏注意力省的是哪一段带宽">数据怎么搬：稀疏注意力省的是哪一段带宽</a></li>
-<li class="h2"><a href="#我的看法">我的看法</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>12 月 1 日，DeepSeek 发布 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V3.2">V3.2</a>。模型卡开篇把技术路线总结成三件事：</p>
@@ -140,9 +139,9 @@
 <li><strong>索引器自己是新的带宽消耗者</strong>：它要对历史做打分，读的是压缩表示，但如果维度没压下来，光算 score 就能读 30 GB+。这解释了为什么索引器的 logit kernel 要单独优化（<a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a>）、稀疏注意力 kernel 要单独写（<a href="https://github.com/deepseek-ai/FlashMLA">FlashMLA</a>）。</li>
 </ol>
 <p>“谁搬”这件事也随之变化：稠密注意力是“按需从 HBM 拉整段 KV”，DSA 变成“先让索引器扫一遍低维表（bandwidth-bound 的小读），再按 top-k 做<strong>不规则 gather</strong>”。不规则 gather 在 GPU 上很难 coalesce，理论带宽利用率常常只有 40%～60%——<strong>这是 DSA 真正的工程难点，也是它必须配专用 kernel 的原因</strong>。</p>
-<h2 id="我的看法">我的看法</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
-<li>“thinking with tools&quot; 会在 2026 年成为开源 agent 模型的基本要求，，纯推理模型会退居”离线分析“场景。</li>
+<li>“thinking with tools&quot; 会在 2026 年成为开源 agent 模型的基本要求，纯推理模型会退居”离线分析“场景。</li>
 <li><strong>agentic 数据合成管线的门槛高于模型本身</strong>，谁能稳定产出带验证的轨迹，谁就能持续迭代。</li>
 <li>“高算力变体”是新的营销层，主干比性价比，变体比上限，两套话术并行。</li>
 <li>对使用者的提醒：<strong>别拿 Speciale 的分数给主干定价</strong>。这两个东西的账单差好几倍。</li>

@@ -52,14 +52,13 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Agent 测评：别信单次分数，先算方差和账单</h1>
-    <p class="meta"><time datetime="2026-02-24T22:30:00">2026-02-24</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2833 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-02-24T22:30:00">2026-02-24</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2811 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#agent-分数是四元函数">agent 分数是四元函数</a></li>
 <li class="h2"><a href="#passk-与-passk两个方向相反的指标">pass@k 与 pass^k：两个方向相反的指标</a></li>
 <li class="h2"><a href="#方差为什么-10-次不够">方差：为什么 10 次不够</a></li>
 <li class="h2"><a href="#成本必须进报表">成本必须进报表</a></li>
 <li class="h2"><a href="#长任务看曲线不看一个点">长任务：看曲线，不看一个点</a></li>
-<li class="h2"><a href="#机器上的字节评测本身也是一套推理系统">机器上的字节：评测本身也是一套推理系统</a></li>
 <li class="h2"><a href="#落地清单">落地清单</a></li>
 <li class="h2"><a href="#结论以及我还不敢说的">结论，以及我还不敢说的</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
@@ -133,7 +132,6 @@ pass^30（任一次全通）会显著更高，但那不代表可靠</code></pre>
 </tbody>
 </table></div>
 <p>单看总分 A 可能只低 5 分，但在“50 步以上”这一桶差了一倍。<strong>你的业务落在哪个桶，决定你该选谁</strong>——这一步比总分重要得多。</p>
-<h2 id="机器上的字节评测本身也是一套推理系统">机器上的字节：评测本身也是一套推理系统</h2>
 <p>跑一次 500 题的 SWE-bench，成本结构大概是这样：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -171,7 +169,7 @@ pass^30（任一次全通）会显著更高，但那不代表可靠</code></pre>
 <ul>
 <li>公开榜单的作用正在从“选型依据”退化为“排除依据”，榜尾的可以直接排除，榜前几名还得自己测。</li>
 <li><strong><code>pass^k</code> + 成本曲线会成为 2026 年的采购语言</strong>，比“某某基准第一”实用得多。</li>
-<li>评测 harness 会像 CI 一样成为基础设施，，需要版本化、可复现、可审计。</li>
+<li>评测 harness 会像 CI 一样成为基础设施，需要版本化、可复现、可审计。</li>
 <li>最容易被忽略的一点：<strong>评测集本身会泄漏</strong>。题目一旦进了公开仓库，下一代模型就会“见过”，所以要定期换题、留出集。</li>
 </ul>
 <h2 id="参考与数据">参考与数据</h2>

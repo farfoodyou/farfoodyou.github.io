@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-5：744B/40B，稀疏注意力成了开源旗舰的默认件</h1>
-    <p class="meta"><time datetime="2026-02-13T09:40:00">2026-02-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2401 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-02-13T09:40:00">2026-02-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2407 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#官方成绩单">官方成绩单</a></li>
 <li class="h2"><a href="#285t-token-与-dsa-的组合意图">28.5T token 与 DSA 的组合意图</a></li>
 <li class="h2"><a href="#摊开算744b-在机房里是什么样">摊开算：744B 在机房里是什么样</a></li>
 <li class="h2"><a href="#长程-agent-任务的真实含义">长程 agent 任务的真实含义</a></li>
-<li class="h2"><a href="#最后说三句">最后说三句</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
 <p>2 月 12 日，智谱开源 <a href="https://huggingface.co/zai-org/GLM-5">GLM-5</a>。从 4.5 到 5 的变化很干脆：</p>
@@ -141,11 +140,11 @@
 </tbody>
 </table></div>
 <p>注意 BrowseComp 的括注“w/ Context Management”：<strong>这类基线的分数强依赖 harness 的记忆管理策略</strong>。模型卡甚至写明了“无上下文管理时只保留最近 5 轮”——评分条件本身就是工程实现的一部分。</p>
-<h2 id="最后说三句">最后说三句</h2>
+<p>说到最后，给几句自己的判断：</p>
 <ul>
 <li>DSA 会成为 2026 年开源旗舰的默认结构，（DeepSeek 先验证、智谱跟进，剩下几家大概率跟上）。</li>
 <li><strong>“总参数↑、激活参数持平”会成为主流</strong>：知识靠容量，成本靠稀疏，二者解耦。</li>
-<li>agent 基准的分数会越来越不可比，，因为 harness 的上下文管理、重试策略、工具质量都会显著影响结果。发布方不写清 harness，数字就没意义。</li>
+<li>agent 基准的分数会越来越不可比，因为 harness 的上下文管理、重试策略、工具质量都会显著影响结果。发布方不写清 harness，数字就没意义。</li>
 <li>对自部署团队：<strong>744B 级模型先别急着自己扛</strong>。除非你有稳定的 8 卡以上资源和成熟的 EP 调优经验，否则走 API 更划算——自建的隐性成本（网络、并行策略、故障恢复）远高于权重本身。</li>
 </ul>
 <h2 id="参考与数据">参考与数据</h2>
@@ -157,7 +156,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/智谱/">智谱</a><a class="tag" href="/tags/glm/">GLM</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/稀疏注意力/">稀疏注意力</a><a class="tag" href="/tags/agent/">Agent</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/agent-evaluation-methodology/">← Agent 测评：别信单次分数，先算方差和账单</a><a class="next" href="/post/kv-cache-ledger-128k/">KV cache 账本：128K 上下文到底要多少张卡 →</a></nav>
+  <nav class="post-nav"><a class="prev" href="/post/agent-evaluation-methodology/">← Agent 测评：别信单次分数，先算方差和账单</a><a class="next" href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存 →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/glm-4.5-hybrid-thinking-mit/">GLM-4.5：把「思考开关」做成开源模型的默认项</a><time>2025-07</time></li><li><a href="/post/glm-4.7-thinking-before-acting/">GLM-4.7：MIT 协议追到 73.8%，以及「思考前置」的工程含义</a><time>2025-12</time></li><li><a href="/post/glm-5.1-long-horizon-shift/">GLM-5.1：8 小时工作日，agent 从「步」变成「班次」</a><time>2026-04</time></li></ul></aside>
 </article>
 </main>

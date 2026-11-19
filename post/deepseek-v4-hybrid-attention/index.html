@@ -58,7 +58,6 @@
 <li class="h2"><a href="#两段式后训练先分家再合并">两段式后训练：先分家，再合并</a></li>
 <li class="h2"><a href="#机器上的字节v4-pro-在机器上的样子">机器上的字节：V4-Pro 在机器上的样子</a></li>
 <li class="h2"><a href="#开源的1m-上下文俱乐部">开源的&quot;1M 上下文俱乐部&quot;</a></li>
-<li class="h2"><a href="#结论以及我还不敢说的">结论，以及我还不敢说的</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>8 月 13 日，DeepSeek 发布 <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro">V4</a>（MIT）：<strong>V4-Pro 1.6T / 49B 激活</strong>、<strong>V4-Flash 284B / 13B 激活</strong>，两者都支持 <strong>1M 上下文</strong>，训练数据 <strong>32T token</strong>。</p>
@@ -131,9 +130,9 @@ V4（压缩 + 稀疏）：约 3.5 KB/token 量级（官方口径 10%）
 </tbody>
 </table></div>
 <p>五家五种实现，但方向一致：<strong>把 O(L²) 打掉</strong>。2026 年下半年，“支持 1M”已经不是卖点，“1M 上下文的每 token 成本”才是。</p>
-<h2 id="结论以及我还不敢说的">结论，以及我还不敢说的</h2>
+<p>说到最后，给几句自己的判断：</p>
 <ul>
-<li>CSA/HCA 这类“分层压缩”会成为长上下文的标准答案，，纯线性注意力在精确检索上仍有短板。</li>
+<li>CSA/HCA 这类“分层压缩”会成为长上下文的标准答案，纯线性注意力在精确检索上仍有短板。</li>
 <li><strong>“先训专家再蒸馏合并”会普及</strong>，多目标 RL 的相互干扰是目前最大的隐性损耗。</li>
 <li>MIT + 1.6T + 1M 上下文，是今年最强的组合，但它只对“有集群”的机构有意义。</li>
 <li>对工程团队：<strong>V4-Flash（284B/13B）才是多数人的落点</strong>，Pro 是标杆，不是日常。</li>

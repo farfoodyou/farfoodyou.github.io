@@ -52,11 +52,10 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K3：2.8T 参数 + KDA，开源第一次摸到 3T 级</h1>
-    <p class="meta"><time datetime="2026-07-17T09:10:00">2026-07-17</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1786 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-07-17T09:10:00">2026-07-17</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1771 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#kda把线性注意力做成可更新状态">KDA：把线性注意力做成&quot;可更新状态&quot;</a></li>
 <li class="h2"><a href="#attnres给层间加残差注意力">AttnRes：给层间加&quot;残差注意力&quot;</a></li>
-<li class="h2"><a href="#摊开算28t-是什么概念">摊开算：2.8T 是什么概念</a></li>
 <li class="h2"><a href="#许可证不是-mit">许可证：不是 MIT</a></li>
 <li class="h2"><a href="#最后说三句">最后说三句</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
@@ -76,7 +75,6 @@
 <h2 id="attnres给层间加残差注意力">AttnRes：给层间加“残差注意力”</h2>
 <p>Transformer 的残差是逐元素的加法；AttnRes 把“跨层信息混合”做成注意力形式——后层可以直接“读”前面若干层的表示，而不只是继承一个累加和。</p>
 <p>这对超深网络（2.8T 参数通常意味着很深的堆叠）有价值：<strong>缓解深层的信息稀释</strong>，让梯度路径更短。今年多个团队在残差连接上做文章（包括 Hy4 的 iHC），说明“残差是下一个可优化点”已经成为共识。</p>
-<h2 id="摊开算28t-是什么概念">摊开算：2.8T 是什么概念</h2>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>数据</th>

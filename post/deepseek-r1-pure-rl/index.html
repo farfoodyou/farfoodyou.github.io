@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-R1：纯 RL 把推理能力「逼」出来</h1>
-    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4743 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4726 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#两条路线zero-和-r1">两条路线：Zero 和 R1</a></li>
 <li class="h2"><a href="#grpo把-critic-省掉">GRPO：把 critic 省掉</a></li>
@@ -60,7 +60,6 @@
 <li class="h2"><a href="#价格才是真正的冲击">价格才是真正的冲击</a></li>
 <li class="h2"><a href="#蒸馏小模型上做-rl-不如抄作业">蒸馏：小模型上做 RL 不如抄作业</a></li>
 <li class="h2"><a href="#落地时踩到的几个坑">落地时踩到的几个坑</a></li>
-<li class="h2"><a href="#算笔账这些数字在机器上怎么搬">算笔账：这些数字在机器上怎么搬</a></li>
 <li class="h2"><a href="#几句判断">几句判断</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
@@ -156,7 +155,6 @@
 </ul>
 <pre data-lang="bash"><code class="language-bash">vllm serve deepseek-ai/DeepSeek-R1-Distill-Qwen-32B \
   --tensor-parallel-size 2 --max-model-len 32768 --enforce-eager</code></pre>
-<h2 id="算笔账这些数字在机器上怎么搬">算笔账：这些数字在机器上怎么搬</h2>
 <p>推理不是“算”，是“搬”。把 R1 的 decode 拆开看：</p>
 <div class="table-wrap"><table>
 <thead><tr>

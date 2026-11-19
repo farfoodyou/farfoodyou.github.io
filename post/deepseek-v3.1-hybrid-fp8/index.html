@@ -52,11 +52,10 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-V3.1：一个模型两种模式，和一次 FP8 格式的押注</h1>
-    <p class="meta"><time datetime="2025-08-22T22:15:00">2025-08-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1983 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-08-22T22:15:00">2025-08-22</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1985 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一个权重两种模式的实现">一个权重，两种模式的实现</a></li>
 <li class="h2"><a href="#128k-是续训出来的">128K 是&quot;续训&quot;出来的</a></li>
-<li class="h2"><a href="#ue8m0-fp8一条不太显眼但很关键的线">UE8M0 FP8：一条不太显眼但很关键的线</a></li>
 <li class="h2"><a href="#工具调用从能调到调得对">工具调用：从&quot;能调&quot;到&quot;调得对&quot;</a></li>
 <li class="h2"><a href="#我的看法">我的看法</a></li>
 <li class="h2"><a href="#原文在这">原文在这</a></li></ol></nav>
@@ -82,7 +81,7 @@
 <li>630B / 209B 这两个数字说明：<strong>长上下文的成本主要在数据工程</strong>，不在算力。</li>
 </ul>
 <p>对使用者：标称 128K 的模型，实际可用区间通常在 60～100K（再长就开始丢细节）。做产品时按 64K 设计比较稳。</p>
-<h2 id="ue8m0-fp8一条不太显眼但很关键的线">UE8M0 FP8：一条不太显眼但很关键的线</h2>
+<p>再往下看，UE8M0 FP8：一条不太显眼但很关键的线：</p>
 <p>V3.1 的权重和激活都用 <strong>UE8M0 的 FP8 scale 格式</strong>（无符号指数、8 位尾数共享 scale），目的写的是“适配 microscaling 数据格式”，实现细节在 <a href="https://github.com/deepseek-ai/DeepGEMM">DeepGEMM</a>。</p>
 <p>为什么值得单独说：</p>
 <ul>
@@ -109,9 +108,9 @@
 <p>agent 的成本是<strong>步数乘思考长度</strong>。把单步思考压下来，比把单步分数提上去更省钱——这也是“混合模式 + 高效思考”成为主流的原因。</p>
 <h2 id="我的看法">我的看法</h2>
 <ul>
-<li>“一个权重两种模式 + 一个 token 切换”会成为开源标准做法，。两套权重的时代基本结束了。</li>
+<li>“一个权重两种模式 + 一个 token 切换”会成为开源标准做法。两套权重的时代基本结束了。</li>
 <li><strong>FP8 格式之争刚开始</strong>。谁的低精度格式被硬件和框架同时支持，谁就能在推理成本上占两年便宜。</li>
-<li>长上下文的价格被高估了能力、低估了成本，。续训数据是门槛，不是算力。</li>
+<li>长上下文的价格被高估了能力、低估了成本。续训数据是门槛，不是算力。</li>
 <li>给自部署团队的一条实用建议：<strong>V3.1 的价值主要在“单权重 + FP8 + 128K”这套组合</strong>，如果只要推理能力，R1-0528 蒸馏版更划算；如果要做 agent 底座，V3.1 是目前开源里最省心的选择之一。</li>
 </ul>
 <h2 id="原文在这">原文在这</h2>

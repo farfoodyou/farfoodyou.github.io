@@ -52,13 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</h1>
-    <p class="meta"><time datetime="2025-06-11T09:15:00">2025-06-11</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2134 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-06-11T09:15:00">2025-06-11</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2140 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#秒级十秒级分钟级是三门生意">秒级、十秒级、分钟级是三门生意</a></li>
 <li class="h2"><a href="#可靠性和速度是一对矛盾">可靠性和速度是一对矛盾</a></li>
 <li class="h2"><a href="#对基础设施的四个要求">对基础设施的四个要求</a></li>
 <li class="h2"><a href="#这类模型会被谁用">这类模型会被谁用</a></li>
-<li class="h2"><a href="#最后说三句">最后说三句</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>6 月 10 日，OpenAI 上线 <a href="https://en.wikipedia.org/wiki/OpenAI_o3">o3-pro</a>。官方推荐用法说得很直白（转引自 <a href="https://techcrunch.com/2025/06/10/openai-releases-o3-pro-a-souped-up-version-of-its-o3-ai-reasoning-model/">TechCrunch 报道</a>）：</p>
@@ -116,11 +115,11 @@ result = st.output</code></pre>
 <li><strong>离线分析管线</strong>：日志归因、事故复盘、批量文档审阅。</li>
 </ul>
 <p>换句话说，<strong>o3-pro 是基础设施组件，不是聊天模型</strong>。它存在的意义是把“最高可靠性”这一档做成可采购的 API，而不是让所有人日常调用。</p>
-<h2 id="最后说三句">最后说三句</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
 <li>延迟分层会固化，同一个模型家族里，快档和慢档长期并存，价格差 5～20 倍。选型的核心问题从“哪个模型最强”变成“这个任务能等多久”。</li>
 <li><strong>同步 API 会被异步 API 侵蚀</strong>。分钟级任务 + 事件流，这套形态在 2025 年下半年开始成为主流供应商的标配。</li>
-<li>可靠性比分数更值钱，。企业愿意为“少一次翻车”付 10 倍价钱，但不愿意为“+3 分 AIME”多付 1 毛。</li>
+<li>可靠性比分数更值钱。企业愿意为“少一次翻车”付 10 倍价钱，但不愿意为“+3 分 AIME”多付 1 毛。</li>
 <li>自建服务的同类能力（超长思考 + 验证循环）成本主要不在 GPU，而在<strong>编排与状态管理</strong>——这是自研 harness 的真正门槛。</li>
 </ul>
 <h2 id="出处">出处</h2>

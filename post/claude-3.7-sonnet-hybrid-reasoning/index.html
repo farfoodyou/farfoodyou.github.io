@@ -52,7 +52,7 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude 3.7 Sonnet：一个模型两种模式，外加一个终端 agent</h1>
-    <p class="meta"><time datetime="2025-02-25T08:40:00">2025-02-25</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2646 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-02-25T08:40:00">2025-02-25</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2645 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#混合推理一个-checkpoint两种行为">混合推理：一个 checkpoint，两种行为</a></li>
 <li class="h2"><a href="#思考预算是一个整数参数">思考预算是一个整数参数</a></li>
@@ -119,7 +119,7 @@
 <p>反过来说，混合模式省掉了维护两条模型线的成本：一套权重、一套安全评估、一套部署。对供应商来说这是笔划算的买卖，我猜这会是后续主流——<strong>不是“推理模型”，而是“带思考开关的模型”</strong>。</p>
 <h2 id="最后说三句">最后说三句</h2>
 <ul>
-<li>混合推理会成为默认形态，，独立推理模型线更像过渡方案；</li>
+<li>混合推理会成为默认形态，独立推理模型线更像过渡方案；</li>
 <li><strong>思考预算参数化</strong>（o3-mini 的 effort、3.7 的 budget_tokens）是 2025 年最重要的 API 设计变化，它把“要不要多想”从模型选择降级成调用参数；</li>
 <li>真正的分水岭不是 AIME，而是<strong>长任务的工具使用可靠性</strong>；SWE-bench 和 TAU-bench 这类基准的分量会越来越重；</li>
 <li>定价不涨是个信号：推理的边际成本在快速下降，靠“贵”维持高端定位的策略撑不了多久。</li>

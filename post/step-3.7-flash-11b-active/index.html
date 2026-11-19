@@ -58,7 +58,6 @@
 <li class="h2"><a href="#三档-reasoning-level把预算交给调用方">三档 reasoning level：把预算交给调用方</a></li>
 <li class="h2"><a href="#多模态的生产级含义">多模态的&quot;生产级&quot;含义</a></li>
 <li class="h2"><a href="#给自建团队的现实账">给自建团队的现实账</a></li>
-<li class="h2"><a href="#结论以及我还不敢说的">结论，以及我还不敢说的</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
 <p>5 月 29 日，阶跃星辰开源 <a href="https://huggingface.co/stepfun-ai/Step-3.7-Flash">Step 3.7 Flash</a>（Apache 2.0）。规格很“实用主义”：</p>
@@ -116,11 +115,11 @@
 <li><strong>吞吐导向</strong>：这类模型的正确用法是<strong>大 batch + 低 effort</strong>，把 GPU 喂满，而不是单请求高 effort；</li>
 <li><strong>缓存定价是信号</strong>：命中价 $0.04 vs 未命中 $0.20，5 倍差距——说明厂商希望你复用前缀，这也是自建时最该优化的地方。</li>
 </ul>
-<h2 id="结论以及我还不敢说的">结论，以及我还不敢说的</h2>
+<p>说到最后，给几句自己的判断：</p>
 <ul>
 <li>11B 激活 + 256K 上下文，是 2026 年“生产级多模态”的甜区：单机能跑、吞吐够、价格能压。</li>
 <li><strong>三档 reasoning 会变成接口标准</strong>，但档位命名/语义各家不统一，跨模型路由需要自己抽象。</li>
-<li>多模态的真实门槛是“结构化输出稳定性”，，不是识别率。</li>
+<li>多模态的真实门槛是“结构化输出稳定性”，不是识别率。</li>
 <li>端侧/边缘场景暂时还轮不到 198B，但同样的“小激活 + MTP”思路正在往下沉（见 <a href="/post/on-device-inference-designs/">端侧推理</a>）。</li>
 </ul>
 <h2 id="参考与数据">参考与数据</h2>
@@ -131,7 +130,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/stepfun/">StepFun</a><a class="tag" href="/tags/开源模型/">开源模型</a><a class="tag" href="/tags/moe/">MoE</a><a class="tag" href="/tags/多模态/">多模态</a><a class="tag" href="/tags/推理优化/">推理优化</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/speculative-decoding-economics/">← 投机解码账本：接受率每掉 10 个点，收益就归零</a><a class="next" href="/post/kimi-k2.6-agent-swarm/">Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling →</a></nav>
+  <nav class="post-nav"><a class="prev" href="/post/speculative-decoding-economics/">← 投机解码踩坑记：开了之后反而慢了 30%</a><a class="next" href="/post/kimi-k2.6-agent-swarm/">Kimi K2.6：300 个子 agent、4000 步，横向扩展的另一种 scaling →</a></nav>
   <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v3-0324-post-training/">DeepSeek-V3-0324：一次「点版本」更新暴露的方法论</a><time>2025-03</time></li><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/minimax-m1-lightning-attention/">MiniMax-M1：1M 上下文 + 线性注意力，把长思考的账单打下来</a><time>2025-06</time></li></ul></aside>
 </article>
 </main>

@@ -52,14 +52,12 @@
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">GLM-4.5：把「思考开关」做成开源模型的默认项</h1>
-    <p class="meta"><time datetime="2025-07-30T22:30:00">2025-07-30</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2393 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-07-30T22:30:00">2025-07-30</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2403 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#双模式怎么切">双模式怎么切</a></li>
 <li class="h2"><a href="#355b32b-这个尺寸的用意">355B/32B 这个尺寸的用意</a></li>
-<li class="h2"><a href="#agent-能力是重点">agent 能力是重点</a></li>
 <li class="h2"><a href="#开源侧的横向位置2025-07">开源侧的横向位置（2025-07）</a></li>
 <li class="h2"><a href="#选型时的三个坑">选型时的三个坑</a></li>
-<li class="h2"><a href="#我的看法">我的看法</a></li>
 <li class="h2"><a href="#来源">来源</a></li></ol></nav>
   <div class="post-content">
 <p>7 月 28 日，智谱开源 <a href="https://huggingface.co/zai-org/GLM-4.5">GLM-4.5 系列</a>：GLM-4.5（355B 总 / 32B 激活）和 GLM-4.5-Air（106B / 12B），Base、混合推理版、FP8 版一起放，<strong>MIT 协议</strong>（<a href="https://huggingface.co/zai-org/GLM-4.5">模型卡</a>）。</p>
@@ -104,7 +102,7 @@ resp = client.chat.completions.create(
 </table></div>
 <p>355B/32B 的激活比例约 9%，比 Kimi K2（3.2%）保守，比 Qwen3-235B/22B（9.4%）接近。<strong>这是“能力/成本”折中的甜区</strong>：单 token 算力约等于 32B dense 模型，但知识容量接近 355B。</p>
 <p>官方同时放 FP8 权重，是很实际的一步：BF16 的 355B 需要 ~710GB 显存，FP8 降到 ~355GB，8 卡 H100/H200 就能跑，部署门槛从“机房”降到“一台机器”。</p>
-<h2 id="agent-能力是重点">agent 能力是重点</h2>
+<p>再往下看，agent 能力是重点：</p>
 <p>GLM-4.5 的定位写的是 “foundation models designed for intelligent agents”。落到工程上，agent 能力 = 三件事的组合：</p>
 <ol>
 <li><strong>工具调用格式稳定</strong>：多轮 function call 不乱、不丢参数；</li>
@@ -135,11 +133,11 @@ resp = client.chat.completions.create(
 <li><strong>FP8 权重要配对应 kernel</strong>。老版本 vLLM/SGLang 可能不支持新的 scale 格式，部署前先确认版本矩阵。</li>
 <li><strong>双模式的评测要分开报</strong>。同一个模型 thinking/non-thinking 是两条曲线，混着比没有意义。</li>
 </ol>
-<h2 id="我的看法">我的看法</h2>
+<p>落到工程上，我的判断是这样：</p>
 <ul>
-<li>“开源 + MIT + 双模式 + FP8”会成为 2025 年下半年开源旗舰的标配四件套，。缺任何一项，工程团队都会犹豫。</li>
+<li>“开源 + MIT + 双模式 + FP8”会成为 2025 年下半年开源旗舰的标配四件套。缺任何一项，工程团队都会犹豫。</li>
 <li><strong>激活参数会继续收敛在 20B～40B</strong>，除非硬件（显存容量/带宽）出现代际变化。</li>
-<li>agent 能力会成为新的分水岭，，但它无法靠榜单衡量——这会让选型更依赖自建评测集，而不是公开 benchmark。</li>
+<li>agent 能力会成为新的分水岭，但它无法靠榜单衡量——这会让选型更依赖自建评测集，而不是公开 benchmark。</li>
 <li>对自部署团队：<strong>先上 FP8 + non-thinking 做主力</strong>，把 thinking 留给异步队列，这是当前性价比最高的组合。</li>
 </ul>
 <h2 id="来源">来源</h2>

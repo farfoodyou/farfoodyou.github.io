@@ -18,6 +18,7 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GLM-5.1：8 小时工作日，agent 从「步」变成「班次」", "description": "同比 GLM-5：SWE-Bench Pro 58.4（+3.3）、Terminal-Bench 2.0 63.5（Claude Code harness 下 69.0）、BrowseComp 79.3。官方把它定位成能连续干 8 小时活的同事。", "datePublished": "2026-04-08T09:10:00+08:00", "dateModified": "2026-04-08T09:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/glm-5.1-long-horizon-shift/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "智谱, GLM, 开源模型, Agent, 编码"}</script>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
   <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
   <div class="giscus"></div>
   <script src="https://giscus.app/client.js"
@@ -26,6 +27,25 @@
     data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
     data-emit-metadata="0" data-input-position="top"
     data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
   </script>
 </section>
 <meta property="og:site_name" content="farfood">

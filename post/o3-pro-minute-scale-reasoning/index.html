@@ -18,6 +18,7 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3-pro：当推理从「秒」变成「分钟」，产品形态就得改", "description": "6 月 10 日 o3-pro 上线，官方定位就一句话：可靠性优先于速度，等几分钟是值得的。这类模型把「同步请求」逼到了尽头，异步任务队列、事件流、结果交付成了必需。", "datePublished": "2025-06-11T09:15:00+08:00", "dateModified": "2025-06-11T09:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-pro-minute-scale-reasoning/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, 延迟, 架构"}</script>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
   <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
   <div class="giscus"></div>
   <script src="https://giscus.app/client.js"
@@ -26,6 +27,25 @@
     data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
     data-emit-metadata="0" data-input-position="top"
     data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
   </script>
 </section>
 <meta property="og:site_name" content="farfood">

@@ -18,6 +18,7 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了", "description": "230B 总参数 / 10B 激活、MIT、主打 coding 与 agentic workflow。M2 把「激活参数」压到 10B 这个量级，意味着单卡吞吐和延迟都进入可交互区间。", "datePublished": "2025-10-28T22:05:00+08:00", "dateModified": "2025-10-28T22:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/minimax-m2-10b-active-agents/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "MiniMax, 开源模型, MoE, Agent, 编码"}</script>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
   <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
   <div class="giscus"></div>
   <script src="https://giscus.app/client.js"
@@ -26,6 +27,25 @@
     data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
     data-emit-metadata="0" data-input-position="top"
     data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
   </script>
 </section>
 <meta property="og:site_name" content="farfood">

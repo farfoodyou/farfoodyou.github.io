@@ -18,6 +18,7 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B", "description": "552B 主干、1M 上下文、MIT。CED 编码器-解码器结构让 prefill 只激活 8B、decode 16B；FP4 主 KV + 分层稀疏索引把 KV 压到 890 B/token，约为 V4-Flash 的 1/4。", "datePublished": "2026-09-10T22:10:00+08:00", "dateModified": "2026-09-10T22:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/deepseek-v4.1-flash-kv-compression/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DeepSeek, 开源模型, KV缓存, 稀疏注意力, 量化"}</script>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
   <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
   <div class="giscus"></div>
   <script src="https://giscus.app/client.js"
@@ -26,6 +27,25 @@
     data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
     data-emit-metadata="0" data-input-position="top"
     data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
   </script>
 </section>
 <meta property="og:site_name" content="farfood">

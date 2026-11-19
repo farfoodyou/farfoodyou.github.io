@@ -18,6 +18,7 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "从现在开始, 记录成长", "description": "1 为什么要写博客 记录已取得的有效信息 夫生物者, 必新陈代谢尔. 遗忘是进步过程中不可缺失的特性. 只有通过输入信息, 构建知识结构, 不断强化有效部分. 让那些无价值的信息, 糟粕随着时间流逝而消失. 学习能力获取模型->记忆能力存储模型->进行预测运用模型->学习能力更新模型 先及格再说 没有最佳方案, 按照现…", "datePublished": "2019-03-23T18:45:00+08:00", "dateModified": "2019-03-23T18:45:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/2019-03-23/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": ""}</script>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
   <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
   <div class="giscus"></div>
   <script src="https://giscus.app/client.js"
@@ -26,6 +27,25 @@
     data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
     data-emit-metadata="0" data-input-position="top"
     data-theme="preferred_color_scheme" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
   </script>
 </section>
 <meta property="og:site_name" content="farfood">

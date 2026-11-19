@@ -38,7 +38,7 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
@@ -52,15 +52,15 @@
 <li class="h2"><a href="#代价">代价</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>运营侧的玩法需求以前是排期发版：新客首单立减、满三单返券、连签进度条，每个都要研发改渲染逻辑。后来把这些做成有状态单元：一个单元有 id、类型、状态字段、渲染模板和生效条件，运营在后台编辑，端上按模板渲染。上线三个月，发版频率从每周一次降到每月一次。</p>
+<p>运营侧的玩法需求以前是排期发版：新客首单立减、满三单返券、连签进度条，每个都要研发改渲染逻辑。一种做法是把这些做成有状态单元：一个单元有 id、类型、状态字段、渲染模板和生效条件，运营在后台编辑，端上按模板渲染。上线三个月，发版频率从每周一次降到每月一次。</p>
 <p>然后出了一次数据事故。两个运营同时在两个 tab 里编辑同一个活动单元，一个在改文案，一个在补发奖励。后保存的那份把整个 <code>state</code> 字段整块覆盖，几万个用户的领取记录被清零，客服在半小时后收到第一批投诉。</p>
 <p>排查下来代码没错，错在写入接口：<code>PUT /unit/{id}/state</code> 把状态当成一个文档，谁最后写谁赢。</p>
 <h2 id="写入协议约定比校验重要">写入协议：约定比校验重要</h2>
-<p>校验只能保证格式对，管不住语义对。那次提交的确实是一个合法的状态对象，只是别人的记录没了。所以补的第一层是写入协议，六条约定，每条对应一个真踩过的坑：</p>
+<p>校验只能保证格式对，管不住语义对。那次提交的确实是一个合法的状态对象，只是别人的记录没了。所以补的第一层是写入协议，六条约定，每条对应一类失败形态：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>约定</th>
-<th>踩过的反例</th>
+<th>典型反例</th>
 <th>修法</th>
 </tr></thead>
 <tbody>
@@ -72,7 +72,7 @@
 <tr><td>未知字段拒收</td><td>旧渲染器丢掉新字段后回写</td><td>写入端 <code>additionalProperties: false</code></td></tr>
 </tbody>
 </table></div>
-<p>最后一条要配另一半：<strong>写入严格、读取宽容</strong>。服务端收到没见过的单元类型要跳过并计数，不能整页报错；但写入时多一个字段直接 400，因为那一刻我们还有机会告诉运营改。</p>
+<p>最后一条要配另一半：<strong>写入严格、读取宽容</strong>。服务端收到没见过的单元类型要跳过并计数，不能整页报错；但写入时多一个字段直接 400，因为那一刻还有机会让运营改。</p>
 <p>单元描述本身是数据，演进靠版本号：</p>
 <pre data-lang="json"><code class="language-json">{
   &quot;unit_id&quot;: &quot;u_1042&quot;,
@@ -112,7 +112,7 @@
 </table></div>
 <p>由此推出一条要求：新版本写入的事件，旧版本必须读得懂，窗口至少两个版本。做不到就让新逻辑先只写影子字段，双跑比对之后再切。</p>
 <h2 id="代价">代价</h2>
-<p>灵活性不免费。schema 演化、兼容窗口、脏数据清理、按类型打点这些活，以前由发版流程吃掉，现在落在平台自己身上。后来把单元描述的变更也纳入发布流程：有预发、有灰度、有审计，运营的一次误操作和研发的一次改代码同等对待。</p>
+<p>灵活性不免费。schema 演化、兼容窗口、脏数据清理、按类型打点这些活，以前由发版流程吃掉，现在落在平台自己身上。实践中会把单元描述的变更也纳入发布流程：有预发、有灰度、有审计，运营的一次误操作和研发的一次改代码同等对待。</p>
 <p>出问题的形态也变了。以前是「新功能上线报错」，现在是「一条数据写错，几天后才被发现」；后者发现成本高得多，所以写入协议、幂等键、状态快照比渲染做得多花哨都重要。</p>
 <h2 id="参考">参考</h2>
 <ul>
@@ -124,7 +124,7 @@
   </div>
   <p class="tag-list"><a class="tag" href="/tags/数据驱动/">数据驱动</a><a class="tag" href="/tags/状态管理/">状态管理</a><a class="tag" href="/tags/渲染/">渲染</a><a class="tag" href="/tags/灰度/">灰度</a><a class="tag" href="/tags/schema/">schema</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%9C%89%E7%8A%B6%E6%80%81%E5%8D%95%E5%85%83%EF%BC%9A%E6%8A%8A%E8%BF%90%E8%90%A5%E8%83%BD%E5%8A%9B%E5%81%9A%E6%88%90%E6%95%B0%E6%8D%AE" target="_blank" rel="noopener">分享到 X</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/ops-platform-three/">← 运营平台三件套：预发、灰度、回滚</a><a class="next" href="/post/holiday-capacity/">节假日扩容：从求人扩容到自己扛住 →</a></nav>
+  <nav class="post-nav"><a class="prev" href="/post/ops-platform-three/">← 运营平台三件套：预发、灰度、回滚</a><a class="next" href="/post/holiday-capacity/">节假日扩容：从加机器到按放大倍数备容量 →</a></nav>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GPT-5 是个路由器，那评测到底在测谁？ - farfood</title>
-<meta name="description" content="和三种角色聊完 GPT-5 之后整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
+<meta name="description" content="围绕 GPT-5 的三种立场整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/gpt-5-router-system/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GPT-5 是个路由器，那评测到底在测谁？", "description": "和三种角色聊完 GPT-5 之后整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。", "datePublished": "2025-08-08T09:40:00+08:00", "dateModified": "2025-08-08T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/gpt-5-router-system/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, GPT-5, 架构, 产品设计"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "GPT-5 是个路由器，那评测到底在测谁？", "description": "围绕 GPT-5 的三种立场整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。", "datePublished": "2025-08-08T09:40:00+08:00", "dateModified": "2025-08-08T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/gpt-5-router-system/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, GPT-5, 架构, 产品设计"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="GPT-5 是个路由器，那评测到底在测谁？ - farfood">
-<meta property="og:description" content="和三种角色聊完 GPT-5 之后整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
+<meta property="og:description" content="围绕 GPT-5 的三种立场整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/gpt-5-router-system/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GPT-5 是个路由器，那评测到底在测谁？ - farfood">
-<meta name="twitter:description" content="和三种角色聊完 GPT-5 之后整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
+<meta name="twitter:description" content="围绕 GPT-5 的三种立场整理成问答：一个系统级模型，对评测、成本、可观测性意味着什么。">
 <meta property="article:published_time" content="2025-08-08T09:40:00+08:00">
 <meta name="keywords" content="OpenAI, GPT-5, 架构, 产品设计">
 </head>
@@ -38,7 +38,7 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
@@ -47,14 +47,14 @@
   </header>
   
   <div class="post-content">
-<p>GPT-5 发布后我们内部拉了个小讨论，三种角色吵得挺厉害。把问题整理成问答，比写成“技术分析”更接近现场。</p>
+<p>GPT-5 发布后，围绕它的三种典型立场分歧很大。把问题整理成问答，比写成“技术分析”更接近争议现场。</p>
 <p><strong>问：它到底是一个模型还是几个？</strong></p>
 <p>答：按官方描述是“一个系统”——快模型 + 推理模型 + 实时路由器，路由依据是对话类型、复杂度、工具需求和用户意图（<a href="https://en.wikipedia.org/wiki/GPT-5">Wikipedia 条目</a> 有对应描述）。它同时顶掉了 GPT-4.1、o3、o4-mini 三条线。</p>
 <p><strong>问：那榜单上的分数是谁的？</strong></p>
 <p>答：这就是争议点。固定 effort 跑 AIME，测的是推理分支；混跑真实流量，测的是路由 + 两个分支的组合。<strong>两者没有可比性，但发布时通常只给一个数字。</strong></p>
-<p>做评测的同事给了个说法我觉得挺准：“这就像给一支球队报个人得分。”</p>
+<p>一个来自评测实践的说法挺准：“这就像给一支球队报个人得分。”</p>
 <p><strong>问：对做网关的人来说，最大的变化是什么？</strong></p>
-<p>答：<strong>决策点从客户端挪到了服务端。</strong> 以前是我们的路由代码决定走哪个模型，现在是供应商决定，我们只能给个 hint（<code>minimal</code> / low / medium / high，或者界面上的“跳过思考”按钮）。</p>
+<p>答：<strong>决策点从客户端挪到了服务端。</strong> 以前是网关里的路由代码决定走哪个模型，现在是供应商决定，调用方只能给个 hint（<code>minimal</code> / low / medium / high，或者界面上的“跳过思考”按钮）。</p>
 <p>坏处很直接：</p>
 <ul>
 <li>回归基线会漂。同一个 prompt，供应商一调权重，行为可能变；</li>
@@ -68,17 +68,17 @@
 <thead><tr>
 <th>分支</th>
 <th>典型延迟</th>
-<th>占比（我们的观察）</th>
+<th>占比（观察值）</th>
 </tr></thead>
 <tbody>
 <tr><td>快路径</td><td>0.8～2 s</td><td>约 70%</td></tr>
 <tr><td>推理路径</td><td>8～40 s</td><td>约 30%</td></tr>
 </tbody>
 </table></div>
-<p>双峰意味着两件事：<strong>P50 好看但 P99 难看</strong>；超时重试会二次计费。我们最后的做法是按分支设两套 SLO，并且把重试改成“只上报不重试”。</p>
+<p>双峰意味着两件事：<strong>P50 好看但 P99 难看</strong>；超时重试会二次计费。务实的做法是按分支设两套 SLO，并且把重试改成“只上报不重试”。</p>
 <p><strong>问：prompt 要不要改？</strong></p>
 <p>答：要，而且是减法。以前为了让模型认真点，大家爱写“请一步一步思考”。在系统级模型里，这类指令可能<strong>把请求推去推理分支</strong>，白付钱。</p>
-<p>一个反直觉的观察：删掉这些“叮嘱”后，简单任务的正确率没变，延迟降了一半。</p>
+<p>这里有个反直觉的结果：删掉这些“叮嘱”后，简单任务的正确率没变，延迟降了一半。</p>
 <p><strong>问：那还会有人想用别的模型吗？</strong></p>
 <p>答：会，两类人。</p>
 <ol>
@@ -88,7 +88,7 @@
 <p>这两类需求恰好是开源模型的入口。8 月 5 日出的 <a href="https://huggingface.co/openai/gpt-oss-120b">gpt-oss</a>（120B/20B、MoE、MXFP4、Apache 2.0）就是同一家公司的另一半答案：<strong>要么把选择权交出去换省心，要么自己维护路由换控制</strong>。</p>
 <p><strong>问：那你们最后怎么定？</strong></p>
 <p>答：两条路分开走，不追求统一。系统级模型做通用入口，要算账的路径还是自己路由。</p>
-<p>上线 36 小时的实测：内部工具那一类请求自己路由到小尺寸模型，单请求成本约为系统级模型的 1/20，正确率低 1.8 分；面向用户的主入口交给系统级模型，只给 <code>low</code> hint，推理分支占比从 45% 降到 12%，P99 从 38 s 回到 21 s。</p>
+<p>两条路分开走的 36 小时量级的账：内部工具那一类请求自己路由到小尺寸模型，单请求成本约为系统级模型的 1/20，正确率低 1.8 分；面向用户的主入口交给系统级模型，只给 <code>low</code> hint，推理分支占比从 45% 降到 12%，P99 从 38 s 回到 21 s。</p>
 <p>两条路的差别不在模型强弱，而在<strong>谁承担回归风险</strong>：走上游路由，行为随供应商调权重而漂，日志里只剩一个总 token 数；走自己的路由，漂了至少能翻出是哪个版本改的。</p>
 <p>同一批请求在两条路上的成本差接近一个数量级，而用户能感知到的只有最后那 21 秒。</p>
 <h2 id="参考">参考</h2>

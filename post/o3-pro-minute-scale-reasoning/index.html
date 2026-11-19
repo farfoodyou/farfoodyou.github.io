@@ -38,7 +38,7 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
@@ -99,7 +99,7 @@ result = st.output</code></pre>
 <li><strong>账单归因</strong>：单次任务可能横跨多个子请求（工具调用、重试），成本要能按 task 聚合成一个数，否则没法定价。</li>
 </ol>
 <h2 id="这类模型会被谁用">这类模型会被谁用</h2>
-<p>我倾向于：<strong>几乎不会被普通用户直接用</strong>。它的用户是三类系统：</p>
+<p>一个判断是：<strong>几乎不会被普通用户直接用</strong>。它的用户是三类系统：</p>
 <ul>
 <li><strong>agent 编排层</strong>：把难题升级到 pro 档，其余走便宜模型（成本分层的关键）；</li>
 <li><strong>CI/代码审查</strong>：异步、可等待、结果可验证；</li>
@@ -107,8 +107,8 @@ result = st.output</code></pre>
 </ul>
 <p>换句话说，<strong>o3-pro 是基础设施组件，不是聊天模型</strong>。它存在的意义是把“最高可靠性”这一档做成可采购的 API，而不是让所有人日常调用。</p>
 <h2 id="还没解决的">还没解决的</h2>
-<p>最直接的是<strong>取消的粒度</strong>。我们测过一次客户端断开：上游进程退了，但那张卡上已经在跑的 batch 没有回收，下一个任务得等它自然结束。多租户下这部分损耗没有便宜的计量方式，我只能按峰值预留。</p>
-<p>第二个没答案的是<strong>思考缓存的复用边界</strong>。分钟级任务里同一份上下文会被带进多个子请求，理论上前缀缓存能命中，但工具结果插进上下文之后，后面那段 KV 的偏移就变了。命中率能到多少取决于工具返回的插入位置，我们的样本太少，测不出稳定值。</p>
+<p>最直接的是<strong>取消的粒度</strong>。客户端断开的后果可以观察：上游进程退了，但那张卡上已经在跑的 batch 没有回收，下一个任务得等它自然结束。多租户下这部分损耗没有便宜的计量方式，只能按峰值预留。</p>
+<p>第二个没答案的是<strong>思考缓存的复用边界</strong>。分钟级任务里同一份上下文会被带进多个子请求，理论上前缀缓存能命中，但工具结果插进上下文之后，后面那段 KV 的偏移就变了。命中率能到多少取决于工具返回的插入位置，公开样本太少，测不出稳定值。</p>
 <p>第三个是<strong>定价</strong>。单任务成本能聚合，但“多花三分钟换少一次重试”到底值多少钱，取决于业务对错误的定价，从系统里算不出来。</p>
 <h2 id="出处">出处</h2>
 <ul>

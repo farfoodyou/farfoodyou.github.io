@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Kimi K2：1T MoE 全权重开源，以及 Muon 优化器的一次大考</h1>
-    <p class="meta"><time datetime="2025-07-12T23:10:00">2025-07-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2462 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-07-12T23:10:00">2025-07-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2460 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#muon-优化器的规模化">Muon 优化器的规模化</a></li>
 <li class="h2"><a href="#155t-token-与-agentic-数据">15.5T token 与 agentic 数据</a></li>
@@ -114,7 +114,7 @@
 </ul>
 <p>所以 K2 的路线是：<strong>先做一个又快又稳的执行者，把思考留给需要的地方</strong>（后续的 K2-Thinking 补上了这一块）。这个分工和 Claude 的 Sonnet/Opus、Gemini 的 Flash/Pro 是同一逻辑，只是 K2 是从“完全不思考”起步。</p>
 <h2 id="没测出来的">没测出来的</h2>
-<p>MuonClip 的 clip 阈值 tau 是全局一个还是分层设，报告没写；1T 规模上这个超参的敏感区间有多宽，也没有扫参结果。官方说“零不稳定”，但没公开 loss 曲线分阶段的细节，所以 Muon 能不能推到 3T，现在只能算猜测。还有一条我确实不知道答案：激活比例从 3.2% 再压到 2%，路由退化的临界点在哪里，取决于训练 token 与专家数的配比，K2 这一版没有给对照组。</p>
+<p>MuonClip 的 clip 阈值 tau 是全局一个还是分层设，报告没写；1T 规模上这个超参的敏感区间有多宽，也没有扫参结果。官方说“零不稳定”，但没公开 loss 曲线分阶段的细节，所以 Muon 能不能推到 3T，现在只能算猜测。还有一条确实没有答案：激活比例从 3.2% 再压到 2%，路由退化的临界点在哪里，取决于训练 token 与专家数的配比，K2 这一版没有给对照组。</p>
 <h2 id="两组数放在一起">两组数放在一起</h2>
 <p>把 K2 和上一代 671B/37B 的部署账并排放：总参数从 671B 涨到 1T（+49%），权重从 671GB 涨到 1TB，但每 token 要读的激活权重只从 37GB 降到 32GB，H200 上对应 7.7ms 和 6.7ms 的 decode 单步——<strong>参数多了一半，单流延迟只省 13%</strong>。稀疏化的收益落在算力侧（每 token FLOPs 少 14%），不在带宽侧；真要降单流延迟，得靠更狠的量化：INT4 后 32B 激活只占 16GB，单步掉到 3.3ms，代价是精度要重新评。</p>
 <h2 id="原文在这">原文在这</h2>

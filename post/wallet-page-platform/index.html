@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>钱包页平台化：页面、分组、单元三层抽象 - farfood</title>
-<meta name="description" content="一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。">
+<meta name="description" content="一个页面塞到二十六个运营位，改一句文案要三天。判据先行，三个方案并排比过之后，落在三层数据驱动。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/wallet-page-platform/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "钱包页平台化：页面、分组、单元三层抽象", "description": "一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。", "datePublished": "2021-06-22T21:05:00+08:00", "dateModified": "2021-06-22T21:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/wallet-page-platform/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "页面搭建, 数据驱动, 分层抽象, 灰度"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "钱包页平台化：页面、分组、单元三层抽象", "description": "一个页面塞到二十六个运营位，改一句文案要三天。判据先行，三个方案并排比过之后，落在三层数据驱动。", "datePublished": "2021-06-22T21:05:00+08:00", "dateModified": "2021-06-22T21:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/wallet-page-platform/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "页面搭建, 数据驱动, 分层抽象, 灰度"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="钱包页平台化：页面、分组、单元三层抽象 - farfood">
-<meta property="og:description" content="一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。">
+<meta property="og:description" content="一个页面塞到二十六个运营位，改一句文案要三天。判据先行，三个方案并排比过之后，落在三层数据驱动。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/wallet-page-platform/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="钱包页平台化：页面、分组、单元三层抽象 - farfood">
-<meta name="twitter:description" content="一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。">
+<meta name="twitter:description" content="一个页面塞到二十六个运营位，改一句文案要三天。判据先行，三个方案并排比过之后，落在三层数据驱动。">
 <meta property="article:published_time" content="2021-06-22T21:05:00+08:00">
 <meta name="keywords" content="页面搭建, 数据驱动, 分层抽象, 灰度">
 </head>
@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">钱包页平台化：页面、分组、单元三层抽象</h1>
-    <p class="meta"><time datetime="2021-06-22T21:05:00">2021-06-22</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/架构/">架构</a></p>
+    <p class="meta"><time datetime="2021-06-22T21:05:00">2021-06-22</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2497 字 <a class="cat" href="/categories/架构/">架构</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
 <li class="h2"><a href="#三层各自管什么">三层各自管什么</a></li>
@@ -54,7 +54,7 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>钱包首页从三个运营位长到二十六个，用了不到一年。改动成本不是线性涨的：第三个位是加一段代码，第二十六个位是加一段代码再加一次三方评审，没人敢确定这段不会碰到别人的位置。</p>
-<p>挑方案之前我先摆了五条判据，后面所有讨论都对着它打分：</p>
+<p>挑方案之前先列五条判据，后面所有讨论都对着它打分：</p>
 <ul>
 <li>P1 运营换文案、换图、调顺序，要不要研发介入</li>
 <li>P2 某个运营位出错，能不能只回滚那一个</li>

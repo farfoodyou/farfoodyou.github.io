@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>从「推配置」到「拉配置」：一次调度配置下发改造 - farfood</title>
+<title>从「推配置」到「拉配置」：调度配置下发链路的改造 - farfood</title>
 <meta name="description" content="调度系统把配置从 controller 推给 server 时，一次网络抖动就会让某台机器永久停在旧规则上。改成定期拉取 + 版本对比之后，失效模式从「永不收敛」变成了「延迟收敛」。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/pull-not-push-config/">
@@ -15,16 +15,16 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "从「推配置」到「拉配置」：一次调度配置下发改造", "description": "调度系统把配置从 controller 推给 server 时，一次网络抖动就会让某台机器永久停在旧规则上。改成定期拉取 + 版本对比之后，失效模式从「永不收敛」变成了「延迟收敛」。", "datePublished": "2020-01-06T09:20:00+08:00", "dateModified": "2020-01-06T09:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/pull-not-push-config/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "配置管理, 分布式, 最终一致, 容灾"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "从「推配置」到「拉配置」：调度配置下发链路的改造", "description": "调度系统把配置从 controller 推给 server 时，一次网络抖动就会让某台机器永久停在旧规则上。改成定期拉取 + 版本对比之后，失效模式从「永不收敛」变成了「延迟收敛」。", "datePublished": "2020-01-06T09:20:00+08:00", "dateModified": "2020-01-06T09:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/pull-not-push-config/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "配置管理, 分布式, 最终一致, 容灾"}</script>
 
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="从「推配置」到「拉配置」：一次调度配置下发改造 - farfood">
+<meta property="og:title" content="从「推配置」到「拉配置」：调度配置下发链路的改造 - farfood">
 <meta property="og:description" content="调度系统把配置从 controller 推给 server 时，一次网络抖动就会让某台机器永久停在旧规则上。改成定期拉取 + 版本对比之后，失效模式从「永不收敛」变成了「延迟收敛」。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/pull-not-push-config/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="从「推配置」到「拉配置」：一次调度配置下发改造 - farfood">
+<meta name="twitter:title" content="从「推配置」到「拉配置」：调度配置下发链路的改造 - farfood">
 <meta name="twitter:description" content="调度系统把配置从 controller 推给 server 时，一次网络抖动就会让某台机器永久停在旧规则上。改成定期拉取 + 版本对比之后，失效模式从「永不收敛」变成了「延迟收敛」。">
 <meta property="article:published_time" content="2020-01-06T09:20:00+08:00">
 <meta name="keywords" content="配置管理, 分布式, 最终一致, 容灾">
@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">从「推配置」到「拉配置」：一次调度配置下发改造</h1>
-    <p class="meta"><time datetime="2020-01-06T09:20:00">2020-01-06</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2016 字 <a class="cat" href="/categories/架构/">架构</a></p>
+    <h1 class="post-title">从「推配置」到「拉配置」：调度配置下发链路的改造</h1>
+    <p class="meta"><time datetime="2020-01-06T09:20:00">2020-01-06</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2154 字 <a class="cat" href="/categories/架构/">架构</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#推模式的失效模式">推模式的失效模式</a></li>
 <li class="h2"><a href="#改成拉版本号-定期对比">改成拉：版本号 + 定期对比</a></li>
@@ -51,7 +51,7 @@
 <li class="h2"><a href="#还需要一层回执">还需要一层「回执」</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>去年年底接手调度配置这块时，线上有一个说不清严重程度、但一直没人敢否认的问题：<strong>配置下发之后，有极少数机器用的还是旧规则</strong>。</p>
+<p>调度配置的下发链路上有一个说不清严重程度、但一直没人敢否认的问题：<strong>配置下发之后，有极少数机器用的还是旧规则</strong>。</p>
 <p>比例不高，千分之几的量级，平时看不出来。但它出现在两种最不能出错的场景里——数据中心级别的容灾切换，以及业务方新配置的网络策略上线。前者意味着有一批用户切不到正常机房，后者意味着配置单「生效了」但实际没生效。</p>
 <h2 id="推模式的失效模式">推模式的失效模式</h2>
 <p>原来的链路是 controller 遍历所有 server，逐个发 HTTP 请求把最新配置推下去。看起来没问题，实际上有四种失效：</p>
@@ -95,16 +95,17 @@
         }
     }
 }</code></pre>
-<p>有几个细节是踩过坑才定下来的：</p>
+<p>有几个细节必须定死：</p>
 <ul>
 <li><strong>版本探测要轻</strong>。只返回一个整数，不要让「检查」变成一次全量传输。检查的 QPS 等于机器台数除以轮询间隔，机器一多就是每秒几十上百次，量不小。</li>
 <li><strong>拉回来的版本号必须校验</strong>。中间可能有别的变更插入，你请求 v=7 拿回来的是 v=8，这时候要么接受 8，要么丢弃等下一轮。<strong>千万不能把 8 当作 7 应用</strong>，否则本地版本号和内容不一致，之后所有比较都是错的。</li>
 <li><strong>applier 必须原子</strong>。Go 里用 <code>atomic.Value</code> 存整份不可变配置，读侧永远是完整快照，不存在「改了一半被读到」。</li>
 <li><strong>本地要落盘</strong>。否则重启瞬间是无配置状态，对调度系统等于不可用。</li>
 </ul>
+<p>轮询间隔 N 是唯一要调的参数，它同时定下两件事：收敛上界是 N 秒（最坏情况刚好错过一次检查），检查 QPS 是台数除以 N。按 3000 台、N=10 秒算，是 300 QPS 的纯整数查询；N 放到 30 秒降到 100 QPS，代价是生效的最坏延迟变成 30 秒。经验上 N 取 5 到 15 秒，紧急配置不靠缩短 N 解决，靠独立通道。</p>
 <h2 id="代价从立即变成最长-n-秒">代价：从「立即」变成「最长 N 秒」</h2>
 <p>推模式最诱人的地方是「改完立刻生效」。拉模式放弃了这个，换来的是<strong>有界收敛</strong>：无论中间挂了多少东西，只要 server 活着、controller 活着，它一定会在 N 秒内追平。</p>
-<p>对调度系统来说这笔交易是划算的，因为配置本身的语义也不是「立即」。真正立即的需求只有停机和熔断，这类配置我留了一条独立的推通道（带签名、带确认回执），跟大批量的规则配置分开走。<strong>别让 5% 的紧急需求把 95% 的常规路径设计成同步的。</strong></p>
+<p>对调度系统来说这笔交易是划算的，因为配置本身的语义也不是「立即」。真正立即的需求只有停机和熔断，这类配置需要一条独立的推通道（带签名、带确认回执），跟大批量的规则配置分开走。按经验口径二八开算，别让 5% 的紧急需求把 95% 的常规路径设计成同步的。</p>
 <h2 id="还需要一层回执">还需要一层「回执」</h2>
 <p>拉模式解决了「会不会收敛」，但没解决「现在到底收敛了没有」。所以又加了两个东西：</p>
 <ul>
@@ -112,7 +113,7 @@
 <li>配置单页面上直接显示这个分布，运营和业务方自己就能看出「有没有生效」。</li>
 </ul>
 <p>这一步做完，配置系统才有完整的语义：<strong>变更从一个请求变成了一段可以观测的过程</strong>。</p>
-<p>这四种失效里，前两种被拉模式消灭了（错过的下一轮会补上），后两种被「版本号单调递增 + 原子应用」消灭了（旧版本永远盖不掉新版本）。这套东西后来在容灾演练里被反复验证。切换时出问题的多半是「配置没到」，「配置错了」反而是少数。</p>
+<p>这四种失效里，前两种被拉模式消灭了（错过的下一轮会补上），后两种被「版本号单调递增 + 原子应用」消灭了（旧版本永远盖不掉新版本）。这套结构在容灾演练里的表现也一致：切换时出问题的多半是「配置没到」，「配置错了」反而是少数。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://martinfowler.com/eaaDev/EventSourcing.html">Martin Fowler: Event Sourcing 与状态收敛的讨论</a></li>
@@ -121,7 +122,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/配置管理/">配置管理</a><a class="tag" href="/tags/分布式/">分布式</a><a class="tag" href="/tags/最终一致/">最终一致</a><a class="tag" href="/tags/容灾/">容灾</a></p>
-  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E4%BB%8E%E3%80%8C%E6%8E%A8%E9%85%8D%E7%BD%AE%E3%80%8D%E5%88%B0%E3%80%8C%E6%8B%89%E9%85%8D%E7%BD%AE%E3%80%8D%EF%BC%9A%E4%B8%80%E6%AC%A1%E8%B0%83%E5%BA%A6%E9%85%8D%E7%BD%AE%E4%B8%8B%E5%8F%91%E6%94%B9%E9%80%A0" target="_blank" rel="noopener">分享到 X</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E4%BB%8E%E3%80%8C%E6%8E%A8%E9%85%8D%E7%BD%AE%E3%80%8D%E5%88%B0%E3%80%8C%E6%8B%89%E9%85%8D%E7%BD%AE%E3%80%8D%EF%BC%9A%E8%B0%83%E5%BA%A6%E9%85%8D%E7%BD%AE%E4%B8%8B%E5%8F%91%E9%93%BE%E8%B7%AF%E7%9A%84%E6%94%B9%E9%80%A0" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/json-as-database/">← 拿 JSON 字段当表用，是怎么把配置平台拖死的</a><a class="next" href="/post/2019-03-23/">从现在开始, 记录成长 →</a></nav>
 </article>
 <section class="comments">

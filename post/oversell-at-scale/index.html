@@ -38,23 +38,23 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">3w/s 下名额超卖是怎么发生的</h1>
-    <p class="meta"><time datetime="2021-12-21T22:05:00">2021-12-21</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2021-12-21T22:05:00">2021-12-21</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2488 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#可售数预扣真扣是三份状态">可售数、预扣、真扣是三份状态</a></li>
 <li class="h2"><a href="#一段-lua-承担了什么">一段 Lua 承担了什么</a></li>
 <li class="h2"><a href="#超卖的空间不在脚本里在复制和回补上">超卖的空间不在脚本里，在复制和回补上</a></li>
 <li class="h2"><a href="#分段之后的新问题">分段之后的新问题</a></li>
-<li class="h2"><a href="#为什么最后接受了千分之三">为什么最后接受了千分之三</a></li>
+<li class="h2"><a href="#千分之三为什么可以接受">千分之三为什么可以接受</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>压测报告里有一列我一开始没打算看：脚本统计的「DECRBY 返回负值的次数」，不在任何既定指标里。那轮目标是 3w/s 下单峰值，报告里成功率 99.98%，挺好看，这一列却是 41200。</p>
+<p>压测报告里有一列不在任何既定指标里：脚本统计的「DECRBY 返回负值的次数」。那轮目标是 3w/s 下单峰值，报告里成功率 99.98%，挺好看，这一列却是 41200。</p>
 <p>返回负数表示那一秒该名额的可用数已经小于零。41200 次意味着大量请求在卖完之后还挤进了扣减逻辑，只是被后面的环节挡掉了。挡掉不代表没发生：真实开卖那天，挡它的那环慢了，就是超卖。</p>
-<p>这次把链路从头走一遍，看超卖空间在哪。</p>
+<p>把链路从头走到尾，超卖空间在哪就清楚了。</p>
 <h2 id="可售数预扣真扣是三份状态">可售数、预扣、真扣是三份状态</h2>
 <p>链路上有三个地方在描述「还剩多少」：</p>
 <div class="table-wrap"><table>
@@ -109,9 +109,9 @@ return left - tonumber(ARGV[1])</code></pre>
 <tr><td>分段预扣 + 本地令牌</td><td>10w/s 以上</td><td>会；碎片方向是少卖</td><td>需要全局校准</td></tr>
 </tbody>
 </table></div>
-<h2 id="为什么最后接受了千分之三">为什么最后接受了千分之三</h2>
+<h2 id="千分之三为什么可以接受">千分之三为什么可以接受</h2>
 <p>零超卖只有一种做法：所有扣减串行进同一个共识组，延迟乘节点数，3w/s 撑不住。既然做不到，就把超卖量算成可承受的数，提前想好怎么消化。</p>
-<p>当时的账是这样：峰值 3w/s 持续 30 秒，总请求 90 万。超卖只算复制窗口和回补两项：切主丢掉的 100 到 400ms 扣减，按千分之三估约 2700 单。分段碎片是反方向的账，1800 到 4500 单少卖，不进这个数。消化那 2700 单靠候补队列加等值补偿，每单几十块，不到十万。相比之下，为消除这 2700 单去做全局串行，硬件多三倍，延迟从 40ms 涨到 150ms 以上。</p>
+<p>账是这样算的：峰值 3w/s 持续 30 秒，总请求 90 万。超卖只算复制窗口和回补两项：切主丢掉的 100 到 400ms 扣减，按千分之三估约 2700 单。分段碎片是反方向的账，1800 到 4500 单少卖，不进这个数。消化那 2700 单靠候补队列加等值补偿，每单几十块，不到十万。相比之下，为消除这 2700 单去做全局串行，硬件多三倍，延迟从 40ms 涨到 150ms 以上。</p>
 <p>这个取舍有前提：名额必须是可替代的，多给一个的边际成本有限，比如发券、发资格、预约位。卖不可替代的东西（特定座位、特定编号）时，千分之三就不成立，只能退回单行条件更新加限流，用吞吐换正确性。</p>
 <h2 id="参考">参考</h2>
 <ul>
@@ -170,7 +170,7 @@ return left - tonumber(ARGV[1])</code></pre>
 <li class="h2"><a href="#一段-lua-承担了什么">一段 Lua 承担了什么</a></li>
 <li class="h2"><a href="#超卖的空间不在脚本里在复制和回补上">超卖的空间不在脚本里，在复制和回补上</a></li>
 <li class="h2"><a href="#分段之后的新问题">分段之后的新问题</a></li>
-<li class="h2"><a href="#为什么最后接受了千分之三">为什么最后接受了千分之三</a></li>
+<li class="h2"><a href="#千分之三为什么可以接受">千分之三为什么可以接受</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li><li><a href="/post/order-state-machine/">订单状态机：让乱序到达变成不可能</a><time>2021-04</time></li><li><a href="/post/close-order-reconcile/">一次「关单」引发的对账</a><time>2021-04</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">

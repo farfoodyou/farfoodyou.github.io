@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">勒索软件的加密指纹：非对称文件头识别</h1>
-    <p class="meta"><time datetime="2022-08-30T15:20:00">2022-08-30</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2494 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2022-08-30T15:20:00">2022-08-30</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2491 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#加密之后还剩什么">加密之后还剩什么</a></li>
 <li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
@@ -75,7 +75,7 @@
 <tr><td>依赖类型识别</td><td>是</td><td>是</td><td>部分</td></tr>
 </tbody>
 </table></div>
-<p>A 最粗也最好实现。实测口径：2MB 随机数据按 64KB 滑窗算香农熵，中位数 7.998；deflate 压过的可执行文件 7.4 到 7.8；JPEG 主体 7.9 以上。阈值必须配类型识别，单靠熵值分不清「加密」和「压过」。</p>
+<p>A 最粗也最好实现。经验口径：2MB 随机数据按 64KB 滑窗算香农熵，中位数 7.998；deflate 压过的可执行文件 7.4 到 7.8；JPEG 主体 7.9 以上。阈值必须配类型识别，单靠熵值分不清「加密」和「压过」。</p>
 <p>B 的判据是错配：头里写着节表偏移，那个偏移上没有任何合法结构；或者大小字段和实际大小差了一整个 16 的倍数。部分加密的实现必然留下这类错配，它保留头部只为迷惑用户。代价是要解析格式，而解析器本身是攻击面，得跑在隔离进程里。</p>
 <p>C 最便宜也最准：从尾部取 512 字节算熵，同时检查这个位置是不是某个格式的合法结尾。它对把密钥块写进独立索引文件的实现无效。</p>
 <h2 id="误报从哪来">误报从哪来</h2>
@@ -94,7 +94,7 @@
 <tr><td>已加密的备份分片</td><td>本来就是密文</td><td>命名规则 + 同批长度一致</td></tr>
 </tbody>
 </table></div>
-<p>更隐蔽的误报源是采样窗口。4KB 窗口在混合数据上抖动很大，全零填充紧挨着密文，窗口跨过去就得到中间值。后来固定 64KB 窗口、取 8 个等距位置看中位数，单点异常翻不动结论。</p>
+<p>更隐蔽的误报源是采样窗口。4KB 窗口在混合数据上抖动很大，全零填充紧挨着密文，窗口跨过去就得到中间值。固定 64KB 窗口、取 8 个等距位置看中位数，单点异常就翻不动结论。</p>
 <h2 id="落成一函数">落成一函数</h2>
 <p>判定顺序按代价排：长度算术、尾部密钥块、最后才是需要类型识别的全段熵。</p>
 <pre data-lang="python"><code class="language-python">import math, collections
@@ -115,7 +115,7 @@ def fingerprint(buf, declared_type):
     high = median_window_entropy(body, win=65536, samples=8) &gt; 7.95
     score = 0.5 * key_block + 0.3 * (aligned and high) + 0.2 * high
     return round(score, 2)</code></pre>
-<p>阈值是经验值，写死前先跑正常文件集合看 99 分位。40 万个文件里 <code>key_block</code> 误报 11 个，全是数据库页文件：尾部固定长度、内容压缩过、熵刚好压线。这类后来进了尾部白名单。</p>
+<p>阈值是经验值，写死前先跑正常文件集合看 99 分位。40 万个文件里 <code>key_block</code> 误报 11 个，全是数据库页文件：尾部固定长度、内容压缩过、熵刚好压线。这类进了尾部白名单。</p>
 <h2 id="一句判断">一句判断</h2>
 <p>三种判据里只有尾部密钥块是从密码学参数推出来的，不随实现风格变；熵和对齐是从「密文看起来像什么」推出来的，得跟类型识别绑着用。</p>
 <h2 id="参考">参考</h2>
@@ -127,7 +127,7 @@ def fingerprint(buf, declared_type):
   </div>
   <p class="tag-list"><a class="tag" href="/tags/加密特征/">加密特征</a><a class="tag" href="/tags/熵/">熵</a><a class="tag" href="/tags/文件格式/">文件格式</a><a class="tag" href="/tags/误报治理/">误报治理</a><a class="tag" href="/tags/勒索软件/">勒索软件</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8B%92%E7%B4%A2%E8%BD%AF%E4%BB%B6%E7%9A%84%E5%8A%A0%E5%AF%86%E6%8C%87%E7%BA%B9%EF%BC%9A%E9%9D%9E%E5%AF%B9%E7%A7%B0%E6%96%87%E4%BB%B6%E5%A4%B4%E8%AF%86%E5%88%AB" target="_blank" rel="noopener">分享到 X</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/pe-format-intro/">← PE 解析入门：头、节表、导入表里那三个我读错的字段</a><a class="next" href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报 →</a></nav>
+  <nav class="post-nav"><a class="prev" href="/post/pe-format-intro/">← PE 解析入门：头、节表、导入表里三个容易读错的字段</a><a class="next" href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报 →</a></nav>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>

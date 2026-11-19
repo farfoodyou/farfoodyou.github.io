@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</h1>
-    <p class="meta"><time datetime="2025-10-16T09:20:00">2025-10-16</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1961 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-10-16T09:20:00">2025-10-16</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1960 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#口径733-是怎么测的">口径：73.3% 是怎么测的</a></li>
 <li class="h2"><a href="#价格差-3-倍意味着架构可以变">价格差 3 倍意味着架构可以变</a></li>
@@ -118,8 +118,8 @@
 </ul>
 <p><strong>延迟是功能</strong>：在单人对话里它是体验，在一条几十步的调用链里它是总账。</p>
 <h2 id="一个反例把规划也交给小模型">一个反例：把规划也交给小模型</h2>
-<p>我们试过一次极端配置：规划、执行、验收全用 Haiku，只留一个 Sonnet 调用做最后审核。在“跨三个文件的接口改名”这类任务上，40 次调用里有 11 次在原地打转：同一个函数签名改了七八遍，测试跑不过就换一种改法再改回去。</p>
-<p>失败点不在单步能力，在<strong>任务的自我诊断</strong>：模型判断不了“我卡住了”，于是把预算全花在重复动作上。换成 Sonnet 规划、Haiku 执行之后，同样的任务 22 次调用收敛，比全小模型那版少一半空转。</p>
+<p>一种极端配置是规划、执行、验收全用 Haiku，只留一个 Sonnet 调用做最后审核。在“跨三个文件的接口改名”这类任务上，40 次调用里有 11 次在原地打转：同一个函数签名改了七八遍，测试跑不过就换一种改法再改回去。</p>
+<p>失败点不在单步能力，在<strong>任务的自我诊断</strong>：模型判断不了自己卡住了，于是把预算全花在重复动作上。换成 Sonnet 规划、Haiku 执行之后，同类任务的调用数能压到 22 次左右，比全小模型那版少一半空转。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>发布公告（含评测脚注与定价）：<a href="https://www.anthropic.com/news/claude-haiku-4-5">Introducing Claude Haiku 4.5</a></li>

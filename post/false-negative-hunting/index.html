@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">漏报从哪来：用回归集找检测盲区</h1>
-    <p class="meta"><time datetime="2024-02-06T21:00:00">2024-02-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2371 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2024-02-06T21:00:00">2024-02-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2370 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三种集合的分工">三种集合的分工</a></li>
 <li class="h2"><a href="#盲区归因的四类">盲区归因的四类</a></li>
@@ -52,7 +52,7 @@
 <li class="h2"><a href="#一个季度的账">一个季度的账</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>漏报不会自己报出来。误报有工单，漏报要等下游出事，才有人去翻日志。那一个季度攒了三个：家族 A 换了外壳，规则里基于旧入口点签名的条件全部失效；家族 B 出了托管版本，规则只写了原生特征；家族 C 的一批样本体积在 60MB 以上，在流水线的体积门就被挡掉，连解析都没进。</p>
+<p>漏报不会自己报出来。误报有工单，漏报要等下游出事，才有人去翻日志。一个季度里攒出三个：家族 A 换了外壳，规则里基于旧入口点签名的条件全部失效；家族 B 出了托管版本，规则只写了原生特征；家族 C 的一批样本体积在 60MB 以上，在流水线的体积门就被挡掉，连解析都没进。</p>
 <p>三个对应的盲区类型不同：特征失效、格式覆盖缺失、前置门误杀。共同点是回归集里没有能暴露它们的样本，所以规则包上线时所有指标都是绿的。</p>
 <h2 id="三种集合的分工">三种集合的分工</h2>
 <p>判据是四条：一个失败能不能落到「哪个族、哪类能力」而不是「哪条哈希」；规则包发布前能不能回答「这次改动让哪些族掉了」；采集渠道变了，集合会不会整体失真；全量跑能不能进 CI（超过半小时的方案没人看结果）。这四条直接当表头用，横着看就是三个方案的差别：</p>
@@ -91,9 +91,9 @@
 </tbody>
 </table></div>
 <p>解析失败当干净最容易被忽略，代码里往往只是一行 <code>if not doc: return clean</code>。检测流水线里「拿不到结论」和「结论是干净」必须是两种状态，这跟延迟超时是同一个问题。前置门那一类也一样：它的毛病不在规则写宽了，而在门是静默的，只有 <code>skip_reason</code> 这样一个字段能把「没进来」和「进来被判干净」分开。</p>
-<p>特征漂移靠解析器版本号加特征快照。我们后来每次解析器升级都对 500 个样本存一份特征值，升级前后做差，差异超过阈值的字段进复核。这一条抓到过一次节熵计算改动，它让一批加壳样本的分数整体下移，规则没动，召回掉了两个点。</p>
+<p>特征漂移靠解析器版本号加特征快照。解析器每次升级都对 500 个样本存一份特征值，升级前后做差，差异超过阈值的字段进复核。这一条抓到过一次节熵计算改动，它让一批加壳样本的分数整体下移，规则没动，召回掉了两个点。</p>
 <h2 id="门禁写成可执行的">门禁写成可执行的</h2>
-<p>回归集只有变成门禁才有约束力。当时的配置大概是这样：</p>
+<p>回归集只有变成门禁才有约束力。配置大致是这样（示例口径）：</p>
 <pre data-lang="yaml"><code class="language-yaml">gate:
   corpus: family-v3            # 37 族，每族至少 6 条
   require:
@@ -108,7 +108,7 @@
 <li>每周统计拦下次数和被绕过次数。绕过率高于两成，说明门槛或样本本身有问题，不是执行问题。</li>
 </ul>
 <h2 id="候选池从哪里来">候选池从哪里来</h2>
-<p>集合会腐化：族在演化，采集渠道在变，一年后相当一部分样本不再代表线上。只靠「出事之后把漏掉的那条加进去」，回归集会退化成一个补丁清单。我改成三条固定取样口：族内低分（每族按分数排序取尾部，族内命中率双峰时这一档产出最多）、被前置门拦掉（按 <code>skip_reason</code> 分层，体积门与类型门各抽一档）、解析失败（归因表里排第二的那一类）。</p>
+<p>集合会腐化：族在演化，采集渠道在变，一年后相当一部分样本不再代表线上。只靠「出事之后把漏掉的那条加进去」，回归集会退化成一个补丁清单。改法是三条固定取样口：族内低分（每族按分数排序取尾部，族内命中率双峰时这一档产出最多）、被前置门拦掉（按 <code>skip_reason</code> 分层，体积门与类型门各抽一档）、解析失败（归因表里排第二的那一类）。</p>
 <p>每档每天抽几十条进候选池，人确认后才入族。标注预算是每天一个人两小时，超了就按族轮换，宁可慢也不扩。双跑比对也能产候选，但它要两套流水线同时跑，成本高，只在规则包大改时开一次。</p>
 <h2 id="一个季度的账">一个季度的账</h2>
 <p>家族级回归集 37 族 310 条，全量 50 秒，进每日构建；哈希回放集 4200 条，只在上线前跑，11 分钟；能力矩阵 24 格，当时空了 5 格，最久的一格空了七个月。上线后一个季度靠这套东西抓出 11 个盲区：6 个前置门、4 个解析失败当干净、1 个特征漂移。</p>

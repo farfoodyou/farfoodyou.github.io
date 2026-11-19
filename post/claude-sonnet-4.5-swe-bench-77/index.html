@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Claude Sonnet 4.5：77.2% 的 SWE-bench，和一份诚实的测评说明</h1>
-    <p class="meta"><time datetime="2025-09-30T09:10:00">2025-09-30</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2169 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-09-30T09:10:00">2025-09-30</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2176 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#772-是怎么来的">77.2% 是怎么来的</a></li>
 <li class="h2"><a href="#osworld-的跳变说明什么">OSWorld 的跳变说明什么</a></li>
@@ -83,7 +83,7 @@
 <li><strong>一句 prompt 就能加分</strong>。“先写测试”这类指令会显著改变结果，所以横评时 prompt 必须公开。</li>
 <li><strong>1M 配置能到 78.2%，但没被采用</strong>。官方说 1M 配置牵涉到近期的推理稳定性问题，所以主分数用 200K。</li>
 </ol>
-<p>第 4 点是我最欣赏的地方：<strong>主动说明“更高分为什么不采信”</strong>。大多数发布只报最好的那个数。</p>
+<p>第 4 点是这份脚注里最值得看的地方：<strong>主动说明“更高分为什么不采信”</strong>。大多数发布只报最好的那个数。</p>
 <h2 id="osworld-的跳变说明什么">OSWorld 的跳变说明什么</h2>
 <p>OSWorld 测的是“在真实桌面环境里完成任务”——点按钮、填表单、切窗口。42.2% → 61.4% 四个月涨 19 分，这个幅度比 SWE-bench 那 10 分更有信息量，因为：</p>
 <ul>
@@ -125,7 +125,7 @@
 </ol>
 <p>按这个顺序，77.2% 的可信度比很多“80%+”高，差别就在口径交代得是否完整。</p>
 <h2 id="没测出来的那几处">没测出来的那几处</h2>
-<p>30 小时的客户证言没说清是哪类任务，也没给每小时的失败率。我自己的长任务实验在 8 小时之后就明显退化，退化落在上下文压缩策略、工具返回噪声还是检查点粒度上，我没测出来，取决于 harness 怎么实现。公告里“1M 配置的近期推理稳定性问题”只有一句话，是并行切分下的数值问题还是长上下文注意力退化，不知道，也没见人复现过。OSWorld 的 61.4% 里有多少比例需要人类接管、SWE-bench 那 500 题里有多少靠改测试通过，同样没有公开。这几处空着，“能跑 30 小时”就只能当客户证言读。</p>
+<p>30 小时的客户证言没说清是哪类任务，也没给每小时的失败率。长任务在 8 小时之后普遍出现明显退化，退化落在上下文压缩策略、工具返回噪声还是检查点粒度上，公开材料里分辨不出来，取决于 harness 怎么实现。公告里“1M 配置的近期推理稳定性问题”只有一句话，是并行切分下的数值问题还是长上下文注意力退化，不知道，也没见人复现过。OSWorld 的 61.4% 里有多少比例需要人类接管、SWE-bench 那 500 题里有多少靠改测试通过，同样没有公开。这几处空着，“能跑 30 小时”就只能当客户证言读。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>发布公告（含评测脚注）：<a href="https://www.anthropic.com/news/claude-sonnet-4-5">Introducing Claude Sonnet 4.5</a></li>

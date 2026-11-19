@@ -38,25 +38,25 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">故障演练：怎么证明「单分片故障不影响支付」</h1>
-    <p class="meta"><time datetime="2021-02-24T09:40:00">2021-02-24</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2496 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <p class="meta"><time datetime="2021-02-24T09:40:00">2021-02-24</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先把结论写成可证伪的形式">先把结论写成可证伪的形式</a></li>
 <li class="h2"><a href="#注入手段各自的真实度">注入手段各自的真实度</a></li>
 <li class="h2"><a href="#观测指标分三类">观测指标分三类</a></li>
-<li class="h2"><a href="#那次演练的真实结果">那次演练的真实结果</a></li>
+<li class="h2"><a href="#一次演练的数字结果">一次演练的数字结果</a></li>
 <li class="h2"><a href="#报告模板">报告模板</a></li>
 <li class="h2"><a href="#边界">边界</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>「单分片故障不影响支付」这句话在评审会上被引用过很多次，但追问证据时，能拿出来的只有一次真实故障的复盘：一个分片网络黑洞十几分钟，成功率掉了一截，掉得不够久没人报障，这句话就被当成结论留了下来。</p>
-<p>问题在于它不可验证。「不影响」是多大，掉 1 个百分点内算不算，分母是全部支付还是受影响分片那部分——不把这些变成数字，演练只能演出一场大家都满意的戏。</p>
+<p>「单分片故障不影响支付」这句话在评审里被引用过很多次，但追问证据时，能拿出来的只有一次故障复盘：一个分片网络黑洞十几分钟，成功率掉了一截，掉得不够久没人报障，这句话就被当成结论留了下来。</p>
+<p>问题在于它不可验证。「不影响」是多大，掉 1 个百分点内算不算，分母是全部支付还是受影响分片那部分——不变成数字，演练只能演出一场大家都满意的戏。</p>
 <h2 id="先把结论写成可证伪的形式">先把结论写成可证伪的形式</h2>
-<p>我们最后的假设是：任一单分片（承载不超过 15% 支付流量）完全不可达 5 分钟，端到端成功率降幅 ≤ 1pp，P99 增幅 ≤ 200 毫秒，重复扣款 0 笔，未决交易在故障结束后 60 秒内回落基线。</p>
+<p>稳态假设要写成这个形式：任一单分片（承载不超过 15% 支付流量）完全不可达 5 分钟，端到端成功率降幅 ≤ 1pp，P99 增幅 ≤ 200 毫秒，重复扣款 0 笔，未决交易在故障结束后 60 秒内回落基线。</p>
 <p>四条对应四个机制：跳单生效、容量有余量、幂等成立、补偿收敛。不达标说明对应机制有问题，而不是「环境不真实」。</p>
 <p>阈值必须在注入之前写死：成功率掉 3 个点可以叫长尾，P99 翻倍可以叫重连抖动，事后解释的空间太大。先定标准，再注入。</p>
 <h2 id="注入手段各自的真实度">注入手段各自的真实度</h2>
@@ -104,9 +104,9 @@ guards:
 <tr><td>正确性</td><td>未决交易数</td><td>峰值 &lt; 基线 3 倍，60 秒回落</td></tr>
 </tbody>
 </table></div>
-<p>第三行是<strong>反向对照</strong>：跳单率没升起来，说明流量根本没打到故障分片。我第一次演练就这么假通过——探活 3 次 × 5 秒，注入只做 30 秒，跳单刚要触发就结束，报告全绿。规则改成「注入时长 ≥ 3 倍探活周期」，且必须附跳单率曲线。</p>
-<h2 id="那次演练的真实结果">那次演练的真实结果</h2>
-<p>5 分钟单分片黑洞，预期成功率降 1 个点以内，实际出现 47 秒降级窗口，成功率从 99.7% 掉到 98.9%，P99 从 180 涨到 420 毫秒，判黄。</p>
+<p>第三行是<strong>反向对照</strong>：跳单率没升起来，说明流量根本没打到故障分片。只做一次短演练就会假通过——探活 3 次 × 5 秒，注入只做 30 秒，跳单刚要触发就结束，报告全绿。规则改成「注入时长 ≥ 3 倍探活周期」，且必须附跳单率曲线。</p>
+<h2 id="一次演练的数字结果">一次演练的数字结果</h2>
+<p>5 分钟单分片黑洞（示例口径），预期成功率降 1 个点以内，实际出现 47 秒降级窗口，成功率从 99.7% 掉到 98.9%，P99 从 180 涨到 420 毫秒，判黄。</p>
 <p>失效链很清楚：探活抖动让分片在 47 秒里被判健康又判不健康两次，跳单来回搬了两批在途请求，第二批在新分片上撞到自己还没写回的幂等记录，拿到可重试错误，客户端又重试。修法是给探活加半开状态和 30 秒冷却：判定不健康后 30 秒内不接受它回来。这是参数问题，而参数问题只有演练能暴露成数字。</p>
 <h2 id="报告模板">报告模板</h2>
 <p>一页纸，不通过的也归档：</p>
@@ -119,7 +119,7 @@ guards:
 <h2 id="边界">边界</h2>
 <p>容量水位超过 70% 时不要全量注入：跳单会把失败分片的流量压到剩余分片，本来紧张的那几片会被压死，这时测的是容量上限而非容灾能力；要覆盖高水位就把比例降到 10% 左右。注入工具的爆炸半径上限要写进配置并在加载时校验——人能记住的参数，事故时记不住。</p>
 <p>演练结束必须清场：未决交易、对账差集、幂等表里的 PROCESSING 残留都归零，否则下次基线是脏的。</p>
-<p>混沌工程的原则里有一条我当判据用：实验必须有稳态假设，并且尽量在生产环境里做，<a href="https://principlesofchaos.org/">那份清单</a> 比多数内部规范克制。注入调度没必要从零写，<a href="https://github.com/chaos-mesh/chaos-mesh">chaos-mesh</a> 覆盖了网络、IO、进程几类故障；「摘掉的节点是否真摘干净」这种行为可以对照 <a href="https://www.envoyproxy.io/docs/envoy/v1.16.0/intro/arch_overview/upstream/outlier">outlier detection</a> 的设计。</p>
+<p>混沌工程的原则里有一条可以直接当判据：实验必须有稳态假设，并且尽量在生产环境里做，<a href="https://principlesofchaos.org/">那份清单</a> 比多数内部规范克制。注入调度没必要从零写，<a href="https://github.com/chaos-mesh/chaos-mesh">chaos-mesh</a> 覆盖了网络、IO、进程几类故障；「摘掉的节点是否真摘干净」这种行为可以对照 <a href="https://www.envoyproxy.io/docs/envoy/v1.16.0/intro/arch_overview/upstream/outlier">outlier detection</a> 的设计。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://principlesofchaos.org/">Principles of Chaos Engineering</a></li>
@@ -176,10 +176,10 @@ guards:
 <aside class="rail rail-right"><div class="rail-box rail-toc"><nav class="toc"><ol><li class="h2"><a href="#先把结论写成可证伪的形式">先把结论写成可证伪的形式</a></li>
 <li class="h2"><a href="#注入手段各自的真实度">注入手段各自的真实度</a></li>
 <li class="h2"><a href="#观测指标分三类">观测指标分三类</a></li>
-<li class="h2"><a href="#那次演练的真实结果">那次演练的真实结果</a></li>
+<li class="h2"><a href="#一次演练的数字结果">一次演练的数字结果</a></li>
 <li class="h2"><a href="#报告模板">报告模板</a></li>
 <li class="h2"><a href="#边界">边界</a></li>
-<li class="h2"><a href="#参考">参考</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a><time>2020-02</time></li><li><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：一次调度配置下发改造</a><time>2020-01</time></li><li><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a><time>2020-03</time></li></ul></aside></aside>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a><time>2020-02</time></li><li><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：调度配置下发链路的改造</a><time>2020-01</time></li><li><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a><time>2020-03</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

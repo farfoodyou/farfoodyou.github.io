@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">恶意 PDF 的结构与检测：一段增量更新让两条链路同时漏判</h1>
-    <p class="meta"><time datetime="2022-12-27T22:40:00">2022-12-27</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2481 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2022-12-27T22:40:00">2022-12-27</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2487 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#那十一个小时里发生了什么">那十一个小时里发生了什么</a></li>
 <li class="h2"><a href="#静态提取漏在哪">静态提取漏在哪</a></li>
@@ -70,7 +70,7 @@
 <h2 id="静态提取漏在哪">静态提取漏在哪</h2>
 <p>PDF 的结构不复杂：header、一串 <code>n g obj</code> 对象、一张交叉引用表、一个 trailer，尾部 <code>startxref</code> 给出 xref 偏移。麻烦出在「一张」上。</p>
 <p>增量更新允许在文件末尾追加对象和新的 xref 段，新 trailer 的 <code>/Prev</code> 指回上一段偏移，同一对象号出现两次时后写的生效。这条链可以有十几段，每段相当于一次「另存为」，正好够先放个干净版本过扫描再追加。</p>
-<p>我们漏掉的是两层叠加。索引器从 <code>startxref</code> 出发只读了一段 xref，把 <code>/Prev</code> 当元信息记下来，没有继续走；样本是第三次增量更新，脚本对象在最后一段。就算走完链，脚本对象还躺在 object stream 里——PDF 1.5 之后对象可以被 FlateDecode 压进 <code>/Type /ObjStm</code> 的流，明文 grep <code>/JavaScript</code> 什么都找不到。这批 40 个样本有 26 个用了对象流。</p>
+<p>实际漏判来自两层叠加。索引器从 <code>startxref</code> 出发只读了一段 xref，把 <code>/Prev</code> 当元信息记下来，没有继续走；样本是第三次增量更新，脚本对象在最后一段。就算走完链，脚本对象还躺在 object stream 里——PDF 1.5 之后对象可以被 FlateDecode 压进 <code>/Type /ObjStm</code> 的流，明文 grep <code>/JavaScript</code> 什么都找不到。这批 40 个样本有 26 个用了对象流。</p>
 <p>还有一层更细：name 允许 <code>#xx</code> 十六进制转义，<code>/JavaScript</code> 能写成 <code>/#4AavaScript</code>，字面匹配的规则集整片失效。</p>
 <pre data-lang="python"><code class="language-python">def build_index(f, start):
     objs, visited, off = {}, set(), start
@@ -86,9 +86,9 @@
     return objs</code></pre>
 <p>段数上限当时定 64。缺任一条，一个 3KB 的畸形文件就能让解析线程卡死。</p>
 <h2 id="沙箱为什么也是空的">沙箱为什么也是空的</h2>
-<p>那两轮执行的都是「打开，观察」。PDF 脚本并不保证打开时执行：<code>/OpenAction</code> 是最常见的自动路径，但这一批样本挂在文档级 <code>/AA</code> 的 <code>/WC</code>（关闭窗口）上，另有一份挂在表单域的 <code>/AA /K</code>（按键）。渲染器只在对应交互发生时才派发事件，我们没做任何交互。</p>
+<p>那两轮执行的都是「打开，观察」。PDF 脚本并不保证打开时执行：<code>/OpenAction</code> 是最常见的自动路径，但这一批样本挂在文档级 <code>/AA</code> 的 <code>/WC</code>（关闭窗口）上，另有一份挂在表单域的 <code>/AA /K</code>（按键）。渲染器只在对应交互发生时才派发事件，而这两轮执行里没有任何交互。</p>
 <p>观测面也缺。日志只抓进程、文件、网络，而 JS 里的字符串拼接、把内嵌文件写盘都在渲染器进程内部完成，得 hook 到文档 API 层才看得见。只看 syscall，等于隔着两层。</p>
-<p>两条链路是同一种错：把「我没看见」当成「不存在」。静态看不见，因为索引不全；动态看不见，因为没触发。</p>
+<p>两条链路是同一种错：把「没有观察到」当成「不存在」。静态看不见，因为索引不全；动态看不见，因为没触发。</p>
 <h2 id="改了什么">改了什么</h2>
 <ol>
 <li><strong>索引层</strong>：走完 <code>/Prev</code> 链（含 xref stream），带环检测与段上限，对象表按后写覆盖合并；每个 <code>/ObjStm</code> 解压后建二级索引。</li>

@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">大文件怎么进检测引擎：整读、mmap 与增量流式</h1>
-    <p class="meta"><time datetime="2023-02-14T21:15:00">2023-02-14</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2149 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-02-14T21:15:00">2023-02-14</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2145 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据先定">判据先定</a></li>
 <li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
@@ -76,9 +76,9 @@
 <tr><td>与解压嵌套</td><td>每层一份全量缓冲</td><td>只能映射磁盘文件</td><td>天然背压，逐层往下流</td></tr>
 </tbody>
 </table></div>
-<p>mmap 那列的 SIGBUS 要说清：文件在映射期间被改小，访问截断的页就会收到 SIGBUS。它不是 C++ 异常，<code>try/catch</code> 接不住，默认终止进程。样本边写边扫、网络存储上有人清目录，都遇到过。要接住只能用信号处理器加 <code>siglongjmp</code>，跳过栈展开恢复对象状态是未定义行为，只适合完全可信的本地文件。</p>
+<p>mmap 那列的 SIGBUS 要说清：文件在映射期间被改小，访问截断的页就会收到 SIGBUS。它不是 C++ 异常，<code>try/catch</code> 接不住，默认终止进程。样本边写边扫、网络存储上有人清目录，都出现过。要接住只能用信号处理器加 <code>siglongjmp</code>，跳过栈展开恢复对象状态是未定义行为，只适合完全可信的本地文件。</p>
 <h2 id="流式那一路怎么落地">流式那一路怎么落地</h2>
-<p>核心是只做「给我下一块」的读取器，加每块都保持状态的解析器。缓冲区 1MB，256KB 到 4MB 吞吐差在 5% 以内。</p>
+<p>核心是只回答「还有下一块吗」的读取器，加每块都保持状态的解析器。缓冲区 1MB，256KB 到 4MB 吞吐差 5% 以内。</p>
 <pre data-lang="cpp"><code class="language-cpp">class ChunkedReader {
 public:
     explicit ChunkedReader(const char* path, size_t cap = 1u &lt;&lt; 20)
@@ -102,7 +102,7 @@ private:
     std::vector&lt;char&gt; buf_;
 };</code></pre>
 <p>构造抛出时 <code>buf_</code> 正常析构，<code>fd_</code> 是 -1，析构里判一下就不会误关。异常路径每天穿过几十万次，漏一次就是泄漏。</p>
-<p>三个约束。短读合法：<code>read</code> 可以只返回几个字节，按缓冲对齐算偏移的代码会错位。<code>string_view</code> 活不过下一次 <code>next()</code>：跨块匹配要把尾部字节拷进自己的状态，踩过一次，签名前半在上一块末尾，解析器留了 view，下一块填进来后匹配到旧数据。尾部结构要预留窗口：ZIP 中央目录在末尾，保留 96KB 环形窗口，越过就从前端丢——EOCD 22 字节加最长 65535 字节注释是 65557 字节，64KB 差 21 字节装不下。</p>
+<p>三个约束。短读合法：<code>read</code> 可以只返回几个字节，按缓冲对齐算偏移的代码会错位。<code>string_view</code> 活不过下一次 <code>next()</code>：跨块匹配要把尾部字节拷进自己的状态，签名前半在上一块末尾，解析器留了 view，下一块填进来后匹配到旧数据。尾部结构要预留窗口：ZIP 中央目录在末尾，保留 96KB 环形窗口，越过就从前端丢——EOCD 22 字节加最长 65535 字节注释是 65557 字节，64KB 差 21 字节装不下。</p>
 <h2 id="异常安全与背压">异常安全与背压</h2>
 <p>约定解析器不抛异常、返回 <code>Result</code>：一个格式解析失败不该中断整批扫描。只有 IO 错误和内存耗尽才抛，冒泡到 worker 循环决定放弃样本还是退出。</p>
 <p><code>ChunkedReader</code> 用 RAII 管 fd 和缓冲，解析器持引用不持 view；裸资源只有 fd，生命周期被类边界夹住，异常路径漏 close 在写法上就不成立。</p>

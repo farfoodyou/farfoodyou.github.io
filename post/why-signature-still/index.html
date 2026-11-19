@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">免杀率 60% 的今天，为什么还在用签名检测</h1>
-    <p class="meta"><time datetime="2022-07-20T10:40:00">2022-07-20</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2480 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2022-07-20T10:40:00">2022-07-20</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2478 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#1410-停机1440-看起来赢了">14:10 停机，14:40 看起来赢了</a></li>
 <li class="h2"><a href="#1620-未知从-11-涨到-34">16:20 未知从 11% 涨到 34%</a></li>
@@ -56,16 +56,16 @@
   <div class="post-content">
 <p>七月中旬拿到一份统计：过去 30 天提交的文件里，签名命中 38%，哈希黑名单 12%，结构启发式 9%，沙箱 30%，剩下 11% 进了人工队列。评审会上有人顺口问，命中率不到四成、改个字符串常量就能绕过，这层还值得每周投两个人维护吗。</p>
 <p>没人接得上话。维护成本实打实：每周新规则几百条，每条都要看样本、写条件、跑白样本；沙箱是黑盒，喂进去给个分就行。</p>
-<p>于是我提了个实验：灰度 10% 流量，把签名层从判定链路摘掉，其他层不动，跑满一天。记录取自工单和监控。</p>
+<p>可行的验证是一个实验：灰度 10% 流量，把签名层从判定链路摘掉，其他层不动，跑满一天。记录取自工单和监控。</p>
 <h2 id="1410-停机1440-看起来赢了">14:10 停机，14:40 看起来赢了</h2>
-<p>14:10 部署完成，灰度组的判定路径只剩三段：哈希黑名单 → 轻量结构启发式 → 沙箱。半小时后数字很好看：p99 从 176ms 掉到 94ms，p50 从 21ms 到 12ms，误报率 0.31% 对 0.29%，落在噪声里，CPU 占用降了约 9%。我在群里说「签名层似乎可以省」，然后去吃晚饭。</p>
+<p>14:10 部署完成，灰度组的判定路径只剩三段：哈希黑名单 → 轻量结构启发式 → 沙箱。半小时后数字很好看：p99 从 176ms 掉到 94ms，p50 从 21ms 到 12ms，误报率 0.31% 对 0.29%，落在噪声里，CPU 占用降了约 9%。此时最容易得出的判断是「签名层可以省」。</p>
 <h2 id="1620-未知从-11-涨到-34">16:20 未知从 11% 涨到 34%</h2>
 <p>未知不是错误答案，它极贵：这类样本要进人工队列，队列每天消化 200 条左右。灰度只有 10% 流量，未知量翻了三倍。原本签名层连同哈希和启发式，把约六成文件的判定提前结束了，其中一多半会落到这个队列里。</p>
 <p>方法论上的失误是：把「10% 流量」当成了「10% 成本」。被签名层挡住的文件本来就不进沙箱，摘掉后省下的容量全释放进队列，10% 的流量 4 小时吃掉了整天的额度。灰度得按资源消耗切。</p>
 <h2 id="2000-沙箱配额打满">20:00 沙箱配额打满</h2>
 <p>沙箱有并发上限，当时 120 个执行槽，单样本最多跑 90 秒墙钟。签名层在时六成文件走不到这一层，摘掉后它们全排到前面。队列深度到 4.2 万，中位等待 22 分钟，最老的一条排了 51 分钟。上传是交互式的，22 分钟等于不可用。次日 09:30 回滚。</p>
 <h2 id="各层的代价和覆盖">各层的代价和覆盖</h2>
-<p>回滚后我把四层拆开量了一遍，单文件按 2MB 计，单机 4 核：</p>
+<p>回滚后四层需要拆开分别计量，单文件按 2MB 计，单机 4 核：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>层</th>
@@ -114,7 +114,7 @@
 }</code></pre>
 <h2 id="留一条判据">留一条判据</h2>
 <p>签名会被绕过：改字符串常量、插填充、换编译器版本都能让某条规则失效。但要让一个文件躲过全部四层，得同时躲开哈希、字节模式、结构异常、运行行为，成本是相乘的。</p>
-<p>我后来用的判据是：一层的命中率低于 20% 仍值得留，前提是单次代价比下一层低两个数量级以上。分层检测的收益来自层与层之间的成本差，跟每层有多准关系不大。签名层在这条链路里会一直在，只是它不该背 KPI。</p>
+<p>可以用的判据是：一层的命中率低于 20% 仍值得留，前提是单次代价比下一层低两个数量级以上。分层检测的收益来自层与层之间的成本差，跟每层有多准关系不大。签名层在这条链路里会一直在，只是它不该背 KPI。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://www.rfc-editor.org/rfc/rfc6234.txt">RFC 6234: US Secure Hash Algorithms</a>：黑名单那层的摘要定义与填充规则</li>

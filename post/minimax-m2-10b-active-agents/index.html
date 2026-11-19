@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">MiniMax-M2：10B 激活做 agent，MoE 的甜区往下移了</h1>
-    <p class="meta"><time datetime="2025-10-28T22:05:00">2025-10-28</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2661 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-10-28T22:05:00">2025-10-28</time><span class="sep">·</span>7 分钟<span class="sep">·</span>2663 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#为什么激活参数重要">为什么激活参数重要</a></li>
 <li class="h2"><a href="#10b-激活-长推理-什么体验">10B 激活 + 长推理 = 什么体验</a></li>
@@ -102,7 +102,7 @@
 <li><strong>长轨迹稳定性</strong>：50 步之后仍遵守最初的约束（不要改无关文件、不要跳过测试）；</li>
 <li><strong>错误语义理解</strong>：读到 <code>ModuleNotFoundError</code> 时知道装依赖，读到 <code>AssertionError</code> 时知道改代码而不是改测试。</li>
 </ol>
-<p>这三点在公开榜单上体现得很弱，真实差距得自己测。模型卡引用 Artificial Analysis 的综合分说它是开源第一，这类第三方聚合分可以参考，但仍然替代不了自己的任务集。</p>
+<p>这三点在公开榜单上体现得很弱，真实差距都在任务集里。模型卡引用 Artificial Analysis 的综合分说它是开源第一，这类第三方聚合分可以参考，但仍然替代不了自己的任务集。</p>
 <h2 id="和大而全路线对照">和“大而全”路线对照</h2>
 <p>2025 年开源侧有两条路线：</p>
 <div class="table-wrap"><table>
@@ -140,7 +140,7 @@
 <li><strong>10B 激活意味着“一张卡能算，两张卡能装”</strong>。230 GB 权重需要 2×H200 或 4×H100，这才是“可自托管”的真实门槛，跟“激活参数只有 10B”是两件事。</li>
 </ol>
 <h2 id="一个反例延迟预算-2-秒的产品">一个反例：延迟预算 2 秒的产品</h2>
-<p>我们试过把 M2 放进一个自动补全场景：请求带 20K 上下文（当前文件加两个依赖），输出 200 token 以内。</p>
+<p>把 M2 放进自动补全场景会撞上延迟墙：请求带 20K 上下文（当前文件加两个依赖），输出 200 token 以内。</p>
 <p>账面上 M2 赢：10B 激活，单条算力是 32B 激活模型的三分之一。实际卡在轮次上：前缀缓存没命中时要先 prefill 这 20K，再 decode 200 token，单条 2.6 秒，超出补全的 2 秒预算；同样的请求交给一个 8B dense 模型，质量差 3 个点，0.7 秒就出来了。</p>
 <p>同一个“小激活”的优势，在 agent 里是成本，在补全里是延迟负债。决定该看哪个数的是任务的墙钟预算，不是参数量。</p>
 <h2 id="来源">来源</h2>

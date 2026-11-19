@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>本地跑模型做 Agent：一次显存打满的复盘 - farfood</title>
+<title>本地跑模型做 Agent：24GB 卡上的显存账 - farfood</title>
 <meta name="description" content="24GB 卡上跑 4bit 的 13B，白天并发一上来就集体变慢然后退出；账算清楚后发现瓶颈是 KV cache 和没有上限的上下文拼接。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/local-llm-agent/">
@@ -15,16 +15,16 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "本地跑模型做 Agent：一次显存打满的复盘", "description": "24GB 卡上跑 4bit 的 13B，白天并发一上来就集体变慢然后退出；账算清楚后发现瓶颈是 KV cache 和没有上限的上下文拼接。", "datePublished": "2024-12-10T21:10:00+08:00", "dateModified": "2024-12-10T21:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/local-llm-agent/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "本地推理, 显存, 量化, 上下文, 降级"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "本地跑模型做 Agent：24GB 卡上的显存账", "description": "24GB 卡上跑 4bit 的 13B，白天并发一上来就集体变慢然后退出；账算清楚后发现瓶颈是 KV cache 和没有上限的上下文拼接。", "datePublished": "2024-12-10T21:10:00+08:00", "dateModified": "2024-12-10T21:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/local-llm-agent/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "本地推理, 显存, 量化, 上下文, 降级"}</script>
 
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="本地跑模型做 Agent：一次显存打满的复盘 - farfood">
+<meta property="og:title" content="本地跑模型做 Agent：24GB 卡上的显存账 - farfood">
 <meta property="og:description" content="24GB 卡上跑 4bit 的 13B，白天并发一上来就集体变慢然后退出；账算清楚后发现瓶颈是 KV cache 和没有上限的上下文拼接。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/local-llm-agent/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="本地跑模型做 Agent：一次显存打满的复盘 - farfood">
+<meta name="twitter:title" content="本地跑模型做 Agent：24GB 卡上的显存账 - farfood">
 <meta name="twitter:description" content="24GB 卡上跑 4bit 的 13B，白天并发一上来就集体变慢然后退出；账算清楚后发现瓶颈是 KV cache 和没有上限的上下文拼接。">
 <meta property="article:published_time" content="2024-12-10T21:10:00+08:00">
 <meta name="keywords" content="本地推理, 显存, 量化, 上下文, 降级">
@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">本地跑模型做 Agent：一次显存打满的复盘</h1>
-    <p class="meta"><time datetime="2024-12-10T21:10:00">2024-12-10</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2483 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <h1 class="post-title">本地跑模型做 Agent：24GB 卡上的显存账</h1>
+    <p class="meta"><time datetime="2024-12-10T21:10:00">2024-12-10</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2481 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#24gb-是怎么分掉的">24GB 是怎么分掉的</a></li>
 <li class="h2"><a href="#根因在拼装不在模型">根因在拼装，不在模型</a></li>
@@ -51,9 +51,9 @@
 <li class="h2"><a href="#降级的判据">降级的判据</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>11 月中的一个周二上午，知识库的问答任务集体变慢。这套东西只做三件事：把问题改写成检索语句、判断要不要调工具、把检索片段拼成回答。跑在一台 24GB 显存的工作站上，权重是 13B 模型的 4bit 量化版本，外面是个很薄的 HTTP 服务，请求进来就起 goroutine 调推理。</p>
+<p>一个工作日的上午，知识库的问答任务集体变慢。这套东西只做三件事：把问题改写成检索语句、判断要不要调工具、把检索片段拼成回答。跑在一台 24GB 显存的工作站上，权重是 13B 模型的 4bit 量化版本，外面是个很薄的 HTTP 服务，请求进来就起 goroutine 调推理。</p>
 <p>单条耗时从 8 秒涨到 30 秒以上，十点半进程退出，最后一行日志是显存分配失败。重启之后空载正常，白天并发一上来就复现。</p>
-<p>我最初判断是量化没生效、权重比预期大。查下来权重只占 7GB 上下，账目对得上，剩下十几 G 被别的东西吃掉。这个判断让排查多绕了两天：我一直在核权重的占用，问题出在每次请求自己申请的缓存上。</p>
+<p>第一反应通常是量化没生效、权重比预期大。实际权重只占 7GB 上下，账目对得上，剩下十几 G 被别的东西吃掉。这个判断容易让排查多绕两天：一直在核权重占用，而问题出在每次请求自己申请的缓存上。</p>
 <p>那天的顺序：</p>
 <ul>
 <li>09:12 延迟告警，p95 从 9 秒到 34 秒，错误率还没动</li>
@@ -71,7 +71,7 @@
 <li><strong>框架自身</strong>：分配器池、图捕获、通信缓冲，1–2GB。</li>
 </ul>
 <p>每 token 的 KV 占用可以手算：两份（K 和 V）乘层数乘 KV 头数乘每头维度乘每元素的 byte 数。这个 13B 模型是 40 层、8 个 KV 头、每头 128 维、KV 用 fp16，得到 2×40×8×128×2 = 163,840 B，约 160KB 一个 token。</p>
-<p>8K 上下文就是 1.3GB，一条 4 万 token 的请求要 6.4GB。当时并发 4 路，其中两路是长文档任务，合计 14GB 以上，加上权重和缓冲区，24GB 正好卡死。</p>
+<p>8K 上下文就是 1.3GB，一条 4 万 token 的请求要 6.4GB。示例里并发 4 路，其中两路是长文档任务，合计 14GB 以上，加上权重和缓冲区，24GB 正好卡死。</p>
 <p>有个地方和直觉相反：量化只压权重，不压 KV cache。权重从 26GB 压到 7GB，看着省了七成，KV 仍然按 fp16 原样增长。模型越小、上下文越长，KV 在总占用里的比例越高，最后变成主项。</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -121,7 +121,7 @@
 <li><strong>输出长度</strong>：单条超过 1500 token 的输出在工具调用场景里基本跑偏了，截断重试。</li>
 </ul>
 <p>同样的负载，p95 回到 12 秒左右，长文档任务成功率从 60% 掉到 55%，一部分请求被赶到 compact 档。进程再没退出过，这个交换值：上游是人在等，60 秒超时和拿到一个差一点的答案，后者至少能继续往下走。</p>
-<p>还有一件事后来才补上：把每条请求的 token 数和 KV 估算的 byte 数写进同一条日志。没有这两个数，上面所有预算都是拍脑袋，出了问题只能重启试试。</p>
+<p>还有一条容易漏的观测：把每条请求的 token 数和 KV 估算的 byte 数写进同一条日志。没有这两个数，上面所有预算都是拍脑袋，出了问题只能重启试试。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://arxiv.org/abs/2305.14314">QLoRA：4bit 量化与显存分解</a></li>
@@ -130,7 +130,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/本地推理/">本地推理</a><a class="tag" href="/tags/显存/">显存</a><a class="tag" href="/tags/量化/">量化</a><a class="tag" href="/tags/上下文/">上下文</a><a class="tag" href="/tags/降级/">降级</a></p>
-  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%9C%AC%E5%9C%B0%E8%B7%91%E6%A8%A1%E5%9E%8B%E5%81%9A+Agent%EF%BC%9A%E4%B8%80%E6%AC%A1%E6%98%BE%E5%AD%98%E6%89%93%E6%BB%A1%E7%9A%84%E5%A4%8D%E7%9B%98" target="_blank" rel="noopener">分享到 X</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%9C%AC%E5%9C%B0%E8%B7%91%E6%A8%A1%E5%9E%8B%E5%81%9A+Agent%EF%BC%9A24GB+%E5%8D%A1%E4%B8%8A%E7%9A%84%E6%98%BE%E5%AD%98%E8%B4%A6" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/kv-cache-basics/">← KV cache：推理为什么吃显存</a><a class="next" href="/post/agent-tool-loop/">Agent 的工具循环：什么时候该停 →</a></nav>
 </article>
 <section class="comments">
@@ -178,7 +178,7 @@
 <li class="h2"><a href="#根因在拼装不在模型">根因在拼装，不在模型</a></li>
 <li class="h2"><a href="#改成预算制">改成预算制</a></li>
 <li class="h2"><a href="#降级的判据">降级的判据</a></li>
-<li class="h2"><a href="#参考">参考</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</a><time>2026-09</time></li><li><a href="/post/holiday-capacity/">节假日扩容：从求人扩容到自己扛住</a><time>2021-07</time></li><li><a href="/post/structured-output/">结构化输出为什么难：一份 oneOf 与四层失败</a><time>2024-06</time></li></ul></aside></aside>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</a><time>2026-09</time></li><li><a href="/post/holiday-capacity/">节假日扩容：从加机器到按放大倍数备容量</a><time>2021-07</time></li><li><a href="/post/structured-output/">结构化输出为什么难：一份 oneOf 与四层失败</a><time>2024-06</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">
   <div class="wrap">

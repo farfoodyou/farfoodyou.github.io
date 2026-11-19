@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">订单状态机：让乱序到达变成不可能</h1>
-    <p class="meta"><time datetime="2021-04-06T10:40:00">2021-04-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2473 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2021-04-06T10:40:00">2021-04-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2487 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先把迁移表写成数据">先把迁移表写成数据</a></li>
 <li class="h2"><a href="#用版本号把条件更新焊死">用版本号把条件更新焊死</a></li>
@@ -52,9 +52,9 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>订单表里的 <code>status</code> 字段，是全库最便宜也最贵的字段。</p>
-<p>2020 年底出过一次事故：一笔超时未支付的订单被关单任务置为已关闭，三分钟后渠道的支付成功回调到达，处理函数按「成功就置成功」的写法把状态改回了已支付。下游退款流程以为这是正常支付的单，发起全额退款；但渠道侧订单更早之前已经被关掉，退款被拒。用户侧看到「待支付 → 已支付 → 已关闭 → 退款失败」四个状态来回跳，我们侧看到一条被反复覆盖、无法还原的历史。</p>
+<p>2020 年底出过一次事故：一笔超时未支付的订单被关单任务置为已关闭，三分钟后渠道的支付成功回调到达，处理函数按「成功就置成功」的写法把状态改回了已支付。下游退款流程以为这是正常支付的单，发起全额退款；但渠道侧订单更早之前已经被关掉，退款被拒。用户侧看到「待支付 → 已支付 → 已关闭 → 退款失败」四个状态来回跳，系统侧留下的是一条被反复覆盖、无法还原的历史。</p>
 <p>难的不是修那一段代码。服务里有七处地方直接 <code>UPDATE</code> 状态字段：回调、关单任务、退款、超时重试、人工改单、修数脚本、下游转发。把七处都改对靠记性，而记性撑不过半年。</p>
-<p>我的做法是把状态从「可赋值的字段」改成「只能沿迁移表前进的跃迁」：每次跃迁带上前置状态和版本号做条件更新，终态不出边。做完这三件事，乱序到达从「要小心处理的情况」变成「写不进去的语句」。</p>
+<p>一种可行的做法是把状态从「可赋值的字段」改成「只能沿迁移表前进的跃迁」：每次跃迁带上前置状态和版本号做条件更新，终态不出边。做完这三件事，乱序到达从「要小心处理的情况」变成「写不进去的语句」。</p>
 <h2 id="先把迁移表写成数据">先把迁移表写成数据</h2>
 <p>第一步是把散落在 <code>if</code> 里的规则收成一张表：当前状态、事件、目标状态。没列出来的一律非法。</p>
 <div class="table-wrap"><table>
@@ -76,7 +76,7 @@
 <tr><td>已关闭 / 已退款</td><td>任何事件</td><td>——</td><td>终态，无出边</td></tr>
 </tbody>
 </table></div>
-<p>两个约定让我受益很多。一是<strong>事件名用业务语言，不用状态名</strong>：「支付成功」是事件，「已支付」是状态。早期两者都写成大写英文常量，迁移表里冒出 <code>PAID → PAID</code> 这种自己到自己的行，语义说不清。二是<strong>表要有加载校验</strong>：启动时读表，用代码里的常量做全量比对，出现未知状态或非终态没有入边就启动失败，这一步拦住过两次改枚举漏改迁移的低级错误。</p>
+<p>两个约定值得在写表之前就定下来。一是<strong>事件名用业务语言，不用状态名</strong>：「支付成功」是事件，「已支付」是状态。早期两者都写成大写英文常量，迁移表里冒出 <code>PAID → PAID</code> 这种自己到自己的行，语义说不清。二是<strong>表要有加载校验</strong>：启动时读表，用代码里的常量做全量比对，出现未知状态或非终态没有入边就启动失败，这一步拦住过两次改枚举漏改迁移的低级错误。</p>
 <p>迁移表带来的不是「非法迁移不可能发生」，而是<strong>非法迁移只有一个入口</strong>：所有改状态的路径走同一个 <code>Apply(event)</code>，那段 <code>UPDATE</code> 只有一份，审阅时只有一处要看。</p>
 <h2 id="用版本号把条件更新焊死">用版本号把条件更新焊死</h2>
 <p>只比较前置状态不够。两个请求同时读到「退款中」，一个要走到「已退款」、一个要回「已支付」，前置状态相同、目标不同，靠状态比较照样能互相覆盖，且顺序不同结果不同。所以要加版本号：</p>
@@ -85,11 +85,11 @@
  WHERE order_no = :no
    AND state   = :expected_state    -- 前置状态参与校验
    AND version = :expected_version  -- 读到的版本，防 ABA</code></pre>
-<p>影响行数为 0 只有一种解释：我读到的不是现在的。应用层固定成三段。读、判、写。入口按顺序做四件事：终态直接报错、按迁移表查目标状态、校验事件里的金额与币种、执行那条 CAS。写失败重读一次再判，最多三次，仍失败就返回「状态已变化」让上游重投，不做无界重试。</p>
+<p>影响行数为 0 只有一种解释：这次读到的不是当前值。应用层固定成三段。读、判、写。入口按顺序做四件事：终态直接报错、按迁移表查目标状态、校验事件里的金额与币种、执行那条 CAS。写失败重读一次再判，最多三次，仍失败就返回「状态已变化」让上游重投，不做无界重试。</p>
 <p>版本号还让重放变安全：补发的旧事件版本对不上，语句自然空转，不需要去重表。当时订单写入峰值三千 QPS 上下（经验值），CAS 冲突率不到千分之一，三次重试够用。</p>
 <h2 id="终态不可逆迟到的消息只能被拒绝">终态不可逆，迟到的消息只能被拒绝</h2>
 <p>终态的定义要写死：<strong>没有出边的状态就是终态</strong>，<code>已关闭</code> 和 <code>已退款</code> 都是。终态上收到事件只有两种处理：丢弃并计数（重复回调、补发的旧消息），或者不改本单、另开补偿动作。关单后收到支付成功就生成退款单，而不是把订单改回去。</p>
-<p>判断标准我一直用这一句：<strong>如果一条迟到的事件需要改变终态，说明终态选错了，或者这条事件本该产生一个新对象。</strong> 事后把 <code>已关闭</code> 改回 <code>已支付</code> 是篡改历史，生成退款单是追加历史。前者让所有基于状态做过的判断（发过货、释放过库存、算过账）全部失效，后者不会。</p>
+<p>判断标准可以压成一句：<strong>如果一条迟到的事件需要改变终态，说明终态选错了，或者这条事件本该产生一个新对象。</strong> 事后把 <code>已关闭</code> 改回 <code>已支付</code> 是篡改历史，生成退款单是追加历史。前者让所有基于状态做过的判断（发过货、释放过库存、算过账）全部失效，后者不会。</p>
 <p>那次事故之后又归出几类乱序：</p>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -105,8 +105,8 @@
 </tbody>
 </table></div>
 <h2 id="读侧也要跟着改">读侧也要跟着改</h2>
-<p>状态机只约束写入，读侧坑一样多。最典型的是「查未完成订单」写成 <code>state != &#x27;已关闭&#x27;</code>，状态集合一变多，中间态全混进结果集，报表口径当场变化。读侧我改成<strong>白名单状态集合</strong>，而且必须显式列出：<code>state IN (&#x27;待支付&#x27;,&#x27;退款中&#x27;) AND updated_at &lt; now() - interval &#x27;5 minutes&#x27;</code>。</p>
-<p>这条语句也是补偿任务的入口：停在非终态超过一定时间的单，一定有人在等它推进。它救过我一次。一次回调格式变更导致退款中堆积，报表看不出异常，但「停留超过五分钟的退款中」半小时涨了四十倍，告警先于投诉响。</p>
+<p>状态机只约束写入，读侧坑一样多。最典型的是「查未完成订单」写成 <code>state != &#x27;已关闭&#x27;</code>，状态集合一变多，中间态全混进结果集，报表口径当场变化。读侧要改成<strong>白名单状态集合</strong>，而且必须显式列出：<code>state IN (&#x27;待支付&#x27;,&#x27;退款中&#x27;) AND updated_at &lt; now() - interval &#x27;5 minutes&#x27;</code>。</p>
+<p>这条语句也是补偿任务的入口：停在非终态超过一定时间的单，一定有人在等它推进。它比投诉更早发现问题：一次回调格式变更导致退款中堆积，报表看不出异常，但「停留超过五分钟的退款中」半小时涨了四十倍，告警先于投诉响。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://www.omg.org/spec/UML/2.5.1/">OMG UML 2.5.1 规范</a>：状态与迁移的形式定义，「终态无出边」是硬约束</li>

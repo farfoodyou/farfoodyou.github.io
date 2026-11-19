@@ -38,22 +38,22 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">2026 推理栈答卷：缓存、稀疏、并行、量化</h1>
-    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2264 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+    <p class="meta"><time datetime="2026-11-18T22:20:00">2026-11-18</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2263 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#前缀缓存从优化项变成准入项">前缀缓存：从优化项变成准入项</a></li>
 <li class="h2"><a href="#稀疏注意力吃掉长上下文">稀疏注意力：吃掉长上下文</a></li>
 <li class="h2"><a href="#并行集群被拆成两层">并行：集群被拆成两层</a></li>
 <li class="h2"><a href="#量化fp4-落地">量化：FP4 落地</a></li>
 <li class="h2"><a href="#代价表四条主线的取舍">代价表：四条主线的取舍</a></li>
-<li class="h2"><a href="#今年我改掉的两个默认值">今年我改掉的两个默认值</a></li>
+<li class="h2"><a href="#今年改掉的两个默认值">今年改掉的两个默认值</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav>
   <div class="post-content">
-<p>年初的 <a href="/post/inference-engines-2025-review/">引擎复盘</a> 里，我把推理优化归成四条主线。一年过去，四条都走完了各自的一段路。</p>
+<p>年初的 <a href="/post/inference-engines-2025-review/">引擎复盘</a> 里，推理优化可以归成四条主线。一年过去，四条都走完了各自的一段路。</p>
 <h2 id="前缀缓存从优化项变成准入项">前缀缓存：从优化项变成准入项</h2>
 <p>2025 年，前缀缓存还是“开了更好”；2026 年，长程 agent 的账单把它变成“不开就破产”。</p>
 <p>算一笔：</p>
@@ -138,7 +138,7 @@
 </tbody>
 </table></div>
 <p>上线的顺序还是那一条：先缓存、再量化、再稀疏结构，最后才是 PD/EP。前两步几乎无风险，后两步要重训或重部署。</p>
-<h2 id="今年我改掉的两个默认值">今年我改掉的两个默认值</h2>
+<h2 id="今年改掉的两个默认值">今年改掉的两个默认值</h2>
 <p>第一个是 KV 落盘策略：年初还是“命中率低于 40% 就不落盘”，现在改成按“每 token 读取字节数 × 前缀长度”算回本点。NVMe 的带宽约 7 GB/s，比 HBM 差三个数量级，长前缀不落盘等于每次重新 prefill。</p>
 <p>第二个是 PD 分离的开关：以前一律开，现在只在 KV 传输量低于请求计算量 5% 时才开。按 890 B/token 算，100K 上下文是 89 MB，400G 网络下 1.8 ms；换成 35 KB/token 的老模型，同一个请求要传 3.5 GB、约 70 ms，分离省下的并行收益还不够付这笔传输。</p>
 <p>这两个默认值都不是从论文里抄的，是从账单上倒推的。</p>
@@ -201,7 +201,7 @@
 <li class="h2"><a href="#并行集群被拆成两层">并行：集群被拆成两层</a></li>
 <li class="h2"><a href="#量化fp4-落地">量化：FP4 落地</a></li>
 <li class="h2"><a href="#代价表四条主线的取舍">代价表：四条主线的取舍</a></li>
-<li class="h2"><a href="#今年我改掉的两个默认值">今年我改掉的两个默认值</a></li>
+<li class="h2"><a href="#今年改掉的两个默认值">今年改掉的两个默认值</a></li>
 <li class="h2"><a href="#参考与数据">参考与数据</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/deepseek-v4.1-flash-kv-compression/">V4.1-Flash：KV 压到 890 字节/token，prefill 只激活 8B</a><time>2026-09</time></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA / CSA+HCA / IndexShare / CSA2 / KDA</a><time>2026-09</time></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手机上的 1B</a><time>2026-10</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">

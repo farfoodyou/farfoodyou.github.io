@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Gemini 2.5 Pro：把「思考」设成默认行为</h1>
-    <p class="meta"><time datetime="2025-03-25T23:30:00">2025-03-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2396 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-03-25T23:30:00">2025-03-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2394 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#默认思考意味着什么">默认思考意味着什么</a></li>
 <li class="h2"><a href="#1m-上下文是另一种工程题">1M 上下文是另一种工程题</a></li>
@@ -57,7 +57,7 @@
 <li>上下文 <a href="https://deepmind.google/models/gemini/">1M token</a>（官方说 2M 在路上）；</li>
 <li>上线即 LMArena 第一，“by a significant margin”。</li>
 </ul>
-<p>一个月内我们看到了三种对“思考”的不同处理：o3-mini 是 effort 参数，Claude 3.7 是 budget_tokens 预算，Gemini 2.5 直接把思考设成默认。这是产品哲学的分岔，不只是实现差异。</p>
+<p>一个月内出现了三种对“思考”的不同处理：o3-mini 是 effort 参数，Claude 3.7 是 budget_tokens 预算，Gemini 2.5 直接把思考设成默认。这是产品哲学的分岔，不只是实现差异。</p>
 <h2 id="默认思考意味着什么">默认思考意味着什么</h2>
 <p>对用户：不用再选模型/档位，问什么都先想一遍。体验上确实更“聪明”，但延迟变得不可预期——同一个 prompt，简单问题 2 秒，复杂问题可能 40 秒。</p>
 <p>对工程：<strong>延迟和成本从“确定性参数”退化成“分布”</strong>。做一个搜索类产品，用户能容忍 800ms；接了默认思考的模型，就得重新设计交互（流式输出进度、后台任务化、结果轮询）。</p>

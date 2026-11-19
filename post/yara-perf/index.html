@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">规则匹配引擎的性能：原子与字符串的选择</h1>
-    <p class="meta"><time datetime="2023-03-21T22:40:00">2023-03-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1844 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-03-21T22:40:00">2023-03-21</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1849 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#那一夜的时间线">那一夜的时间线</a></li>
 <li class="h2"><a href="#原子是怎么选出来的">原子是怎么选出来的</a></li>
@@ -57,12 +57,12 @@
 <h2 id="那一夜的时间线">那一夜的时间线</h2>
 <ul>
 <li>03:40 告警；03:47 回滚新规则，CPU 从 92% 降到 70%。</li>
-<li>04:10 拿 2000 份历史样本单进程重跑：旧规则集 p50 12ms，新规则集 p50 39ms，p99 从 24ms 到 41ms。</li>
+<li>04:10 用 2000 份历史样本单进程重跑：旧规则集 p50 12ms，新规则集 p50 39ms，p99 从 24ms 到 41ms。</li>
 <li>04:30 逐条关规则做二分，三条新规则贡献了 70% 的增量。</li>
 <li>05:20 把这三条拆开看，共同点是正则带 <code>[0-9]{6}</code> 这类字符类，另有一条 <code>nocase</code> 加 <code>wide</code> 的 3 字节短串。</li>
 </ul>
 <h2 id="原子是怎么选出来的">原子是怎么选出来的</h2>
-<p>引擎不会拿整条字符串去逐字节比对。它先把每条字符串切成若干定长子串（当时是 4 字节）当原子，把所有原子建一棵自动机；扫描时先跑自动机拿到候选偏移，再回到候选位置上跑完整匹配做验证。</p>
+<p>引擎不会拿整条字符串去逐字节比对。它先把每条字符串切成若干定长子串（4 字节是常见取值）当原子，把所有原子建一棵自动机；扫描时先跑自动机拿到候选偏移，再回到候选位置上跑完整匹配做验证。</p>
 <p>这笔账分成两段：自动机扫描随文件大小线性增长，价格是固定的；验证环节的开销正比于候选数乘以字符串长度。原子选得差，第二段的系数会大两个数量级。1975 年那篇讲多模式匹配自动机的论文里，构造和扫描的复杂度都写得很清楚，但它只保证第一段便宜，<a href="https://cr.yp.to/bib/1975/aho.pdf">原文</a>里没有候选爆炸这一说，因为那取决于你丢进去什么。</p>
 <p>所以原子的质量有三个维度：长度够不够 4 字节、在正常文件里出现得频不频繁、落在字符串的哪一段。字面量的原子通常取最长连续可打印片段，正则里遇到字符类就断开，只能从两侧的固定片段里取；带了 <code>nocase</code> 或 <code>wide</code> 的字符串，每个变体各占一个原子槽。</p>
 <p>三条新规则的毛病正好各占一个：一条的固定片段只有 <code>api/</code> 这么长，几乎每份文本文件都能命中；一条 3 字节的短串根本取不出原子，引擎退回逐条字符串扫描；一条 <code>nocase</code> 加 <code>wide</code>，原子翻倍，候选也翻倍。</p>
@@ -110,7 +110,7 @@
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://yara.readthedocs.io/en/v4.2.3/writingrules.html">引擎的字符串写法与修饰符说明</a>：原子、<code>nocase</code>、<code>wide</code> 的语义都在这</li>
-<li><a href="https://yara.readthedocs.io/en/v4.2.3/commandline.html">命令行工具的 <code>--scan-list</code> 与超时参数</a>：复现用的就是它</li>
+<li><a href="https://yara.readthedocs.io/en/v4.2.3/commandline.html">命令行工具的 <code>--scan-list</code> 与超时参数</a>：复现这类问题时用得上</li>
 <li><a href="https://cr.yp.to/bib/1975/aho.pdf">Aho, Corasick: Efficient String Matching</a></li>
 </ul>
   </div>

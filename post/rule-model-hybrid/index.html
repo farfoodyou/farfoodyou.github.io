@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">规则、模型、再一层规则：一晚漏检换来的编排顺序</h1>
-    <p class="meta"><time datetime="2023-09-05T21:10:00">2023-09-05</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2495 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-09-05T21:10:00">2023-09-05</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2485 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#那一晚的时间线">那一晚的时间线</a></li>
 <li class="h2"><a href="#从-score-到-verdict">从 score 到 verdict</a></li>
@@ -53,7 +53,7 @@
 <li class="h2"><a href="#一个还没解决的边界">一个还没解决的边界</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>七月的一个周五，凌晨两点，值班的人在看板上来回切时间窗。一个家族的检出量从傍晚开始一路下滑，到零点只剩原来的七成，跟灰度比例对得上。而所有单点指标都是绿的：前置规则的命中率在正常区间，模型打分的分布没有偏移，队列没积压，错误率没动。</p>
+<p>七月的一个周五，凌晨两点，值班侧在看板上来回切时间窗。一个家族的检出量从傍晚开始一路下滑，到零点只剩原来的七成，跟灰度比例对得上。而所有单点指标都是绿的：前置规则的命中率在正常区间，模型打分的分布没有偏移，队列没积压，错误率没动。</p>
 <p>问题出在终点。同一批文件，模型给了 0.93，标签也对，最后写进结果的 verdict 是 clean。从哪一步开始掉头的，日志里没有一行是「错」的。</p>
 <p>链路上有三段：前置规则做快筛和黑白名单，模型打分并给出家族标签，后置规则拿到分数和标签做策略裁决——抑制、升级、附加处置。前两段各自工作正常，第三段按标签字符串精确匹配。那天模型换了标签命名法，后置规则一条都没匹配上，落进了「无匹配则放行」的默认分支。</p>
 <h2 id="那一晚的时间线">那一晚的时间线</h2>
@@ -103,9 +103,9 @@ func (e *Engine) Post(r Result) Verdict {
 <tr><td>规则快筛 → 模型 → 规则兜底</td><td>快筛省成本，兜底能纠正模型的明显错判</td><td>兜底层的默认方向决定事故性质：放行则漏检，升级则积压</td></tr>
 </tbody>
 </table></div>
-<p>我们原来用的第三种，只做了一半：兜底层存在，方向反了。默认放行隐含「没匹配上就不需要处置」，这个假设在标签体系变更那天就失效了。</p>
+<p>第三种形态只做了一半：兜底层存在，方向反了。默认放行隐含「没匹配上就不需要处置」，这个假设在标签体系变更那天就失效了。</p>
 <h2 id="改了什么">改了什么</h2>
-<p><strong>默认分支反转。</strong> 后置规则匹配不到任何策略时，不再给 clean，而是进复核队列并带上 <code>unmatched-tag</code> 的原因码。代价立刻显出来：升级率从 0.4% 涨到 1.1%，人工队列每天多四十来单。这笔成本我认，它把静默失效换成了可见的积压，而积压能报警。</p>
+<p><strong>默认分支反转。</strong> 后置规则匹配不到任何策略时，不再给 clean，而是进复核队列并带上 <code>unmatched-tag</code> 的原因码。代价立刻显出来：升级率从 0.4% 涨到 1.1%，人工队列每天多四十来单。这笔成本换来的是可见性：静默失效变成能报警的积压。</p>
 <p><strong>补契约测试。</strong> 模型侧声明会输出哪些标签，规则侧声明依赖哪些标签，构建时取交集，差集非空就失败。另外在 CI 里放 2000 份固定样本，断言全链路 verdict 与基线一致，改标签或改阈值都会撞墙。</p>
 <p><strong>拆分发布节奏。</strong> 规则按天甚至按小时发，模型按周发，两者不再进同一个变更窗口。绑在一起发布，等于让最贵的那次变更加上最高频的风险。</p>
 <p><strong>给空转加观测。</strong> 每条策略上报命中次数，连续 24 小时为 0 的策略进巡检清单，这次能提前十小时暴露。</p>

@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">十万条规则怎么不炸：一次规则包下发的复盘</h1>
-    <p class="meta"><time datetime="2023-06-13T22:40:00">2023-06-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2261 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-06-13T22:40:00">2023-06-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2257 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#那半小时">那半小时</a></li>
 <li class="h2"><a href="#二分到单条规则">二分到单条规则</a></li>
@@ -54,7 +54,7 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>14:02 规则包发布完成。14:06，三个机房的检测节点扫描 p99 从 40ms 附近抬到 900ms 以上。14:11 待检队列开始堆，到 14:32 积压三十万个文件时，值班的人是从队列深度告警里知道出事的。</p>
-<p>我先怀疑的是存储：单节点 IO 曲线很平，跨机房带宽也正常，节点 load 却跟着队列一起涨，CPU 有一半耗在用户态。一小时里唯一变动过的东西，是 14:02 推上去的规则包：10.4 万条规则，编译产物含字符串池 1.9 GB，以整包原子替换的方式铺到全部 240 个节点。</p>
+<p>排查从存储开始：单节点 IO 曲线很平，跨机房带宽也正常，节点 load 却跟着队列一起涨，CPU 有一半耗在用户态。一小时里唯一变动过的东西，是 14:02 推上去的规则包：10.4 万条规则，编译产物含字符串池 1.9 GB，以整包原子替换的方式铺到全部 240 个节点。</p>
 <h2 id="那半小时">那半小时</h2>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -107,11 +107,11 @@ rules:
   - id: &quot;0007&quot;
     expires_at: 2023-09-11
     sample_cost_ms: 0.8</code></pre>
-<p>节点启动时校验 sha256、比对引擎版本下限，按分组装配；装配失败就保留旧组继续跑，等下一轮。灰度档位记在节点标签上，发布器按标签算流量覆盖率。这里我犯过一次错：第一版按节点数除以总数算覆盖率，结果 1% 的档位刚好落在几个小机房，那几个机房只承担百分之几的流量，等于拿 40 个节点陪跑，什么也没验证到。改成按节点上的实际扫描量加权之后，第一个档位才承压。</p>
+<p>节点启动时校验 sha256、比对引擎版本下限，按分组装配；装配失败就保留旧组继续跑，等下一轮。灰度档位记在节点标签上，发布器按标签算流量覆盖率。这里有一个容易犯的错：按节点数除以总数算覆盖率，结果 1% 的档位刚好落在几个小机房，那几个机房只承担百分之几的流量，等于拿 40 个节点陪跑，什么也没验证到。改成按节点上的实际扫描量加权之后，第一个档位才承压。</p>
 <h2 id="还剩下的失效模式">还剩下的失效模式</h2>
 <p>分组切太细会让订阅组合爆炸，20 组之后开始有人订错组，排障时要先确认「这个节点到底该有什么」。冷热分层比继续切细更省事。</p>
 <p>TTL 会误杀低频规则。一年只出现两次的家族特征，90 天阈值必然把它踢出去，所以这类规则挂 <code>low_freq</code> 标记，不进 TTL 统计，代价是人工每季度过一遍。</p>
-<p>采样计时拦不住「只在特定输入上爆炸」的规则，它只覆盖大概率的那一类。匹配超时必须按节点的扫描目标倒推，40ms 的目标配 30 秒超时是自欺欺人，我们后来改成 200ms 硬中断，超了就记一条告警样本。</p>
+<p>采样计时拦不住「只在特定输入上爆炸」的规则，它只覆盖大概率的那一类。匹配超时必须按节点的扫描目标倒推，40ms 的目标配 30 秒超时是自欺欺人，后来改成 200ms 硬中断，超了就记一条告警样本。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://yara.readthedocs.io/en/v4.2.3/writingrules.html">规则语言里正则与字符串匹配的写法与代价</a></li>

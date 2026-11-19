@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PE 解析入门：头、节表、导入表里那三个我读错的字段 - farfood</title>
+<title>PE 解析入门：头、节表、导入表里三个容易读错的字段 - farfood</title>
 <meta name="description" content="一次规则调权把一批正常安装包判成可疑，根因是三个 PE 字段的取值口径全错：节长度、导入表遍历、节数量。头字段值得当特征的不多，但每个都有解析陷阱。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/pe-format-intro/">
@@ -15,16 +15,16 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "PE 解析入门：头、节表、导入表里那三个我读错的字段", "description": "一次规则调权把一批正常安装包判成可疑，根因是三个 PE 字段的取值口径全错：节长度、导入表遍历、节数量。头字段值得当特征的不多，但每个都有解析陷阱。", "datePublished": "2022-09-15T10:05:00+08:00", "dateModified": "2022-09-15T10:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/pe-format-intro/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "PE格式, 文件检测, 特征工程, 样本分析"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "PE 解析入门：头、节表、导入表里三个容易读错的字段", "description": "一次规则调权把一批正常安装包判成可疑，根因是三个 PE 字段的取值口径全错：节长度、导入表遍历、节数量。头字段值得当特征的不多，但每个都有解析陷阱。", "datePublished": "2022-09-15T10:05:00+08:00", "dateModified": "2022-09-15T10:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/pe-format-intro/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "PE格式, 文件检测, 特征工程, 样本分析"}</script>
 
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="PE 解析入门：头、节表、导入表里那三个我读错的字段 - farfood">
+<meta property="og:title" content="PE 解析入门：头、节表、导入表里三个容易读错的字段 - farfood">
 <meta property="og:description" content="一次规则调权把一批正常安装包判成可疑，根因是三个 PE 字段的取值口径全错：节长度、导入表遍历、节数量。头字段值得当特征的不多，但每个都有解析陷阱。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/pe-format-intro/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="PE 解析入门：头、节表、导入表里那三个我读错的字段 - farfood">
+<meta name="twitter:title" content="PE 解析入门：头、节表、导入表里三个容易读错的字段 - farfood">
 <meta name="twitter:description" content="一次规则调权把一批正常安装包判成可疑，根因是三个 PE 字段的取值口径全错：节长度、导入表遍历、节数量。头字段值得当特征的不多，但每个都有解析陷阱。">
 <meta property="article:published_time" content="2022-09-15T10:05:00+08:00">
 <meta name="keywords" content="PE格式, 文件检测, 特征工程, 样本分析">
@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">PE 解析入门：头、节表、导入表里那三个我读错的字段</h1>
-    <p class="meta"><time datetime="2022-09-15T10:05:00">2022-09-15</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2478 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <h1 class="post-title">PE 解析入门：头、节表、导入表里三个容易读错的字段</h1>
+    <p class="meta"><time datetime="2022-09-15T10:05:00">2022-09-15</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2471 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#时间线">时间线</a></li>
 <li class="h2"><a href="#三个字段三种读错">三个字段，三种读错</a></li>
@@ -51,21 +51,21 @@
 <li class="h2"><a href="#改了什么">改了什么</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>那天上午九点零五分，告警率曲线几乎是竖直上去的。文件检测引擎的日报里，可疑文件占比从千分之七涨到 11%，样本全是同一批安装包：打包器生成的安装程序、驱动安装包、几个更新包。前一天还是干净的。</p>
-<p>我最初以为是规则写错了。规则当天只调了三个特征的权重，解析代码一行没动：出问题的是特征值本身，那些值从两年前上线起就是错的，只是权重低，从没越过阈值。</p>
+<p>当天上午九点零五分，告警率曲线几乎是竖直上去的。文件检测引擎的日报里，可疑文件占比从千分之七涨到 11%，样本全是同一批安装包：打包器生成的安装程序、驱动安装包、几个更新包。前一天还是干净的。</p>
+<p>最初最容易误判成规则写错。规则当天只调了三个特征的权重，解析代码一行没动：出问题的是特征值本身，那些值从两年前上线起就是错的，只是权重低，从没越过阈值。</p>
 <h2 id="时间线">时间线</h2>
 <p>08:40 规则包上线，只改了一件事：把「节熵」「导入函数数」「节数量」的权重从 0.15 提到 0.55。</p>
 <p>09:05 告警量涨到日常 15 倍，当天处理的 1.2 万个文件里 1300 个超阈值。</p>
 <p>09:20 人工看 40 条告警，全是脚本式打包器和老式快速开发工具链生成的安装包，无一可疑；共同点是末节又大又压缩过。</p>
-<p>09:35 决定回滚，09:50 完成，告警率回到 0.6%。</p>
+<p>09:35 回滚，09:50 完成，告警率回到 0.6%。</p>
 <p>10:10 开始查为什么这些文件在旧权重下安静了两年。</p>
-<p>定位慢在半路上：规则和解析在两个仓。我按「阈值太松」查了两小时没进展，最后把样本在解析器里单跑、打出特征值，才看到节熵全在 7.9 以上。压缩过的安装器节熵高正常，不正常的是它两年前就该是 7.9。</p>
+<p>定位慢在半路上：规则和解析在两个仓。按「阈值太松」查了两小时没进展，最后把样本在解析器里单跑、打出特征值，才看到节熵全在 7.9 以上。压缩过的安装器节熵高正常，不正常的是它两年前就该是 7.9。</p>
 <h2 id="三个字段三种读错">三个字段，三种读错</h2>
-<p>把特征值和解析库的字段逐项对一遍，三处都是我读错：</p>
+<p>把特征值和解析库的字段逐项对一遍，三处读法都错：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>特征</th>
-<th>我原来的读法</th>
+<th>常见读法</th>
 <th>正确的读法</th>
 <th>对这批文件的后果</th>
 </tr></thead>
@@ -75,7 +75,7 @@
 <tr><td>节数量</td><td>直接信 <code>NumberOfSections</code></td><td>先用 <code>SizeOfHeaders</code> 校验节表没越界，再决定是否采信</td><td>少数样本填 0 或超大值，特征完全失真</td></tr>
 </tbody>
 </table></div>
-<p>三个错误同源：我把「文件里的字节」和「加载后的虚拟布局」当成了同一个坐标系。<code>VirtualAddress</code> / <code>VirtualSize</code> 是内存视角，<code>PointerToRawData</code> / <code>SizeOfRawData</code> 是文件视角，只在「这一节确实有原始数据」时才对得上。对齐粒度也不同，<code>SectionAlignment</code> 通常 0x1000，<code>FileAlignment</code> 通常 0x200。</p>
+<p>三个错误同源：把「文件里的字节」和「加载后的虚拟布局」当成了同一个坐标系。<code>VirtualAddress</code> / <code>VirtualSize</code> 是内存视角，<code>PointerToRawData</code> / <code>SizeOfRawData</code> 是文件视角，只在「这一节确实有原始数据」时才对得上。对齐粒度也不同，<code>SectionAlignment</code> 通常 0x1000，<code>FileAlignment</code> 通常 0x200。</p>
 <h2 id="值得当特征的字段">值得当特征的字段</h2>
 <p>把整个头过一遍，能进特征的不多。</p>
 <p>DOS 头只有 <code>e_lfanew</code> 有用，是 PE 头在文件里的偏移。取出来先做范围校验，改过头的样本常在这里露馅。</p>
@@ -95,7 +95,7 @@ def walk_imports(pe):
             # 序号导入没有名字，丢掉它等于丢掉一个信号
             out.append(imp.name.decode() if imp.name else &#x27;#%d&#x27; % imp.ordinal)
     return out</code></pre>
-<p>两处细节都是事后补的：<code>VirtualSize</code> 为 0 时退回 <code>SizeOfRawData</code>。</p>
+<p>两处细节都是后补的：<code>VirtualSize</code> 为 0 时退回 <code>SizeOfRawData</code>。</p>
 <h2 id="改了什么">改了什么</h2>
 <p>解析层有了黄金集：300 个真实文件，安装器、加壳、命令行工具、托管程序各 75 个，期望值写死在测试里，口径改动先过硬性比对。</p>
 <p>特征定义进了版本号。改口径等于改模型输入，调权前必须重新打分，不能再按「解析代码没动」推断不用回归。</p>
@@ -109,7 +109,7 @@ def walk_imports(pe):
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/pe格式/">PE格式</a><a class="tag" href="/tags/文件检测/">文件检测</a><a class="tag" href="/tags/特征工程/">特征工程</a><a class="tag" href="/tags/样本分析/">样本分析</a></p>
-  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=PE+%E8%A7%A3%E6%9E%90%E5%85%A5%E9%97%A8%EF%BC%9A%E5%A4%B4%E3%80%81%E8%8A%82%E8%A1%A8%E3%80%81%E5%AF%BC%E5%85%A5%E8%A1%A8%E9%87%8C%E9%82%A3%E4%B8%89%E4%B8%AA%E6%88%91%E8%AF%BB%E9%94%99%E7%9A%84%E5%AD%97%E6%AE%B5" target="_blank" rel="noopener">分享到 X</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=PE+%E8%A7%A3%E6%9E%90%E5%85%A5%E9%97%A8%EF%BC%9A%E5%A4%B4%E3%80%81%E8%8A%82%E8%A1%A8%E3%80%81%E5%AF%BC%E5%85%A5%E8%A1%A8%E9%87%8C%E4%B8%89%E4%B8%AA%E5%AE%B9%E6%98%93%E8%AF%BB%E9%94%99%E7%9A%84%E5%AD%97%E6%AE%B5" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/nonresident-code/">← 非常驻代码：节表里那块只有虚拟大小的内存</a><a class="next" href="/post/ransomware-fingerprint/">勒索软件的加密指纹：非对称文件头识别 →</a></nav>
 </article>
 <section class="comments">

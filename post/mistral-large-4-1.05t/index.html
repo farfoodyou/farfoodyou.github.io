@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Mistral Large 4：1.05T 的欧洲旗舰，和「不做最大」的路线</h1>
-    <p class="meta"><time datetime="2026-10-08T09:20:00">2026-10-08</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1990 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-10-08T09:20:00">2026-10-08</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1991 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#105t-的位置">1.05T 的位置</a></li>
 <li class="h2"><a href="#欧洲的算力现实">欧洲的算力现实</a></li>
@@ -103,7 +103,7 @@
 </ul>
 <p>对使用者的建议：<strong>预览版只做技术验证，不做容量规划</strong>。真正定架构要等 GA 的许可证和价格。</p>
 <h2 id="不确定的部分">不确定的部分</h2>
-<p>预览版没有公开激活参数，上面的 KV 与带宽账是按 40B 估的，真实值可能是 32B 也可能是 45B，取决于专家粒度；1.05T 是训练时就这个规模、还是后训练扩出来的，同样没说。许可证没定，商用条款取决于 GA 时挂哪一版。还有一个我确实不知道的：FP4 在这个规模上对长上下文检索的损失有多大，官方只给了聚合分数，没有 needle 一类的定位测试，所以“FP4 能不能上生产”目前只能按任务自己试。</p>
+<p>预览版没有公开激活参数，上面的 KV 与带宽账是按 40B 估的，真实值可能是 32B 也可能是 45B，取决于专家粒度；1.05T 是训练时就这个规模、还是后训练扩出来的，同样没说。许可证没定，商用条款取决于 GA 时挂哪一版。还有一个公开材料里没有的：FP4 在这个规模上对长上下文检索的损失有多大，官方只给了聚合分数，没有 needle 一类的定位测试，所以“FP4 能不能上生产”目前只能按任务自己试。</p>
 <h2 id="一个-fp4-节点还剩多少">一个 FP4 节点还剩多少</h2>
 <div class="table-wrap"><table>
 <thead><tr>

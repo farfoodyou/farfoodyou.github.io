@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">DeepSeek-R1：纯 RL 把推理能力「逼」出来</h1>
-    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4758 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-01-21T09:20:00">2025-01-21</time><span class="sep">·</span>12 分钟<span class="sep">·</span>4759 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#两条路线zero-和-r1">两条路线：Zero 和 R1</a></li>
 <li class="h2"><a href="#grpo把-critic-省掉">GRPO：把 critic 省掉</a></li>
@@ -170,7 +170,7 @@
 <p>prefill 则相反：每 token 约 2 × 37G = 74 GFLOP，算力先满，是 compute-bound。这就是为什么所有推理框架都把 prefill 和 decode 分开调度，甚至拆到不同机器上（PD 分离）——两者的资源画像完全相反。</p>
 <p>跨节点专家并行时，那 6.6 MB/token 的 all-to-all 要走 RDMA。按 400 Gbps（50 GB/s）算，一个 token 的专家通信就要 130 μs，比本地算一遍还慢——<strong>MoE 的扩展瓶颈是网络，不是 FLOPs</strong>。</p>
 <h2 id="复现比公式难得多">复现比公式难得多</h2>
-<p>GRPO 的公式半小时能抄完，难的是两头：可验证数据的管线，和 128K rollout 的训练-推理集群。报告没给 token 预算曲线，长度为什么自发增长也没解释，这两处只能靠内部数据补；规则奖励能覆盖的只有数学、代码和有标准答案的 STEM，写作、法律、产品决策没有判分器，也就没有这条路。蒸馏那段给出的结论反过来印证了这一点：在 1.5B～70B 上抄 R1 的 CoT，比在小模型上重跑一遍 RL 便宜得多，因为 RL 的成本几乎全压在 rollout 的基础设施上，小模型的收益曲线撑不起这份开销。</p>
+<p>GRPO 的公式半小时能抄完，难的是两头：可验证数据的管线，和 128K rollout 的训练-推理集群。报告没给 token 预算曲线，长度为什么自发增长也没解释，这两处只能靠非公开数据补；规则奖励能覆盖的只有数学、代码和有标准答案的 STEM，写作、法律、产品决策没有判分器，也就没有这条路。蒸馏那段给出的结论反过来印证了这一点：在 1.5B～70B 上抄 R1 的 CoT，比在小模型上重跑一遍 RL 便宜得多，因为 RL 的成本几乎全压在 rollout 的基础设施上，小模型的收益曲线撑不起这份开销。</p>
 <p>所以这一轮的差距是“两周内能不能跑完一轮 128K 实验”，不是公式记得住记不住。</p>
 <h2 id="来源">来源</h2>
 <ul>

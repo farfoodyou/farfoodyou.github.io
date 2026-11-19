@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">上下文预算：三种裁剪方案放在同一张账单上</h1>
-    <p class="meta"><time datetime="2024-07-09T21:05:00">2024-07-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2501 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+    <p class="meta"><time datetime="2024-07-09T21:05:00">2024-07-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2494 字 <a class="cat" href="/categories/agent/">Agent</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据要能量出来">判据要能量出来</a></li>
 <li class="h2"><a href="#账单先摊开">账单先摊开</a></li>
@@ -54,7 +54,7 @@
 <li class="h2"><a href="#什么时候不该裁">什么时候不该裁</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>那个助手一晚上烧掉了当天一半的额度。任务只是排一个线上问题：检索、读日志、再检索，来回 31 轮，到第 20 轮时上下文已经 92K，模型开始重复读同一个文件。此后三种裁剪做法都跑过，各自丢的是不同的东西。</p>
+<p>一个典型场景：排一个线上问题，检索、读日志、再检索，来回 31 轮，到第 20 轮时上下文已经 92K，模型开始重复读同一个文件，一晚上的消耗能到当天额度的一半。三种裁剪做法各有失效模式，丢掉的东西各不相同。</p>
 <h2 id="判据要能量出来">判据要能量出来</h2>
 <ul>
 <li>事实留存：40 道回归题，人工标注每题 3 到 6 个必须保留的事实（编号、阈值、约束），看回答命中多少。</li>
@@ -63,7 +63,7 @@
 </ul>
 <p>第三条最容易被跳过，也最影响敢不敢调参。</p>
 <h2 id="账单先摊开">账单先摊开</h2>
-<p>动手之前按来源拆了一次 token 账单，结果和直觉不同：</p>
+<p>按来源把 token 账单摊开，结果和直觉不同：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>来源</th>
@@ -94,7 +94,7 @@
 </tbody>
 </table></div>
 <p>B 的输入比 A 还高，因为每轮摘要都要重发历史。它适合 50 轮以上，20 轮以内不划算。</p>
-<p>C 是最后留下的：没有「裁剪」概念，只有槽位和淘汰顺序。</p>
+<p>留下的是 C：没有「裁剪」概念，只有槽位和淘汰顺序。</p>
 <h2 id="预算是怎么切的">预算是怎么切的</h2>
 <pre data-lang="text"><code class="language-text">budget    = ctx_window - reserve_output - safety
 fixed     = min(2000, 系统提示 + 工具定义)
@@ -127,7 +127,7 @@ history   = budget - fixed - task - retrieval</code></pre>
 <p>差 3%，为这 3% 加淘汰逻辑、加一个会丢信息的环节，账面不成立。裁历史买到的是另三样：不撞窗口、prefill 可控、p99 不随轮数漂。按经验值 prefill 约 3k token/s，12k 输入约 4 秒，20k 约 6.7 秒。</p>
 <p>省钱的着力点是检索截断、工具定义瘦身和 prompt 缓存，它省单价不省长度。判据和 HTTP 缓存（<a href="https://www.rfc-editor.org/rfc/rfc9111.html">RFC 9111</a>）不同，要求一样：命中的前缀必须完全一致，改一个空格就退化成全量 prefill。</p>
 <h2 id="摘要漂移是怎么发生的">摘要漂移是怎么发生的</h2>
-<p>B 方案最贵的一次问题在改信息。摘要模型看到「配额上限 20000」，写成「两万左右」，下一轮成了「约 2 万」，第四轮变成「21000」。每一跳损失很小，累积三跳就是错误事实。</p>
+<p>B 方案最典型的失效在改信息。摘要模型看到「配额上限 20000」，写成「两万左右」，下一轮成了「约 2 万」，第四轮变成「21000」。每一跳损失很小，累积三跳就是错误事实。</p>
 <p>改法是只摘要过程，不摘要事实。事实走槽位：id、数值、结论三列，固定 schema，每轮重新注入，不经过摘要模型。摘要按 <a href="https://www.unicode.org/reports/tr29/">UAX #29</a> 的句子边界切，不按字符数硬截，中文里那样截会把数字和单位分开。</p>
 <h2 id="什么时候不该裁">什么时候不该裁</h2>
 <p>窗口 32k 以上、任务 10 轮以内，别裁。省不下钱，却要为几乎不会触发的边界写代码。该做的是把工具返回压小，那是 20 轮里唯一有可见效果的改动。</p>

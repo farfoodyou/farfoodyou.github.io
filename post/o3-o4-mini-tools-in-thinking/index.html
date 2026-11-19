@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">o3 与 o4-mini：在思考过程里调用工具</h1>
-    <p class="meta"><time datetime="2025-04-17T09:50:00">2025-04-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2315 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-04-17T09:50:00">2025-04-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2314 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#从串行到思考内工具">从&quot;串行&quot;到&quot;思考内工具&quot;</a></li>
 <li class="h2"><a href="#视觉进了推理链">视觉进了推理链</a></li>
@@ -61,7 +61,7 @@
                 +-- needs math ----&gt; run Python --&gt; back to CoT
                 +-- needs detail --&gt; crop/zoom ---&gt; back to CoT
         -&gt; keep reasoning -&gt; answer</code></pre>
-<p>差别在于<strong>中间结论可以被外部事实纠正</strong>。纯 CoT 的失败模式是“一路自信地推错”，工具插入后，模型有机会在中途发现“我记的数字不对”。</p>
+<p>差别在于<strong>中间结论可以被外部事实纠正</strong>。纯 CoT 的失败模式是“一路自信地推错”，工具插入后，模型有机会在中途发现“记下的数字不对”。</p>
 <p>代价也很清楚：一次请求可能触发多次工具调用，延迟从“一次生成”变成“多轮生成 + IO”。<strong>成本模型彻底变了</strong>，不再按 token 线性估算，而是按“工具调用次数 × 每轮上下文”估算，且上下文会随着工具结果不断增长。</p>
 <h2 id="视觉进了推理链">视觉进了推理链</h2>
 <p>o3/o4-mini 都是视觉语言模型，宣传语是 <a href="https://en.wikipedia.org/wiki/OpenAI_o4-mini">“think with images&quot;</a>。实用差别在于：模型可以对图像做<strong>操作</strong>，放大局部、旋转、裁剪后再看，而不是一次性把整张图编码进上下文。</p>
@@ -98,7 +98,7 @@ resp = client.responses.create(
 <p>如果要上，先确认三件事：</p>
 <ol>
 <li><strong>工具预算写死在代码里</strong>：<code>max_tool_calls</code> 给 8，超了就返回部分结果。没有这条上限，单请求的上下文会长到算不出成本。</li>
-<li><strong>每一步都能回放</strong>：工具的入参、原始输出、当步的推理摘要全部落盘。一条请求十几步，按我们的采样日志量是普通请求的 8～10 倍，得单独给容量。</li>
+<li><strong>每一步都能回放</strong>：工具的入参、原始输出、当步的推理摘要全部落盘。一条请求十几步，按采样日志的量级是普通请求的 8～10 倍，得单独给容量。</li>
 <li><strong>评测口径写明 harness</strong>：工具栈、超时时间、重试次数不写清，SWE-bench 这类数字跨团队不可比。</li>
 </ol>
 <h2 id="出处">出处</h2>

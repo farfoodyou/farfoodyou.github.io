@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">反沙箱手法算账：90 秒的预算对上 600 秒的等待</h1>
-    <p class="meta"><time datetime="2023-03-07T20:50:00">2023-03-07</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-03-07T20:50:00">2023-03-07</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2497 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个数先摆出来">三个数先摆出来</a></li>
 <li class="h2"><a href="#加速时钟是唯一选项也就是可测的选项">加速时钟是唯一选项，也就是可测的选项</a></li>
@@ -54,7 +54,7 @@
   <div class="post-content">
 <p>一批样本进沙箱之后行为报告几乎是空的：没有文件落地，没有网络连接，进程起了两个就没下文。值班的人先怀疑沙箱坏了，在同一个镜像里手动跑，报告还是空。</p>
 <p>这批样本在最初两秒内做了一件事：确认自己在不在分析环境里，结果是「在」，然后退出。</p>
-<p>反沙箱的技术面不复杂：时间、CPU、设备指纹三类，每类几十行代码。难的是判断值不值得防、防到哪层停手。这篇用账本写，因为胜负最终由成本决定，不由判据数量决定。</p>
+<p>反沙箱的技术面不复杂：时间、CPU、设备指纹三类，每类几十行代码。难的是判断值不值得防、防到哪层停手。按账本算，因为胜负最终由成本决定，不由判据数量决定。</p>
 <h2 id="三个数先摆出来">三个数先摆出来</h2>
 <p>沙箱集群的配置：400 个并发实例，单样本墙钟 90 秒、CPU 120 秒、内存 2GB、磁盘 60GB；日提交 12 万份。</p>
 <div class="table-wrap"><table>
@@ -86,7 +86,7 @@ c  = 周期计数器的差值 / 主频    (接近真实，读 TSC 或等价计�
 <p>空转循环会打穿 CPU 预算：120 秒的预算，循环 130 秒就超时。沙箱可以把预算抬到 300 秒，吞吐按同一条算式掉 3.3 倍，降到 11.5 万份/天。到这里双方的账都清楚了：<strong>时间这一维度上，沙箱的每一点防守都在消耗自己的吞吐，攻击者的每一点试探只消耗一次编译。</strong></p>
 <h2 id="cpu-与内存误判率的不对称">CPU 与内存：误判率的不对称</h2>
 <p>环境类判据的写法是「或」：核心数少于 2、物理内存小于 2GB、磁盘小于 60GB、无输入设备、无电池——命中任意一条就认定在分析环境里。</p>
-<p>单条判据在真实用户里的误判率，按我们的样本统计约 2%（一台正常机器是单核、内存 2GB 以下的比例）。五条「或」起来，真实机器被误判的比例是：</p>
+<p>单条判据在真实用户里的误判率，按经验样本统计约 2%（一台正常机器是单核、内存 2GB 以下的比例）。五条「或」起来，真实机器被误判的比例是：</p>
 <pre data-lang="text"><code class="language-text">P(误判) = 1 - (1 - 0.02)^5 ≈ 9.6%</code></pre>
 <p>9.6% 的感染被自己放弃，对攻击者是可以接受的代价，因为换来的是在被分析环境里 100% 的识别率。沙箱侧的要求正好相反：漏判一条，整个判据组就失效。</p>
 <p>同样的数字放在两边结论不同，这是最核心的不对称——<strong>容忍误判的一方可以靠「或」堆判据，不能容忍漏判的一方堆判据只会增加维护面。</strong></p>

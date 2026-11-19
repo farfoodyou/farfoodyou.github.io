@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">FTS5 的中文检索：一个分词器选项撑起来的整套设计</h1>
-    <p class="meta"><time datetime="2024-04-23T22:15:00">2024-04-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2488 字 <a class="cat" href="/categories/后端/">后端</a></p>
+    <p class="meta"><time datetime="2024-04-23T22:15:00">2024-04-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2484 字 <a class="cat" href="/categories/后端/">后端</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一个-token-是怎么变成可查的">一个 token 是怎么变成可查的</a></li>
 <li class="h2"><a href="#中文怎么切">中文怎么切</a></li>
@@ -51,14 +51,14 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p><code>tokenize</code> 的默认值是 <code>unicode61</code>。名字里的 61 指 Unicode 6.1，那张表管大小写折叠与变音符号，跟「怎么切词」没关系。决定切法的是另一条规则：一段连续的字母数字类码点算一个 token，其余字符都算分隔符。</p>
-<p>汉字的 Unicode 类别是 <code>Lo</code>，属于「字母」。于是「重建索引需要多久」在默认分词下是一个 token，查「索引」匹配不到，只有整句话原样打进去才命中。第一次建表时没注意，1,900 篇文档零命中，索引文件 9MB 看起来完全正常。</p>
+<p>汉字的 Unicode 类别是 <code>Lo</code>，属于「字母」。于是「重建索引需要多久」在默认分词下是一个 token，查「索引」匹配不到，只有整句话原样打进去才命中。用默认分词建表后，1,900 篇文档零命中，索引文件 9MB 看起来完全正常。</p>
 <h2 id="一个-token-是怎么变成可查的">一个 token 是怎么变成可查的</h2>
 <p>FTS5 是虚拟表，<code>CREATE VIRTUAL TABLE</code> 会在同一个库里建五张影子表：<code>%_data</code> 存倒排段，<code>%_idx</code> 以 term 为键，<code>%_content</code> 存原文（外部内容表时不建），<code>%_docsize</code> 记每篇每列的 token 数，<code>%_config</code> 存 <code>automerge</code> 这类参数。</p>
 <p>写入路径很短。一次 <code>INSERT</code> 把这一行的 term 序列压成一个新段，追加进 <code>%_data</code>，攒到一定数量后按 <code>automerge</code> 的档位（默认 4）合并。删除不物理删段，而是在段里写一条「这个 rowid 的这些 term 没了」的墓碑，查询时过滤；墓碑多了就靠 <code>optimize</code> 整表重写。</p>
 <p>查询路径从 query parser 起。<code>重建 索引</code> 是两个 term 的隐式 AND；<code>&quot;重建索引&quot;</code> 是短语，要拿位置链做邻近校验；<code>重建*</code> 走前缀索引，得在建表时用 <code>prefix=&#x27;2 3&#x27;</code> 预先声明。位置信息由 <code>detail</code> 控制，默认 <code>full</code> 存位置加列号，设成 <code>none</code> 能把索引压小，代价是短语查询失效。</p>
 <p>排序默认走 bm25，<code>ORDER BY rank</code> 按它升序。它返回负数，越相关越负：<code>bm25(fts, 10.0, 1.0)</code> 里那两个数是给列的权重。<code>idf</code> 用 <code>log((N-n+0.5)/(n+0.5))</code>，FTS5 把结果钳在极小正数上，避免高频词贡献负分；<code>tf</code> 用 <code>k1=1.2</code>、<code>b=0.75</code> 做饱和与长度归一，长度取自 <code>%_docsize</code>。</p>
 <h2 id="中文怎么切">中文怎么切</h2>
-<p>绕开默认分词有三条路，我三种都上过线，代价差别很大。</p>
+<p>绕开默认分词有三条路，三条的代价差别很大。</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>方案</th>
@@ -74,7 +74,7 @@
 </tbody>
 </table></div>
 <p>体积是同一批 1,900 篇、6.8M 字符下 <code>%_data</code> 加 <code>%_idx</code> 的实测，换语料会变。</p>
-<p>二元切分是我最后留下的方案：在应用层把正文切成两字一组、用空格连接，写进一个专门的列，原文另存一列给摘要展示用。查询串同样切分，然后包成短语：</p>
+<p>二元切分是权衡后常见的一种方案：在应用层把正文切成两字一组、用空格连接，写进一个专门的列，原文另存一列给摘要展示用。查询串同样切分，然后包成短语：</p>
 <pre data-lang="sql"><code class="language-sql">CREATE VIRTUAL TABLE doc_fts USING fts5(
   title, body_bigram,
   content=&#x27;doc&#x27;, content_rowid=&#x27;id&#x27;,

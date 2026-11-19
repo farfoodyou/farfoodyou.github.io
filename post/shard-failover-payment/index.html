@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">分片挂了还能付款：跳单容灾怎么设计</h1>
-    <p class="meta"><time datetime="2021-01-12T21:30:00">2021-01-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2489 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2021-01-12T21:30:00">2021-01-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2485 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#数据库层切换救不了哪些故障">数据库层切换救不了哪些故障</a></li>
 <li class="h2"><a href="#逻辑分片与物理落点分开">逻辑分片与物理落点分开</a></li>
@@ -52,7 +52,7 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>订单按用户维度哈希落到 8 个库。上线三个月后，一个库所在主机磁盘写满，实例转成只读，那一批用户的订单写入全部失败。故障本身不复杂，清理磁盘二十来分钟就能搞定，但业务侧结结实实挨了四十分钟的投诉。</p>
-<p>为这件事开了两轮会。一派主张把数据库层的高可用做彻底——选主、代理、自动切换；另一派主张应用层能绕过坏分片。我倾向后者。理由跟技术偏好无关，看的是故障谱系：<strong>有一半的故障场景，数据库层自己救不了。</strong></p>
+<p>这类事故通常引出两派意见。一派主张把数据库层的高可用做彻底——选主、代理、自动切换；另一派主张应用层能绕过坏分片。后者成立与否不看技术偏好，看的是故障谱系：<strong>有一半的故障场景，数据库层自己救不了。</strong></p>
 <h2 id="数据库层切换救不了哪些故障">数据库层切换救不了哪些故障</h2>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -90,7 +90,7 @@
     }
     return 0, ErrNoShard
 }</code></pre>
-<p>有一条我坚持不让步：<strong>落点记录必须和订单行写在目标分片的同一个本地事务里。</strong>当时有人提了另一种做法：记录先写到一个独立的配置存储里，这样查路由不用碰业务库。独立存储查得快、不占业务库连接，但它和订单行不在一个事务里，中间任何一次崩溃都会留下查不到的单。 反过来做——先写订单、再写记录。会出现「钱收了、单也落了，但路由查不到它」，这种单在对账里表现为凭空多出来的余额，处理成本比故障本身高一个数量级。同一个本地事务保证了两者要么都在、要么都不在。</p>
+<p>有一条不能让步：<strong>落点记录必须和订单行写在目标分片的同一个本地事务里。</strong>当时有人提了另一种做法：记录先写到一个独立的配置存储里，这样查路由不用碰业务库。独立存储查得快、不占业务库连接，但它和订单行不在一个事务里，中间任何一次崩溃都会留下查不到的单。 反过来做——先写订单、再写记录。会出现「钱收了、单也落了，但路由查不到它」，这种单在对账里表现为凭空多出来的余额，处理成本比故障本身高一个数量级。同一个本地事务保证了两者要么都在、要么都不在。</p>
 <p>顺带一个约束：订单号不能带分片位。原来号段是按分片发的，号里隐含了「这单在哪」，跳单之后这个隐含关系就假了，运维排查时会把人带到错的分片上。</p>
 <h2 id="跳单的代价清单">跳单的代价清单</h2>
 <div class="table-wrap"><table>
@@ -109,7 +109,7 @@
 </table></div>
 <p>配额这一条是第二次故障才加上的。第一次跳单时没有上限，坏掉的分片占了全部写入的 12.5%，摊到 7 个幸存分片上每个多 1.8%。看起来不多。真正的问题是故障瞬间的重试风暴：客户端同时在重试，7 个分片的连接池同时打满，本来健康的分片开始超时，健康度判定把它们也标灰了。一次单分片故障差点演变成全集群故障。后来加了配额和重试抖动，这个放大链路才断掉。</p>
 <h2 id="牺牲一次探测换可用性">牺牲一次探测换可用性</h2>
-<p>跳单的触发条件上，我们争论最久的是「多快判定一个分片坏了」。</p>
+<p>跳单的触发条件上，争议最大的是「多快判定一个分片坏了」。</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>策略</th>

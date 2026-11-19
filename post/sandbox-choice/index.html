@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">沙箱选型：三个数算完，只剩混合部署</h1>
-    <p class="meta"><time datetime="2024-07-23T20:30:00">2024-07-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2432 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+    <p class="meta"><time datetime="2024-07-23T20:30:00">2024-07-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2431 字 <a class="cat" href="/categories/agent/">Agent</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先把要算的数定下来">先把要算的数定下来</a></li>
 <li class="h2"><a href="#启动开销的账">启动开销的账</a></li>
@@ -53,7 +53,7 @@
 <li class="h2"><a href="#改动哪个数会推翻结论">改动哪个数会推翻结论</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>文件检测引擎要执行不可信样本里的脚本，平均 40 秒一个，峰值 8 QPS。这个量级听起来不大，但它决定了沙箱长什么样：并发数、每实例内存、启动开销三样一乘，选型空间就只剩两三个点。我把三种隔离方案按同一套账算了遍，算完发现决定台数的是内存密度，隔离强度反而没怎么参与。</p>
+<p>文件检测引擎要执行不可信样本里的脚本，平均 40 秒一个，峰值 8 QPS。这个量级听起来不大，但它决定了沙箱长什么样：并发数、每实例内存、启动开销三样一乘，选型空间就只剩两三个点。把三种隔离方案按同一套账算一遍，决定台数的是内存密度，隔离强度反而没怎么参与。</p>
 <h2 id="先把要算的数定下来">先把要算的数定下来</h2>
 <ul>
 <li>峰值 8 QPS，单任务平均 40 秒，按 Little 定律并发 = 8 × 40 = 320。</li>
@@ -62,7 +62,7 @@
 <li>冷启动：容器约 120ms，用户态内核约 350ms，微虚拟机 125ms，快照恢复 8ms。</li>
 <li>池化命中率按 0.9 估算（预热池够大时能到，下面有算式）。</li>
 </ul>
-<p>这些数是我在一台 8 核 32G 的宿主机上量的量级，不是厂商数字。同一方案换个镜像、换个文件系统，冷启动能差 2 倍，所以下面所有结论都只在「同机对比」的意义上成立。</p>
+<p>这些数是在一台 8 核 32G 的宿主机上量的量级，属于同机实测，不是厂商数字。同一方案换个镜像、换个文件系统，冷启动能差 2 倍，所以下面所有结论都只在「同机对比」的意义上成立。</p>
 <h2 id="启动开销的账">启动开销的账</h2>
 <p>池化之后，用户看到的启动延迟是加权平均：</p>
 <pre data-lang="text"><code class="language-text">E[start] = h × 8ms + (1 - h) × cold
@@ -87,7 +87,7 @@ h = 0,   cold = 125ms  →  125ms</code></pre>
 <tr><td>微虚拟机</td><td>114MB</td><td>36.5GB</td><td>不够</td><td>2</td></tr>
 </tbody>
 </table></div>
-<p>微虚拟机那 114MB 里，96MB 是客户机内存，18MB 是 VMM 自身的开销（设备模拟、内存映射表、vCPU 线程栈）。客户机内存不能压得太小，内核启动和脚本解释器要占掉一部分，96MB 是我试到能稳定跑的下限。</p>
+<p>微虚拟机那 114MB 里，96MB 是客户机内存，18MB 是 VMM 自身的开销（设备模拟、内存映射表、vCPU 线程栈）。客户机内存不能压得太小，内核启动和脚本解释器要占掉一部分，96MB 是实测能稳定跑的下限。</p>
 <p>用户态内核卡在 28.8 对 28 这条线上，四舍五入等于要两台。这种「差 0.1GB 就翻倍」的位置最难受：调到 85MB 能塞进一台，但一旦有样本内存涨上去就 OOM，所以还是按两台算。</p>
 <h2 id="兼容性的账">兼容性的账</h2>
 <p>隔离强度不能只看「能不能逃逸」，要看暴露了多少接口给不可信代码。</p>
@@ -104,7 +104,7 @@ h = 0,   cold = 125ms  →  125ms</code></pre>
 <tr><td>微虚拟机</td><td>独立内核，虚拟设备面</td><td>VMM 设备模拟或 KVM ioctl</td><td>需要 /dev/kvm，宿主不支持嵌套虚拟化时跑不起来</td></tr>
 </tbody>
 </table></div>
-<p>文件检测这个场景里，样本脚本会做的事情很杂：解压、起子进程、读大量文件、偶尔尝试 ptrace 自己。容器方案下这些都能跑，但 seccomp 一旦放宽到能 ptrace，逃逸面就回来了。用户态内核对 ptrace 的支持是打折扣的，我测的两个样本直接崩在 syscall 上。</p>
+<p>文件检测这个场景里，样本脚本会做的事情很杂：解压、起子进程、读大量文件、偶尔尝试 ptrace 自己。容器方案下这些都能跑，但 seccomp 一旦放宽到能 ptrace，逃逸面就回来了。用户态内核对 ptrace 的支持是打折扣的，实测有两个样本直接崩在 syscall 上。</p>
 <h2 id="算完的选择">算完的选择</h2>
 <p>不可信样本走微虚拟机，可信的内部批处理走容器。用户态内核这一档没选，原因不在隔离，在文件 IO：它的文件系统请求要经一层代理转发，扫描类任务全是随机小读，代理成了瓶颈，同样的样本集跑下来 CPU 有相当一部分消耗在转发上，测出来的吞吐比微虚拟机还低。</p>
 <p>微虚拟机要两台机器，容器一台就够。差价大约是一倍机器成本，换来的是「样本即使拿到内核提权也出不来」。这个交易在文件检测里划算，因为一台机器跑 40 秒一个任务，机器成本早被任务时长摊薄了；换个场景，比如一次只跑 200ms 的表达式求值，同样的差价就不划算。</p>
@@ -115,7 +115,7 @@ h = 0,   cold = 125ms  →  125ms</code></pre>
 <li>峰值 QPS 从 8 掉到 1，池化就没必要了，冷启动 125ms 完全可以接受，池子那套预热逻辑可以整个删掉。</li>
 <li>客户机内存下限如果能压到 64MB，微虚拟机 320 并发只要 26.2GB，一台机器装得下，前面「两台」的结论不成立。</li>
 </ul>
-<p>所以我不太信「隔离更强所以选它」这类判断。可算的部分是并发、内存、启动和补池算力；不可算的部分才是逃逸面的定价，而那个定价要放到具体场景里看：样本跑 40 秒，值得为它多花一台机器；样本跑 200ms，不值得。</p>
+<p>所以「隔离更强所以选它」这类判断站不住。可算的部分是并发、内存、启动和补池算力；不可算的部分才是逃逸面的定价，而那个定价要放到具体场景里看：样本跑 40 秒，值得为它多花一台机器；样本跑 200ms，不值得。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://firecracker-microvm.github.io/">微虚拟机的设计目标与启动开销</a></li>

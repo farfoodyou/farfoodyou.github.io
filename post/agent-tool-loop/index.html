@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agent 的工具循环：什么时候该停 - farfood</title>
-<meta name="description" content="跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比过，最后我把停止从语义判断改成了记账。">
+<meta name="description" content="跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比完之后，停止条件从语义判断改成了记账。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/agent-tool-loop/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Agent 的工具循环：什么时候该停", "description": "跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比过，最后我把停止从语义判断改成了记账。", "datePublished": "2024-11-12T23:05:00+08:00", "dateModified": "2024-11-12T23:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/agent-tool-loop/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Agent, 停止条件, 循环检测, 成本上限, 幂等"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Agent 的工具循环：什么时候该停", "description": "跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比完之后，停止条件从语义判断改成了记账。", "datePublished": "2024-11-12T23:05:00+08:00", "dateModified": "2024-11-12T23:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/agent-tool-loop/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Agent, 停止条件, 循环检测, 成本上限, 幂等"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="Agent 的工具循环：什么时候该停 - farfood">
-<meta property="og:description" content="跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比过，最后我把停止从语义判断改成了记账。">
+<meta property="og:description" content="跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比完之后，停止条件从语义判断改成了记账。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/agent-tool-loop/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Agent 的工具循环：什么时候该停 - farfood">
-<meta name="twitter:description" content="跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比过，最后我把停止从语义判断改成了记账。">
+<meta name="twitter:description" content="跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比完之后，停止条件从语义判断改成了记账。">
 <meta property="article:published_time" content="2024-11-12T23:05:00+08:00">
 <meta name="keywords" content="Agent, 停止条件, 循环检测, 成本上限, 幂等">
 </head>
@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Agent 的工具循环：什么时候该停</h1>
-    <p class="meta"><time datetime="2024-11-12T23:05:00">2024-11-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2497 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+    <p class="meta"><time datetime="2024-11-12T23:05:00">2024-11-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2494 字 <a class="cat" href="/categories/agent/">Agent</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据">判据</a></li>
 <li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
@@ -51,8 +51,8 @@
 <li class="h2"><a href="#停下之后做什么">停下之后做什么</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>九月底有个跑飞的例子。任务很简单：把知识库的目录整理成一份索引说明。模型先列目录，读一份文件时被截断，于是再读同一个路径，又被截断，第三次还是同一个路径。一共 24 轮同一个动作，花了 78k token，最后交上来一份基于前 200 行的目录说明，内容还是错的。</p>
-<p>模型每次的推理都成立：它看到的是「内容被截断」，所以合理地再读一次。问题在于我的循环里没有任何一处负责说停，只有一个 <code>max_steps=25</code> 兜底，恰好够它跑到上限。</p>
+<p>一个典型的跑飞例子。任务很简单：把知识库的目录整理成一份索引说明。模型先列目录，读一份文件时被截断，于是再读同一个路径，又被截断，第三次还是同一个路径。一共 24 轮同一个动作，花了 78k token，最后交上来一份基于前 200 行的目录说明，内容还是错的。</p>
+<p>模型每次的推理都成立：它看到的是「内容被截断」，所以合理地再读一次。问题在于这个循环里没有任何一处负责说停，只有一个 <code>max_steps=25</code> 兜底，恰好够它跑到上限。</p>
 <h2 id="判据">判据</h2>
 <p>停止策略不只是省钱，四个判据，前两个决定做不做，后两个决定做多重：</p>
 <div class="table-wrap"><table>
@@ -87,9 +87,9 @@
 <tr><td>适合</td><td>短任务、只读工具</td><td>步骤明确的批处理</td><td>长任务、工具多、有副作用</td></tr>
 </tbody>
 </table></div>
-<p>A 的失效点在于模型看不见「我在原地打转」。要它自己判断，就得把历史重新读一遍，而「被截断」恰好发生在历史里，于是它越读越确定自己该再读一次。</p>
+<p>A 的失效点在于模型看不见「自己在原地打转」。要它自己判断，就得把历史重新读一遍，而「被截断」恰好发生在历史里，于是它越读越确定自己该再读一次。</p>
 <p>B 在步骤明确的场景很好用：给 300 个文件补元数据，计划 6 步，每步一个可自动验证的断言。难点全在断言上：写松了循环不停，写紧了正常跑完也判失败，调断言的工时比写主流程还多。</p>
-<p>C 是我最后留下的形态。它把「停」从语义判断变成记账，而账可以拿日志核对，这一点比任何启发式都可靠。</p>
+<p>最后留下的是 C。它把「停」从语义判断变成记账，而账可以拿日志核对，这一点比任何启发式都可靠。</p>
 <h2 id="三重刹车">三重刹车</h2>
 <pre data-lang="python"><code class="language-python">def run(task, budget):
     sigs, obs = {}, []
@@ -137,7 +137,7 @@
   </div>
   <p class="tag-list"><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/停止条件/">停止条件</a><a class="tag" href="/tags/循环检测/">循环检测</a><a class="tag" href="/tags/成本上限/">成本上限</a><a class="tag" href="/tags/幂等/">幂等</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Agent+%E7%9A%84%E5%B7%A5%E5%85%B7%E5%BE%AA%E7%8E%AF%EF%BC%9A%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E8%AF%A5%E5%81%9C" target="_blank" rel="noopener">分享到 X</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/local-llm-agent/">← 本地跑模型做 Agent：一次显存打满的复盘</a><a class="next" href="/post/after-o1/">什么时候「多想一会儿」不值：推理档位的账 →</a></nav>
+  <nav class="post-nav"><a class="prev" href="/post/local-llm-agent/">← 本地跑模型做 Agent：24GB 卡上的显存账</a><a class="next" href="/post/after-o1/">什么时候「多想一会儿」不值：推理档位的账 →</a></nav>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>

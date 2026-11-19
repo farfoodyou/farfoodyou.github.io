@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">给人看的证据链：检测结论怎么才解释得清</h1>
-    <p class="meta"><time datetime="2023-07-25T21:30:00">2023-07-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2474 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-07-25T21:30:00">2023-07-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2465 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#五条判据">五条判据</a></li>
 <li class="h2"><a href="#三种形态并排">三种形态并排</a></li>
@@ -54,7 +54,7 @@
 <li class="h2"><a href="#一个反例">一个反例</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>被误判的一方来找我们时，问的从来不是「你的模型多少分」，而是三个具体问题：你依据哪一条判的，那条依据现在还能验证吗，我的文件到底哪一段触发了它。</p>
+<p>误判申诉里，被误判一方问的从来不是「你的模型多少分」，而是三个具体问题：你依据哪一条判的，那条依据现在还能验证吗，这份文件到底哪一段触发了它。</p>
 <p>内部排查要的是另一组：这条命中跟哪些告警同源、下一步看哪个进程。审计要的是第三组：半年前那批判定现在还站得住吗。</p>
 <p>三组问题对应三种证据形态。先说判据，再说方案，顺序反过来就会变成给现有结构补文档。</p>
 <h2 id="五条判据">五条判据</h2>
@@ -76,7 +76,7 @@
 <tr><td>保留期</td><td>可留一年以上</td><td>六个月够用</td><td>按需生成，过期删</td></tr>
 </tbody>
 </table></div>
-<p>命中摘要这一层不能省，它是索引。但把它当证据用，是我们早期最常犯的错：给客户看一条规则 ID 加一个文件偏移，等于让他去读我们的规则集。</p>
+<p>命中摘要这一层不能省，它是索引。但把它当证据用是最常见的错：给外部看一条规则 ID 加一个文件偏移，等于让人去读规则集。</p>
 <h2 id="为什么在线只到证据链">为什么在线只到证据链</h2>
 <p>快照层看起来最理想，代价在存储。单个样本平均 1.4MB，日命中一万出头，全量快照一天 14GB，加上引擎镜像与规则包副本，一个月就是几百 GB，还得配一套能重放的执行环境。它的重放也不便宜：沙箱重跑一次按分钟算。</p>
 <p>所以在线生成到证据链为止，快照按需触发：申诉成立的样本、评级最高的那批、以及每天 1% 的随机抽样。抽样那部分的目的不是给谁看，是留一批「半年后还能验」的样本，用来验证旧证据没有腐烂。</p>
@@ -106,7 +106,7 @@
 <p>申诉入口只问三件事，全部由证据链回答：命中的是哪条规则、那条规则当时的原文和版本、输入能不能复原。第三件若答不了，就转到快照层重放；重放不了，按「无法复核」处理，直接放行并记账。</p>
 <p>执行两个月，申诉维持率从七成降到五成出头，省下来的不是误报本身，是来回答辩的时间。记账部分进回归集，规则包发布前跑一遍。</p>
 <h2 id="一个反例">一个反例</h2>
-<p>我们试过在证据里附「相似样本列表」，挑五个同族样本的哈希给人参考。结果分析师开始用相似度替代判据，讨论从「这条规则为什么命中」滑到「这五个样本是不是同一批」。证据链是把判定钉在可核验的依据上，软性参考项会稀释它。那一版两周后撤掉了。</p>
+<p>在证据里附「相似样本列表」是个反例：挑五个同族样本的哈希给人参考，分析师随后开始用相似度替代判据，讨论从「这条规则为什么命中」滑到「这五个样本是不是同一批」。证据链是把判定钉在可核验的依据上，软性参考项会稀释它。那一版两周后撤掉了。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://www.w3.org/TR/prov-o/">W3C PROV-O: The PROV Ontology</a>：实体、活动、代理三元结构的来源</li>

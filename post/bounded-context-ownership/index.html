@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">限界上下文：按「谁的规则谁负责」切，而不是按表切</h1>
-    <p class="meta"><time datetime="2020-10-09T10:40:00">2020-10-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/架构/">架构</a></p>
+    <p class="meta"><time datetime="2020-10-09T10:40:00">2020-10-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/架构/">架构</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#按表切会发生什么">按表切会发生什么</a></li>
 <li class="h2"><a href="#三个问题定归属">三个问题定归属</a></li>
@@ -53,8 +53,8 @@
 <li class="h2"><a href="#什么情况下不要切">什么情况下不要切</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>接手订单服务时，「额度」这条规则在代码里有三份：订单侧的下单校验用按天累计表算一份；用户域处理提额、临时额度、冻结、过期一份；批处理出报表又一份。三份都「正确」——写的人各自确认过口径。</p>
-<p>三个月里它们分叉了四次：临时额度到期按自然日重置还是按下发后 24 小时；退款回冲时要不要从当天已用里扣；冻结状态下可用额度假定为 0 还是取剩余；跨境订单是否计入日累计。每次分叉都不报错，只会出现「订单侧通过、用户侧拒绝」，或者更糟——钱扣了，累计额度超了。</p>
+<p>一套老订单服务里，「额度」这条规则在代码里有三份：订单侧的下单校验用按天累计表算一份；用户域处理提额、临时额度、冻结、过期一份；批处理出报表又一份。三份都「正确」——写的人各自确认过口径。</p>
+<p>三个月里分叉了四次：临时额度到期按自然日重置还是按下发后 24 小时；退款回冲时要不要从当天已用里扣；冻结状态下可用额度假定为 0 还是取剩余；跨境订单是否计入日累计。每次分叉都不报错，只会出现「订单侧通过、用户侧拒绝」，或者更糟——钱扣了，累计额度超了。</p>
 <p>结论更像一句权责划分：<strong>限界上下文该切在「谁的规则谁负责」上，而不是「谁是这张表的主人」上。</strong>表的所有者是数据存放位置，规则的归属才是边界。</p>
 <h2 id="按表切会发生什么">按表切会发生什么</h2>
 <p>按表切最省事：订单表归订单服务，用户表归用户服务，额度表归额度服务。它的正当性是「每行数据只有一个写入者」，代价是规则被打散。表划的只是存储边界，<strong>一致性单元</strong>比它大得多。真实规则几乎总横跨多张表，比如「当日累计支付不超过可用额度，且冻结时可用额度视为 0」要读订单、额度、冻结状态。按表切之后它没有家，只能复制到每个调用方，然后按各家需求漂移。</p>
@@ -67,7 +67,7 @@
 </ol>
 <p>用第三个问题测「额度」：在用户域，额度是有生命周期、有审批流、会冻结、可分期恢复的<strong>资源</strong>；在订单域，额度只是支付前的一次可否判断。同一个词，两种生命长度。术语抄成一样不解决问题，要紧的是把这层差异传下去。<a href="https://martinfowler.com/bliki/UbiquitousLanguage.html">统一语言</a>的价值不是让大家用同一个词，而是让「同词不同义」暴露出来。</p>
 <h2 id="额度归用户域订单只消费结论">额度归用户域，订单只消费结论</h2>
-<p>判定收进用户域后，订单侧从「我算一下」变成「我问一次」，拿回的不是账户对象而是判决。</p>
+<p>判定收进用户域后，订单侧从「自己算一遍」变成「问一次」，拿回的不是账户对象而是判决。</p>
 <pre data-lang="go"><code class="language-go">// 订单域只依赖自己的接口，不 import 上游模型
 type CreditDecision struct {
     Allowed   bool

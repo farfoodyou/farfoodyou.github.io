@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">跳单的代价：换分片之后怎么不重复扣款</h1>
-    <p class="meta"><time datetime="2021-02-09T10:10:00">2021-02-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2395 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2021-02-09T10:10:00">2021-02-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2392 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#超时只说明不知道">超时只说明「不知道」</a></li>
 <li class="h2"><a href="#去重域必须大于故障域">去重域必须大于故障域</a></li>
@@ -54,7 +54,7 @@
   <div class="post-content">
 <p>跳单上线两周后可用性曲线好看了，代价出现在 T+1 对账的差集里：11 笔交易在同一个请求号下出现两条扣款流水，分别落在新旧分片，时间差 40 毫秒到 3 秒。</p>
 <p>链路还原得很干净：旧分片提交成功，响应在返回路径上超时；调用方判定这个分片不健康，把同一个请求发给新分片；新分片的去重表是本地建的，没有这个请求号，于是又扣了一次。</p>
-<p>11 笔之外的成本更高：它说明我们当初把跳单当成路由问题，实际上它是一次<strong>主动的状态重放</strong>，幂等设计得覆盖重放能到的每个位置。</p>
+<p>11 笔之外的成本更高：把跳单当成路由问题就错了，它是一次<strong>主动的状态重放</strong>，幂等设计得覆盖重放能到的每个位置。</p>
 <h2 id="超时只说明不知道">超时只说明「不知道」</h2>
 <p>写请求只有三种结果：确定成功、确定失败、不知道。超时、连接重置、上游 5xx 都属于第三种。跳单的实质是把「不知道」当「不可用」处理，用确定性换可用性——它只在换地方之前能识别出旧地方可能已写过时成立。</p>
 <p>重复写入的来源不止跳单：</p>
@@ -121,12 +121,12 @@
 <li>下游也超时 → 保持原状，下一轮再说。</li>
 </ul>
 <p>只有第二条允许换分片，判据是下游的回复而不是猜测。T+1 对账保留为最后一道：按请求号 join 两侧流水，重复直接冲正，并做成必须归零的指标。</p>
-<p>数字：日常跳单率千分之二到千分之五，大促峰值约 2%；两周 11 笔双扣，量级万分之四；去重域全局化后四个月双扣 0 笔，但每天仍有 20~50 笔 PROCESSING 卡过 5 分钟，约三分之一最终确认下游没收到。</p>
+<p>数字（经验口径）：日常跳单率千分之二到千分之五，大促峰值约 2%；两周 11 笔双扣，量级万分之四；去重域全局化后四个月双扣 0 笔，但每天仍有 20~50 笔 PROCESSING 卡过 5 分钟，约三分之一最终确认下游没收到。</p>
 <h2 id="几条边界">几条边界</h2>
 <p><strong>有效期</strong>。请求号保留 7 天，超窗口的同号请求当新请求处理并告警。</p>
 <p><strong>降级方向</strong>。去重库不可用就拒单，不许降级成「跳过去重继续扣」。</p>
 <p><strong>键的形态</strong>。用随机 UUID（<a href="https://www.rfc-editor.org/rfc/rfc4122.html">RFC 4122</a>），由发起方生成并持久化；别用「用户 ID 加金额加商品」这类自然键，同样两笔单用户真的会连下。</p>
-<p>判断跳单是否安全，我后来只问一个问题：<strong>换分片之前，新分片能不能看到旧分片可能写过的那条记录</strong>。看不到，就还得再补一套对账。</p>
+<p>判断跳单是否安全只需要问一个问题：<strong>换分片之前，新分片能不能看到旧分片可能写过的那条记录</strong>。看不到，就还得再补一套对账。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://www.rfc-editor.org/rfc/rfc7231.html">RFC 7231 §4.2.2: Idempotent Methods</a></li>

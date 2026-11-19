@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">分布式锁的三种实现与它们的失效场景</h1>
-    <p class="meta"><time datetime="2022-06-14T21:05:00">2022-06-14</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2485 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2022-06-14T21:05:00">2022-06-14</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2493 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#锁的语义由-ttl-决定">锁的语义由 TTL 决定</a></li>
 <li class="h2"><a href="#解锁为什么必须比对-value">解锁为什么必须比对 value</a></li>
@@ -57,13 +57,13 @@
 <pre data-lang="text"><code class="language-text">SET lock:settle:20220614 &lt;owner&gt; NX PX 30000</code></pre>
 <p>三个成分：<code>NX</code> 决定互斥，value 决定所有权，<code>PX 30000</code> 决定这行键最多活 30 秒。前两个是设计，第三个是让步。跨进程没有可靠的死亡判定，只能靠过期。</p>
 <h2 id="锁的语义由-ttl-决定">锁的语义由 TTL 决定</h2>
-<p>单机锁靠内存里一个标志位，线程活着一把，退出一把，运行时替你保证。跨进程之后那个运行时不存在了，别人观察不到你死活，只能观察一个带过期时间的键。</p>
-<p>于是分布式锁的语义该这么读：在 TTL 之内，我认为没有人同时持有它。这句限定词要当契约读。按这个读法，失效只剩两类：持锁时间超过 TTL，或者 TTL 内的互斥被破坏。前者是用法问题，后者是存储问题。</p>
+<p>单机锁靠内存里一个标志位，线程活着一把，退出一把，运行时保证。跨进程之后那个运行时不存在了，别人观察不到持锁者死活，只能观察一个带过期时间的键。</p>
+<p>于是分布式锁的语义该这么读：在 TTL 之内，可认为没有人同时持有它。这句限定词要当契约读。按这个读法，失效只剩两类：持锁时间超过 TTL，或者 TTL 内的互斥被破坏。前者是用法问题，后者是存储问题。</p>
 <h2 id="解锁为什么必须比对-value">解锁为什么必须比对 value</h2>
 <p>常见的错误写法是加锁用 <code>SET NX PX</code>，解锁直接 <code>DEL</code>。设 A 持锁、TTL 到期、B 拿到锁，A 的业务此时才结束，一条 <code>DEL</code> 删掉的是 B 的锁，随后 C 也能进来。这个 bug 低负载时不出现，GC 抖动或慢查询时准时出现。</p>
 <p>正确写法是 value 放调用方生成的随机串，解锁时用 Lua 脚本原子地比对再删，不能拆成 <code>GET</code> 加 <code>DEL</code> 两次往返。一条 <code>SET</code> 带 <code>NX</code> 和 <code>PX</code> 同理：早年 <code>SETNX</code> 加 <code>EXPIRE</code> 是两步，中间崩溃会留下永不过期的锁。</p>
 <h2 id="续期把-ttl-变成一个赌注">续期把 TTL 变成一个赌注</h2>
-<p>业务耗时不可预知，30 秒大概率不够，于是加看门狗：每 10 秒把 TTL 续回 30 秒。它解决了「活得比 TTL 久」，也带出新问题：续期成功的瞬间，凭什么还是你？</p>
+<p>业务耗时不可预知，30 秒大概率不够，于是加看门狗：每 10 秒把 TTL 续回 30 秒。它解决了「活得比 TTL 久」，也带出新问题：续期成功的瞬间，凭什么仍是原来那个持锁者？</p>
 <p>进程被 <code>SIGSTOP</code>、宿主机暂停、虚拟化层卡顿，这几种情况下客户端根本没机会跑续期代码，恢复后却仍以为锁在自己手里。所以续期要满足两条：心跳与业务线程分离；续期失败时业务主动放弃，别把日志里那行 warn 当没看见。</p>
 <p>经验值：TTL 取 P99.9 耗时的 3 倍，续期间隔取 TTL 的 1/3，低于这个比例长尾就会变成双写。</p>
 <h2 id="主从切换之后有两个持锁者">主从切换之后有两个持锁者</h2>
@@ -100,7 +100,7 @@ db.Exec(&quot;UPDATE balance SET amt=amt-? WHERE id=? AND fence&lt;?&quot;, amt,
 <p>数据库那边行锁没有 TTL，事务结束才释放，不存在「锁过期人还在写」，代价是执锁期间占着连接；advisory lock 比自建锁表干净。</p>
 <h2 id="选择条件">选择条件</h2>
 <p>按顺序问三个问题：被保护的数据能不能校验写序号，能就用 fencing，锁只需大致互斥；临界区有没有外部调用，有就别用数据库行锁，事务会拖到超时；能否接受加锁从亚毫秒变几毫秒，能就用 etcd 换单调序号，不能就留在 Redis 自己补。</p>
-<p>落地的是第二种：结算按商户号加 etcd 锁，写库带 revision。它没让锁永不过期，只是让过期之后的写入可被拒绝。</p>
+<p>选择条件指向第二种：结算按商户号加 etcd 锁，写库带 revision。它没让锁永不过期，只是让过期之后的写入可被拒绝。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://redis.io/docs/reference/patterns/distributed-locks/">Redis: Distributed Locks</a>：多数派加锁与它列出的假设</li>

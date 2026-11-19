@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">把 YARA 接进产品：编译、性能、误报</h1>
-    <p class="meta"><time datetime="2022-08-09T09:35:00">2022-08-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2473 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2022-08-09T09:35:00">2022-08-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2470 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#编译一次几秒但不该发生在请求路径上">编译：一次几秒，但不该发生在请求路径上</a></li>
 <li class="h2"><a href="#扫描代价由三件事决定">扫描：代价由三件事决定</a></li>
@@ -55,7 +55,7 @@
 <p>编译一条规则时，引擎先做一件多数写规则的人不知道的事：把每条字符串拆成若干 4 字节的 atom，塞进一个多模式匹配的自动机。扫描时先跑自动机，只有 atom 落在数据里，才回到原始字符串做完整比对。</p>
 <p>这条设计决定了它在产品里的全部性能特征：提不出独特 atom 的规则退化成对整块数据逐字节过一遍，atom 挑得好，几千条规则扫 2MB 也还是毫秒级。下面顺着数据流走：规则文本进去，判定出来，每步的代价和坑。</p>
 <h2 id="编译一次几秒但不该发生在请求路径上">编译：一次几秒，但不该发生在请求路径上</h2>
-<p>编译是重活。当时规则集 800 条左右，约 40 条带通配 hex，4 核机器上编译一次 1.8 秒、峰值几百 MB。放在启动阶段无所谓，放进上传请求路径就是灾难。</p>
+<p>编译是重活。规则集 800 条左右（示例口径），约 40 条带通配 hex，4 核机器上编译一次 1.8 秒、峰值几百 MB。放在启动阶段无所谓，放进上传请求路径就是灾难。</p>
 <p>所以产品里的做法是编译一次、序列化落盘、进程启动时加载：</p>
 <pre data-lang="python"><code class="language-python">import yara
 
@@ -65,7 +65,7 @@ src = {&quot;family_a&quot;: &quot;/srv/rules/family_a.yar&quot;,
 rules = yara.compile(filepaths=src)
 rules.save(&quot;/srv/rules/compiled.bin&quot;)          # 加载 90ms  vs 编译 1.8s</code></pre>
 <p>分命名空间是为了扫描能选范围：对已知是文档类的文件只跑 generic，跳过可执行结构规则，代价降到三分之一。命名空间同时是误报定位的坐标，<code>family_a.rule_017</code> 出问题能立刻找到出处。</p>
-<p>第二个坑是原子质量。<code>{ 4D 5A ?? ?? 50 45 }</code> 这种通配太多的 hex 提不出 atom，规则会退化成慢规则；写成 <code>{ 4D 5A [2-4] 50 45 }</code> 就有连续字节可用。短于 4 字节的字符串、纯宽字符串、量词很松的正则都往「无 atom」那边靠。我在编译期加了一条检查：atom 情况逐条打出来，提不出 atom 的规则直接拒收。</p>
+<p>第二个坑是原子质量。<code>{ 4D 5A ?? ?? 50 45 }</code> 这种通配太多的 hex 提不出 atom，规则会退化成慢规则；写成 <code>{ 4D 5A [2-4] 50 45 }</code> 就有连续字节可用。短于 4 字节的字符串、纯宽字符串、量词很松的正则都往「无 atom」那边靠。编译期还有一条检查：atom 情况逐条打出来，提不出 atom 的规则直接拒收。</p>
 <h2 id="扫描代价由三件事决定">扫描：代价由三件事决定</h2>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -81,10 +81,10 @@ rules.save(&quot;/srv/rules/compiled.bin&quot;)          # 加载 90ms  vs 编�
 </tbody>
 </table></div>
 <p>最后一行会出事故。回溯能真的跑满 CPU，而扫描在工作进程里是同步的。护栏两条：扫描器上设 5 秒超时，超过记一次 <code>slow</code> 并把规则摘出来审；正则禁用无界量词，<code>[0-9]{4}-[0-9]{2}</code> 这种有界写法是唯一允许的形状。</p>
-<p>块大小那一行还有个细节：字符串可能横跨块边界，跨块匹配有代价。我们固定成 1MB 一块、相邻块重叠 4KB，既不丢跨界匹配，峰值也压得住。这属于调参，不是定论。</p>
+<p>块大小那一行还有个细节：字符串可能横跨块边界，跨块匹配有代价。固定成 1MB 一块、相邻块重叠 4KB，既不丢跨界匹配，峰值也压得住。这属于调参，不是定论。</p>
 <h2 id="误报门禁要放在合入之前">误报：门禁要放在合入之前</h2>
 <p>误报来源比想象中单调，也就三类：命中人人都在用的运行时库字符串、命中打包器的固定结构、命中中文语料里常见的字节序列。三类都能在合入前挡掉，前提是白样本够大。</p>
-<p>我们的门禁是三条，跑在规则合入的流水线上：</p>
+<p>门禁是三条，跑在规则合入的流水线上：</p>
 <p><strong>白样本零命中。</strong> 库里有 6 万个正常文件，覆盖办公格式、安装包、脚本和一批从线上环境回收的可执行文件。新规则在这批文件上命中一条就不许合入，这一条挡掉了约七成的初版规则。</p>
 <p><strong>正样本至少三条。</strong> 附三个能命中的样本摘要，且不能是同批提交的近似副本。没有正样本的规则就是一句猜测。</p>
 <p><strong>meta 齐全。</strong> 必须带 <code>author</code>、<code>reference</code>、<code>severity</code>，<code>reference</code> 指一份能读的分析记录。这条决定了三个月后还有没有人敢动这条规则。</p>

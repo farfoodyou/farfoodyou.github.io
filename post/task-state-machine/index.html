@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">任务清单的三种存法：把一个方括号字符当状态源</h1>
-    <p class="meta"><time datetime="2024-05-14T20:30:00">2024-05-14</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2484 字 <a class="cat" href="/categories/架构/">架构</a></p>
+    <p class="meta"><time datetime="2024-05-14T20:30:00">2024-05-14</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2475 字 <a class="cat" href="/categories/架构/">架构</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据">判据</a></li>
 <li class="h2"><a href="#三种存法并排">三种存法并排</a></li>
@@ -51,13 +51,13 @@
 <li class="h2"><a href="#数字和边界">数字和边界</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>任务清单我改过三次存法，每次都因为上一种在某个维度上撞了墙。现在定下来的形态很土：一行 Markdown 文本，状态就是那个方括号里的一个字符。</p>
+<p>任务清单的存法试过三种，每一种都在某个维度上撞墙。定下来的形态很土：一行 Markdown 文本，状态就是那个方括号里的一个字符。</p>
 <pre data-lang="text"><code class="language-text">- [ ] 对账差异落地 #alpha !p1 2024-05-06 open
 - [x] 分片路由回滚验证 #beta !p2 2024-05-02 done@05-09</code></pre>
-<p>3,400 行这样的文本，散在 40 多个项目目录里。围绕它有三种存法，我先列判据，再摆对照表。</p>
+<p>3,400 行这样的文本，散在 40 多个项目目录里。围绕它有三种存法，判据先列，再摆对照表。</p>
 <h2 id="判据">判据</h2>
 <ol>
-<li><strong>能不能直接改</strong>：我在地铁上用手机改一个状态，需要装什么、走哪条链路。</li>
+<li><strong>能不能直接改</strong>：在手机上改一个状态，需要装什么、走哪条链路。</li>
 <li><strong>索引能不能丢</strong>：中午误删了索引文件，晚上能不能查东西。</li>
 <li><strong>能问出什么</strong>：上周哪些 P1 任务跨项目阻塞了超过两天。</li>
 <li><strong>写路径有几条</strong>：一个状态变更要经过几处代码。</li>
@@ -82,7 +82,7 @@
 </tbody>
 </table></div>
 <p><strong>扫文件</strong>的死角在组合查询。3,400 行全量解析一次 620ms，单次查询勉强能忍；一旦要「上周所有跨项目阻塞超过两天的 P1」这种带时间窗和聚合的问题，脚本里就出现三层嵌套循环，加一个维度就要改代码。它的好处是零同步：不存在第二份状态，也没有失效一说。</p>
-<p><strong>索引为源</strong>最舒服的其实是写路径：一次 UPDATE，事务给你全部保证。我试过两个月，最后被两件事劝退。第一，索引文件丢过一次（换机器时漏拷贝），重建不出来，因为源就在里面。第二，手机上看不了、grep 不了、代码评审里也看不到，任务从此离开了它出生的地方。状态数据一旦离开文本，就必须有人给它做客户端，那个成本比索引贵得多。</p>
+<p><strong>索引为源</strong>最舒服的其实是写路径：一次 UPDATE，事务给你全部保证。这条路走过两个月，最后被两件事劝退。第一，索引文件丢过一次（换机器时漏拷贝），重建不出来，因为源就在里面。第二，手机上看不了、grep 不了、代码评审里也看不到，任务从此离开了它出生的地方。状态数据一旦离开文本，就必须有人给它做客户端，那个成本比索引贵得多。</p>
 <p><strong>文件为源 + 旁路索引</strong>留下的是双份状态，代价明确：写入要走两条路径，索引可能滞后，回写可能覆盖别人的编辑。前两条可以接受（滞后 1 秒以内），第三条必须用工程手段压住。</p>
 <h2 id="单向的合同">单向的合同</h2>
 <p>选 B 之后，把规则写死成三句：</p>
@@ -124,9 +124,9 @@ def patch_state(text: str, line_no: int, old: str, new: str, src_hash: str) -&gt
 <tr><td>回写冲突</td><td>约 0.3%</td><td>靠哈希比对拦下后重试，重试成功</td></tr>
 </tbody>
 </table></div>
-<p>非法转移在索引层只报警、不阻断。原因是人在文本里手改，会写出 <code>[!]</code> 直接跳到 <code>[x]</code> 这种序列；如果解析器拒收，那一行就从索引里消失，用户看到的是「任务不见了」，比状态机不严谨严重得多。报警进周报，一周大概 2 到 3 条，基本都是我自己图快。</p>
-<p><code>- [ ]</code> 这套勾选框不在 CommonMark 里，规范只管到列表项。所以解析器是我自己写的，只用标准子集里的列表、缩进和行内代码，写出来 200 行左右，比引一个方言解析器便宜。重建索引就是重跑这个解析器，20 秒，随时可以删。</p>
-<p>状态机在查询侧的价值是能回答「从阻塞到完成平均多久」。这条数字逼我把 <code>!</code> 和 <code>~</code> 分开，原来一个「进行中」把阻塞时间混进去了，统计出来永远是乐观的。</p>
+<p>非法转移在索引层只报警、不阻断。原因是人在文本里手改，会写出 <code>[!]</code> 直接跳到 <code>[x]</code> 这种序列；如果解析器拒收，那一行就从索引里消失，用户看到的是「任务不见了」，比状态机不严谨严重得多。报警进周报，一周大概 2 到 3 条，基本都是图快手改的结果。</p>
+<p><code>- [ ]</code> 这套勾选框不在 CommonMark 里，规范只管到列表项。所以解析器只能自己写，只用标准子集里的列表、缩进和行内代码，写出来 200 行左右，比引一个方言解析器便宜。重建索引就是重跑这个解析器，20 秒，随时可以删。</p>
+<p>状态机在查询侧的价值是能回答「从阻塞到完成平均多久」。这条数字要求把 <code>!</code> 和 <code>~</code> 分开，原来一个「进行中」把阻塞时间混进去了，统计出来永远是乐观的。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://spec.commonmark.org/0.30/">CommonMark 规范 0.30</a>：列表项与行内代码的边界，解析器的判据都在这里</li>

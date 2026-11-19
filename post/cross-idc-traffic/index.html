@@ -38,7 +38,7 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
@@ -54,7 +54,7 @@
   <div class="post-content">
 <p>调度系统上线「条带化」之后，均值几乎没变，p99 从 45ms 涨到 210ms。</p>
 <p>条带化指把每个服务的实例均匀撒到所有机房：4 个机房、每服务 32 个实例就是每机房 8 个。理由是单机房故障只损失四分之一容量，而不是整个服务不可用。上线一周后均值平稳，尾部炸了。</p>
-<p>先怀疑新加的中间层和 GC，查了两天没结论；把 span 的机房字段打出来才看明白：<strong>p99 的请求几乎都至少跨了一次机房</strong>，均值被同机房请求稀释，尾部被那一跳决定。</p>
+<p>排障先怀疑新加的中间层和 GC，两天没有结论；把 span 的机房字段打出来才看明白：<strong>p99 的请求几乎都至少跨了一次机房</strong>，均值被同机房请求稀释，尾部被那一跳决定。</p>
 <h2 id="跨机房的概率是乘出来的">跨机房的概率是乘出来的</h2>
 <p>纯随机选实例时，单次调用落同机房的概率是 1/4；3 跳全同机房是 0.25 的三次方，1.6%：</p>
 <div class="table-wrap"><table>
@@ -72,7 +72,7 @@
 </tbody>
 </table></div>
 <p>最后一行是「同机房优先」生效后的样子（经验值，75% 命中）：跨机房次数 2.25 → 0.75。</p>
-<p>跨机房的代价不只是 RTT。实测口径：同城两机房往返 1.5–2ms，跨城 25–40ms；更要紧的是跨机房链路共享，一排队就丢包，而 TCP 丢包后的重传超时是百毫秒量级（RFC 6298 初始 RTO 为 1 秒，实际实现普遍压到 200ms）。210ms 的来源在这里，不是 45ms 加几个毫秒。</p>
+<p>跨机房的代价不只是 RTT。经验口径：同城两机房往返 1.5–2ms，跨城 25–40ms；更要紧的是跨机房链路共享，一排队就丢包，而 TCP 丢包后的重传超时是百毫秒量级（RFC 6298 初始 RTO 为 1 秒，实际实现普遍压到 200ms）。210ms 的来源在这里，不是 45ms 加几个毫秒。</p>
 <p>尾延迟不是平均值乘以跳数，它是<strong>最慢那一跳的重传定时器</strong>。</p>
 <h2 id="条带化没错错在没管概率">条带化没错，错在没管概率</h2>
 <p>有人提议把服务整体放进一个机房，就没有跨机房调用。方向是错的：</p>
@@ -119,7 +119,7 @@
 <p>两个易错点：</p>
 <ul>
 <li><strong>超时之后不要立刻跨机房重试。</strong> 本机房超时说明对端慢或过载，跨机房只会更慢，重试还吃掉后面几跳的预算。只有连接层失败（拒绝连接、被重置）才值得换。</li>
-<li><strong>预算按跳分配，不平均分。</strong> 总预算 200ms、3 跳，我给同机房 40ms、跨机房 60ms、留 40ms 收尾。跨机房跳成本高，更不能给它在本地同样的短超时，否则永远超时、永远白跑。</li>
+<li><strong>预算按跳分配，不平均分。</strong> 总预算 200ms、3 跳，同机房给 40ms、跨机房 60ms、留 40ms 收尾。跨机房跳成本高，更不能给它在本地同样的短超时，否则永远超时、永远白跑。</li>
 </ul>
 <h2 id="超时预算怎么被级联放大">超时预算怎么被级联放大</h2>
 <p>最危险的配置：入口超时 200ms，下游每跳都设 500ms。</p>

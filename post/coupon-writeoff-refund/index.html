@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">券的核销与退款：状态机、幂等、补偿</h1>
-    <p class="meta"><time datetime="2022-01-11T14:20:00">2022-01-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2022-01-11T14:20:00">2022-01-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2497 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#四条判据">四条判据</a></li>
 <li class="h2"><a href="#三种核销顺序">三种核销顺序</a></li>
@@ -101,10 +101,10 @@ func move(ctx context.Context, code string, from, to status, reason string) (boo
     n, _ := res.RowsAffected()
     return n == 1, nil
 }</code></pre>
-<p><code>WHERE status = ?</code> 一句话干三件事：并发互斥、幂等闸门、审计留痕（<code>reason</code> 记清是支付成功还是超时释放）。调用方拿到影响行数 1 表示这次转移是我做的，0 表示有人先做了：前者发通知，后者直接返回成功。</p>
+<p><code>WHERE status = ?</code> 一句话干三件事：并发互斥、幂等闸门、审计留痕（<code>reason</code> 记清是支付成功还是超时释放）。调用方拿到影响行数 1 表示这次转移由本次调用完成，0 表示有人先做了：前者发通知，后者直接返回成功。</p>
 <p>重试因此不需要去重表，重复执行的影响行数是 0。</p>
 <h2 id="退款时券去哪儿">退款时券去哪儿</h2>
-<p>全额退款和部分退款必须分开定，混着写必然出 bug。我们的口径：整单退款且券抵扣全额退还则退券，部分退款不退券，含运费时按比例分摊判断。</p>
+<p>全额退款和部分退款必须分开定，混着写必然出 bug。口径是整单退款且券抵扣全额退还则退券，部分退款不退券，含运费时按比例分摊判断。</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>策略</th>
@@ -118,8 +118,8 @@ func move(ctx context.Context, code string, from, to status, reason string) (boo
 <tr><td>只退现金</td><td>钱</td><td>不适用</td><td>优惠被收回，实付变高，投诉多</td></tr>
 </tbody>
 </table></div>
-<p>我们用原券回补加顺延，天数等于持有天数，上限 30 天。规则不完美：活动下线后回补的券没用，所以回补前多查一步活动是否还在投放期，不在就转等额新券。两条路都不通时落 <code>Issued</code> 打标人工处理。</p>
-<p>幂等键用退款单号。一单可能多次部分退款，用订单号会把第二次误判成重复。第一版就这么写的，用户申请第二笔退款时券被静默吞掉，对账才发现。</p>
+<p>选的是原券回补加顺延，天数等于持有天数，上限 30 天。规则不完美：活动下线后回补的券没用，所以回补前多查一步活动是否还在投放期，不在就转等额新券。两条路都不通时落 <code>Issued</code> 打标人工处理。</p>
+<p>幂等键用退款单号。一单可能多次部分退款，用订单号会把第二次误判成重复。早期实现如此，用户申请第二笔退款时券被静默吞掉，对账才发现。</p>
 <h2 id="异常终态更需要设计">异常终态更需要设计</h2>
 <p>正常路径三条，异常终态五种，都会长期存在：</p>
 <ul>

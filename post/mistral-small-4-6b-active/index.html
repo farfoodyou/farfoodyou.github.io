@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</h1>
-    <p class="meta"><time datetime="2026-03-18T22:40:00">2026-03-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1987 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-03-18T22:40:00">2026-03-18</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1992 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#6b-激活意味着什么">6B 激活意味着什么</a></li>
 <li class="h2"><a href="#一个模型做三件事的产品逻辑">&quot;一个模型做三件事&quot;的产品逻辑</a></li>
@@ -111,7 +111,7 @@
 <p>2026 年欧洲的 AI 算力仍然受制于采购与能耗，做大模型的路只有两条：堆稀疏（降低单 token 成本）或做小（降低部署门槛）。Mistral Small 4 走了两条路的交集：<strong>MoE 稀疏 + 小激活 + 单卡可部署</strong>。</p>
 <p>这也解释了 Apache 2.0 的选择：<strong>许可越宽松，越容易被集成进别人的产品</strong>，而欧洲市场的优势本来就在 B 端集成与合规，不在消费级流量。</p>
 <h2 id="一次撞到-kv-上限的记录">一次撞到 KV 上限的记录</h2>
-<p>我们第一次把 119B 上到单卡时，压测跑到第 40 分钟，P99 从 1.8 秒跳到 14 秒，GPU 利用率反而掉到 30%。查下去是 KV 池见底：8 条 8K 请求的估算没错，但长请求一来就把 20GB 余量吃到底，调度器开始每步 swap。改成按 4K 粒度切块、给长请求单独排一条队列之后，同样的机器 P99 回到 2.1 秒，代价是短请求的排队时间多 200ms。单卡方案的天花板，基本都藏在这种“算下来够用”的余量里。</p>
+<p>把 119B 上到单卡的典型失败模式是这样的：压测跑到第 40 分钟，P99 从 1.8 秒跳到 14 秒，GPU 利用率反而掉到 30%。查下去是 KV 池见底：8 条 8K 请求的估算没错，但长请求一来就把 20GB 余量吃到底，调度器开始每步 swap。改成按 4K 粒度切块、给长请求单独排一条队列之后，同样的机器 P99 回到 2.1 秒，代价是短请求的排队时间多 200ms。单卡方案的天花板，基本都藏在这种“算下来够用”的余量里。</p>
 <h2 id="原文在这">原文在这</h2>
 <ul>
 <li>官方发布：<a href="https://mistral.ai/news/mistral-small-4">Introducing Mistral Small 4</a></li>

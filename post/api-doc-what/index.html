@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">接口文档到底该写什么：一次重复扣款的复盘</h1>
-    <p class="meta"><time datetime="2022-05-10T10:40:00">2022-05-10</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2487 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <p class="meta"><time datetime="2022-05-10T10:40:00">2022-05-10</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2490 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#时间线">时间线</a></li>
 <li class="h2"><a href="#定位幂等逻辑没错键错了">定位：幂等逻辑没错，键错了</a></li>
@@ -53,7 +53,7 @@
 <li class="h2"><a href="#校验文档也是一种接口">校验：文档也是一种接口</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>4 月 21 日 14:40，三方差集里冒出 37 笔单边账：订单服务有扣款成功的流水，渠道侧没有回执；同一订单号在本地有两条记录，金额相差 1 分。</p>
+<p>4 月 21 日 14:40，三方差集里冒出 37 笔单边账（示例口径）：订单服务有扣款成功的流水，渠道侧没有回执；同一订单号在本地有两条记录，金额相差 1 分。</p>
 <p>金额可以忽略，时间分布不行：37 笔全落在 14:26 到 14:34 这 8 分钟里，横跨 6 个商户号。数据错乱会散布，成簇只会因为同一批请求被重复提交。</p>
 <h2 id="时间线">时间线</h2>
 <div class="table-wrap"><table>
@@ -63,22 +63,22 @@
 <th>谁看到</th>
 </tr></thead>
 <tbody>
-<tr><td>14:05</td><td>文档 v1.7 发布，新增部分退款参数</td><td>我方</td></tr>
+<tr><td>14:05</td><td>文档 v1.7 发布，新增部分退款参数</td><td>服务方</td></tr>
 <tr><td>14:19</td><td>接入方按新文档上线</td><td>接入方</td></tr>
 <tr><td>14:26</td><td>网关 3s 超时，read timeout 陡增</td><td>值班</td></tr>
 <tr><td>14:26–14:34</td><td>接入方重试，每笔最多 3 次</td><td>接入方</td></tr>
-<tr><td>15:52</td><td>查清重复的两条记录幂等键不同</td><td>我方</td></tr>
+<tr><td>15:52</td><td>查清重复的两条记录幂等键不同</td><td>服务方</td></tr>
 </tbody>
 </table></div>
 <h2 id="定位幂等逻辑没错键错了">定位：幂等逻辑没错，键错了</h2>
-<p>第一反应是查幂等实现。去重键是 <code>(商户号, 订单号, 金额)</code>，唯一索引冲突时返回已有结果，跑了两年没出事。</p>
-<p>问题就在「金额」这一维。扣款金额按费率折算，用了 <code>math.Round</code>；接入方重试时又自己校了一次，把 <code>100.005</code> 传成 <code>100.01</code>，我这边折算后是 <code>100.00</code>。三元组有一位不同，索引不冲突，两次都成了合法新请求。</p>
-<p>对接入方来说，他们只是重试了同一个超时请求；对我来说，那是两笔不同业务。双方都没做错，错在文档没定义什么叫「同一个请求」。</p>
+<p>幂等实现本身没错：去重键是 <code>(商户号, 订单号, 金额)</code>，唯一索引冲突时返回已有结果，跑了两年没出事。</p>
+<p>问题就在「金额」这一维。扣款金额按费率折算，用了 <code>math.Round</code>；接入方重试时又自己校了一次，把 <code>100.005</code> 传成 <code>100.01</code>，服务端折算后是 <code>100.00</code>。三元组有一位不同，索引不冲突，两次都成了合法新请求。</p>
+<p>对接入方来说，只是重试了同一个超时请求；对服务端来说，那是两笔不同业务。双方都没做错，错在文档没定义什么叫「同一个请求」。</p>
 <h2 id="根因文档写了字段没写契约">根因：文档写了字段，没写契约</h2>
 <p>v1.7 里 <code>amount</code> 那行写的是 decimal、单位元、必填、两位小数。这是真的，也没用：它没回答超时之后最要紧的三件事，重试时哪些字段必须字节级一致、服务端按什么判重、判重冲突该当失败还是当成功。</p>
 <p>错误码同样如此。原来的表只有 <code>SUCCESS</code>、<code>PARAM_ERROR</code>、<code>SYSTEM_ERROR</code> 三行，<code>SYSTEM_ERROR</code> 说明是「系统异常，请重试」，把「可以重试」和「必然失败」混成一句，接入方只能一律重试。那 8 分钟就是这么放大的。</p>
 <h2 id="改了什么五节固定模板">改了什么：五节固定模板</h2>
-<p>v1.7 之后我把接口文档的骨架固定成五节，缺一节就不允许发布。字段表保留，但它不再是主体。判断一份文档够不够用，标准很朴素：接入方在半夜被告警叫醒，能不能只靠这份文档决定重试还是放弃。</p>
+<p>v1.7 之后接口文档的骨架固定成五节，缺一节就不允许发布。字段表保留，但它不再是主体。判断一份文档够不够用，标准很朴素：接入方在半夜被告警叫醒，能不能只靠这份文档决定重试还是放弃。</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>小节</th>
@@ -116,7 +116,7 @@ x-idempotency:
 <p>文档里最容易省掉的是超时重试。接入方写代码时脑子里只有正常路径，超时那一刻他需要一个明确指令：重试还是查询。</p>
 <pre data-lang="text"><code class="language-text">POST R1 —扣款→ 渠道; 超时; 返回 504 CHANNEL_TIMEOUT
 POST R1 —查原单→ 渠道; 命中; 返回 200 (原结果)</code></pre>
-<p>图的重点在第二条请求走「查询」而不是「新建」。没有它，接入方大概率会生成新请求号，我这边就多出一笔业务。这张图后来被两个接入方直接抄进了自己的重试逻辑里，比我写十段文字都有效。</p>
+<p>图的重点在第二条请求走「查询」而不是「新建」。没有它，接入方大概率会生成新请求号，服务端就多出一笔业务。这张图后来被两个接入方直接抄进了自己的重试逻辑，比十段说明文字都有效。</p>
 <h2 id="校验文档也是一种接口">校验：文档也是一种接口</h2>
 <p>模板改完加了两条机械检查：</p>
 <ol>

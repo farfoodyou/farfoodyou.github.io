@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">四个数：检测系统的账怎么算</h1>
-    <p class="meta"><time datetime="2023-08-15T23:05:00">2023-08-15</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2079 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <p class="meta"><time datetime="2023-08-15T23:05:00">2023-08-15</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2074 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#精度-71">精度 71%</a></li>
 <li class="h2"><a href="#漏报的-006-只是一个上界">漏报的 0.06% 只是一个上界</a></li>
@@ -52,11 +52,11 @@
 <li class="h2"><a href="#四个数放在一起">四个数放在一起</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>季度评审上被问了三次同一个问题：你们的误报率是多少。第一次有人答 29%，第二次有人答 0.18%，第三次有人答「大概三成吧，但主要是低危」。三个数都不是编的，来自同一套系统，差在分母。</p>
-<p>那天之后我把检测链路上所有对外说过的数重新算了一遍。下面四个是本账本里最贵的。</p>
+<p>同一个问题在季度评审上被问了三次：这套系统的误报率是多少。第一次有人答 29%，第二次有人答 0.18%，第三次有人答「大概三成吧，但主要是低危」。三个数都不是编的，来自同一套系统，差在分母。</p>
+<p>检测链路上所有对外说过的数值得重新算一遍。下面四个是本账本里最贵的。</p>
 <h2 id="精度-71">精度 71%</h2>
 <p>日送检 180 万个文件，产生 1.1 万条告警，人工复核确认 7800 条。精度 = TP / (TP + FP) = 7800 / 11000，71%。</p>
-<p>这个数只对「送检全集」成立，而且依赖复核队列不积压：积压时没复核的告警按未确认计，精度会被低估；反过来，如果只统计「复核完成」的那部分，精度会被高估，因为复核员倾向于先处理看起来像真的。我们的做法是把未复核的告警单独列一档，按历史复核确认率折算，不混进分子。</p>
+<p>这个数只对「送检全集」成立，而且依赖复核队列不积压：积压时没复核的告警按未确认计，精度会被低估；反过来，如果只统计「复核完成」的那部分，精度会被高估，因为复核员倾向于先处理看起来像真的。常见做法是把未复核的告警单独列一档，按历史复核确认率折算，不混进分子。</p>
 <p>按告警算出来的 29% 误报率，和按文件算的 0.18%（3200 个误报文件 / 180 万），差 160 倍。两个数都对，用途不同：前者衡量复核成本，后者衡量对业务的影响。对外只说一个，必然挨问。</p>
 <h2 id="漏报的-006-只是一个上界">漏报的 0.06% 只是一个上界</h2>
 <p>漏报没法直接数，只能估。每月从放行流量里分层抽样 5000 个文件做人工复核，连续几个月都是 0 命中。0 命中不等于 0 漏报，按 rule of three，95% 置信上界约等于 3 / n：</p>
@@ -66,7 +66,7 @@
 <h2 id="8-分钟的沙箱和-5s-的吞吐">8 分钟的沙箱和 5/s 的吞吐</h2>
 <p>延迟预算写的是 p99 三十分钟。实际拆下来，p50 只有 40ms（静态扫描），p99 由沙箱排队决定。单个样本在沙箱里平均跑 8 分钟，全集群 2400 个并发槽位（约 60 台、每台 40 个），吞吐约 5 个每秒。高峰送检 900 个每秒，其中约 2% 需要沙箱，也就是 18 个每秒进队列，是吞吐的三倍半。</p>
 <p>按 Little 定律 L = λW，即使到达率不变，队列也会一直涨：积压 30 万个、到达 18 个每秒，停留时间 16667 秒，四个半小时。这不是容量规划的问题，是「2% 触发沙箱」这个策略在高峰期不成立。后来把触发条件从「评级中以上全送」改成按家族命中与评级分层，高峰期的沙箱占比压到 0.6%，队列才稳在十分钟以内。</p>
-<p>延迟指标本身也有坑。用直方图算 p99 时，桶边界一旦按线性切分，长尾全挤在最后一个桶里，p99 永远等于桶上界。我们改成指数桶，从 10ms 到 1h 共十几档，并且把「排队时间」和「执行时间」分成两个指标：混在一起算，优化了执行时间也看不出效果。</p>
+<p>延迟指标本身也有坑。用直方图算 p99 时，桶边界一旦按线性切分，长尾全挤在最后一个桶里，p99 永远等于桶上界。改成指数桶，从 10ms 到 1h 共十几档，并且把「排队时间」和「执行时间」分成两个指标：混在一起算，优化了执行时间也看不出效果。</p>
 <h2 id="450-条回流样本一个月">450 条回流样本一个月</h2>
 <p>申诉每月 900 条左右，成立一半，450 条误报样本进回归集；加上每天从放行流量里随机抽 20 个文件，回归集一个月长一千多条，一年下来会到万级，跑一遍要几个小时。</p>
 <p>所以回归集要分层保留：申诉样本永久留，随机抽样只留三个月，重复的按哈希去重。规则包发布前跑全量回归，命中变化超过 0.5% 就阻断，变化在 0.1% 到 0.5% 之间要求人工看一眼差异清单。这个阈值是拍的，作用是拦住「顺手改一条规则结果扫掉一整类」这类事故，不是保证质量。</p>

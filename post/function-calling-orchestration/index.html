@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">工具调用编排：一次重复建单之后收紧的三处约束</h1>
-    <p class="meta"><time datetime="2024-06-11T10:40:00">2024-06-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2495 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+    <p class="meta"><time datetime="2024-06-11T10:40:00">2024-06-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2496 字 <a class="cat" href="/categories/agent/">Agent</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#二十分钟里发生的事">二十分钟里发生的事</a></li>
 <li class="h2"><a href="#三处根因">三处根因</a></li>
@@ -52,7 +52,7 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>6 月 4 日晚上 20:12，配置助手的批量任务跑完 60 个问题，24 个以「工具调用失败」结束。同一分钟，变更单列表里刷出 11 张参数完全一样的单子，创建时间挤在 4 秒内。</p>
-<p>这个助手给运营用：一句话描述需求，模型决定调哪只工具、填什么参数，编排层执行完把结果拼回对话。工具一共 9 只，4 只读、5 只写，写的那几只会真的改调度配额。我第一反应是下游超时，翻日志才发现超时只占两成。</p>
+<p>这个助手给运营用：一句话描述需求，模型决定调哪只工具、填什么参数，编排层执行完把结果拼回对话。工具一共 9 只，4 只读、5 只写，写的那几只会真的改调度配额。第一反应通常是下游超时，翻日志才发现超时只占两成。</p>
 <h2 id="二十分钟里发生的事">二十分钟里发生的事</h2>
 <ul>
 <li>20:12 批量任务报 40% 失败。编排层把工具失败当普通结果返回，任务退出码 0，所以没有告警，是运营在群里问的。</li>
@@ -64,7 +64,7 @@
 <thead><tr>
 <th>失败类型</th>
 <th>占比</th>
-<th>当时的处理</th>
+<th>原来的处理</th>
 <th>实际后果</th>
 </tr></thead>
 <tbody>
@@ -115,8 +115,8 @@
 <tr><td>单任务 token</td><td>约 21k</td><td>约 13k</td></tr>
 </tbody>
 </table></div>
-<p>剩下的 6% 基本都是工具本身的问题：下游在维护窗口里返回 503，模型换只读工具查了状态，最后如实回答「现在改不了」。这个结果我接受。</p>
-<p>有人问我要不要给 Agent 加自动重试，我的判据是三条：工具幂等吗；错误类型能分出「值得再试」和「再试也没用」吗；重试预算和 deadline 归谁管。三条有一条答不上来，先别加重试。</p>
+<p>剩下的 6% 基本都是工具本身的问题：下游在维护窗口里返回 503，模型换只读工具查了状态，最后如实回答「现在改不了」。这个结果可以接受。</p>
+<p>常被问到的是 Agent 要不要加自动重试，判据是三条：工具幂等吗；错误类型能分出「值得再试」和「再试也没用」吗；重试预算和 deadline 归谁管。三条有一条答不上来，先别加重试。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://json-schema.org/draft/2020-12/json-schema-core.html">JSON Schema Core：object 与 additionalProperties 的定义</a></li>

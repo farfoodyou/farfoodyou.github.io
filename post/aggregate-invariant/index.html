@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">聚合根与不变式：把规则焊在对象里</h1>
-    <p class="meta"><time datetime="2020-11-17T11:20:00">2020-11-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/架构/">架构</a></p>
+    <p class="meta"><time datetime="2020-11-17T11:20:00">2020-11-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2489 字 <a class="cat" href="/categories/架构/">架构</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先考古再谈模型">先考古，再谈模型</a></li>
 <li class="h2"><a href="#聚合根把门">聚合根把门</a></li>
@@ -52,8 +52,8 @@
 <li class="h2"><a href="#边界">边界</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>订单表上出现过一个对不上的数：<code>total_amount</code> 比明细之和少 1 分。金额小到没人当 bug 报，但它出现了几百单，方向还不固定。</p>
-<p>查下去没有任何一处逻辑是「错的」。下单、调价、加项、部分退款四条路径各自维护 total：三条用「在旧值上加」，一条用「重新求和」。并发下两条「加项」同时读到旧 total 再写回，丢更新；退款那条用原始 total 减退款额，没扣后续加项。每条路径单独看都通过了 review。</p>
+<p>订单表上会出现对不上的数：<code>total_amount</code> 比明细之和少 1 分。金额小到没人当 bug 报，但它出现了几百单，方向还不固定。</p>
+<p>逐条核对写路径，没有任何一处逻辑是「错的」。下单、调价、加项、部分退款四条路径各自维护 total：三条用「在旧值上加」，一条用「重新求和」。并发下两条「加项」同时读到旧 total 再写回，丢更新；退款那条用原始 total 减退款额，没扣后续加项。每条路径单独看都自洽。</p>
 <p>结论只有一句：<strong>规则要成立，只能由唯一入口强制执行，写在注释里的意图不算。</strong>只要还有第二条路径能改这笔账，这条不变式就不存在。</p>
 <h2 id="先考古再谈模型">先考古，再谈模型</h2>
 <p>改之前先考古：把「写这张表」的地方全找出来（含批处理与后台脚本），每处把 <code>if</code> 捞出来列成规则清单。这一轮捞出四十多条，真正必须<strong>立刻</strong>成立的不到十条。</p>
@@ -104,9 +104,9 @@ func (o *Order) recompute() {
 }</code></pre>
 <p><code>recompute</code> 是唯一的总额来源。<code>total</code> 不存两份：要么每次算，要么派生并由唯一函数维护，绝不出现「调用方自己加一下」。方法返回 <code>error</code> 而不是打日志继续——规则被违反是调用方的错，静默修正会把错误埋进历史数据。把门守住之后，四条路径变成四个方法，<code>recompute</code> 只剩一个调用者，这条不变式不再依赖「下次改代码的人记得」。</p>
 <h2 id="一个事务只改一个聚合">一个事务只改一个聚合</h2>
-<p>这条约束来自三个物理限制，与团队的纪律无关。</p>
+<p>这条约束来自三个物理限制，与纪律无关。</p>
 <p><strong>单行热点。</strong> 事务持有行锁的时间 ≈ 写次数 × 每次写的延迟。持锁 2 ms 时单行理论吞吐上限约 500 TPS，实际因锁等待与排队，同一热点聚合常见上限在百级（经验值）。两个聚合塞进一个事务，等于把两个热点合并成一个更热的点。<strong>跨库不可能。</strong> 订单库与账务库不在一个实例上时本地事务并不存在，写 <code>BeginTx</code> 只是骗自己。<strong>失败半径。</strong> 一个聚合上的锁等待会沿事务传播到另一个聚合的正常请求，合并事务把 A 的抖动变成 B 的抖动。</p>
-<p>跨聚合统一用「本地事务 + 写 outbox」，不引入分布式事务。写法就是一条带版本条件的更新：<code>UPDATE ... WHERE id=$3 AND version=$4</code>，<code>RowsAffected</code> 为 0 即冲突，此时返回明确的 <code>ErrConflict</code>，由业务层有限次重试（当时设 2 次，超过就报错让人看）。这比在数据库层排队等锁好：排队把延迟藏起来，冲突率却不会降。事件行与这条 UPDATE 必须同属一个 <code>tx</code>，否则回到「消息发了、事务回滚了」的老问题。</p>
+<p>跨聚合统一用「本地事务 + 写 outbox」，不引入分布式事务。写法就是一条带版本条件的更新：<code>UPDATE ... WHERE id=$3 AND version=$4</code>，<code>RowsAffected</code> 为 0 即冲突，此时返回明确的 <code>ErrConflict</code>，由业务层有限次重试（这里设 2 次，超过就报错让人看）。这比在数据库层排队等锁好：排队把延迟藏起来，冲突率却不会降。事件行与这条 UPDATE 必须同属一个 <code>tx</code>，否则回到「消息发了、事务回滚了」的老问题。</p>
 <p>裸 SQL 批处理是这条路的反向漏洞：直接 <code>UPDATE</code> 不改 <code>version</code>，乐观锁就静默失效，所以写路径必须收口。</p>
 <h2 id="聚合多大算合适">聚合多大算合适</h2>
 <p>判据是「事务边界 = 一致性边界 = 聚合边界」，落到操作上两条：聚合里只放<strong>必须同时成立</strong>的东西；聚合外的东西只用 id 引用，不持有对象。</p>
@@ -122,7 +122,7 @@ func (o *Order) recompute() {
 <tr><td>合适（订单为根、明细在内、支付只存 id + 状态快照）</td><td>需要一次双写过渡</td><td>读侧跨聚合查询，走查询模型</td></tr>
 </tbody>
 </table></div>
-<p>这个 p99 是当时的实测口径：加载 20 行明细 4 ms，200 行涨到 40 ms 以上，因为聚合整体加载。这也是读多写少要单独做查询模型的原因：读侧不需要不变式，只需要数据。</p>
+<p>这个 p99 是实测口径：加载 20 行明细 4 ms，200 行涨到 40 ms 以上，因为聚合整体加载。这也是读多写少要单独做查询模型的原因：读侧不需要不变式，只需要数据。</p>
 <h2 id="边界">边界</h2>
 <p>聚合根守得住「必须立刻成立」，守不住「最终必须成立」。要看别的聚合才能判断的规则，硬塞进聚合只会长成一个巨大的锁；这时候接受最终一致，把保证放在对账上，让差异<strong>可枚举</strong>。反过来，聚合自己就能判断的规则别靠补偿去修——补偿逻辑是最难写对、也最难删的代码。</p>
 <h2 id="参考">参考</h2>

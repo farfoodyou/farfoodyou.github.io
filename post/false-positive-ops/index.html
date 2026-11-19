@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">误报治理：把「关规则」换成动阈值之后</h1>
-    <p class="meta"><time datetime="2023-09-19T20:40:00">2023-09-19</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2444 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-09-19T20:40:00">2023-09-19</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2447 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#顺着数据流看一遍">顺着数据流看一遍</a></li>
 <li class="h2"><a href="#四种处置各自的代价">四种处置各自的代价</a></li>
@@ -88,7 +88,7 @@
 <p>聚完再排优先级，判据是「簇大小 × 该规则的独有召回」。只有一簇大、但那条规则从没单独拦下过真样本的，直接收窄条件；簇大且该规则承担独有召回的，动阈值或者加白名单。</p>
 <h2 id="白名单要带租约">白名单要带租约</h2>
 <p>白名单最容易被写成永久豁免：加的时候都想着「这个客户的这种文件就是正常的」，一年后没人知道它还在不在生效。</p>
-<p>我们现在要求每条白名单带四个字段，缺一个就不让提交：</p>
+<p>一套可执行的要求是：每条白名单带四个字段，缺一个就不让提交：</p>
 <pre data-lang="yaml"><code class="language-yaml">- id: wl-2023-0417
   match: {tenant: &quot;t-118&quot;, rule: &quot;r-2291&quot;, field: &quot;body&quot;, fragment: &quot;signature-block&quot;}
   owner: &quot;oncall-detection&quot;
@@ -97,11 +97,11 @@
 <p>到期后不删除，先降级成「只记录不拦」，观察一周再决定续期还是删除。每条白名单还要上报命中次数，连续 30 天零命中的自动进待摘清单——留着不生效的白名单，下次排查误报时会误导判断。</p>
 <h2 id="调阈值要先看分布">调阈值要先看分布</h2>
 <p>阈值要当成一个工作点来调。改之前得知道分数在良性样本和恶意样本上各自怎么分布。</p>
-<p>我们那次把一类规则的阈值从 10 提到 12，依据是：良性样本的分数在 11 以上只占 0.07%，而恶意样本里 12 分以上的覆盖是 98.4%，与改动前相比掉 0.6 个百分点。这两个数字都来自 3400 份标注样本，样本构成是过去半年的工单加随机抽样，标注口径写在回归集的说明里。</p>
+<p>一次调整把一类规则的阈值从 10 提到 12，依据是：良性样本的分数在 11 以上只占 0.07%，而恶意样本里 12 分以上的覆盖是 98.4%，与改动前相比掉 0.6 个百分点。这两个数字都来自 3400 份标注样本，样本构成是过去半年的工单加随机抽样，标注口径写在回归集的说明里。</p>
 <p>改完必须跑回归集。回归集能给的是排除「变差」：同一批样本、同一套期望结论，改前改后逐条 diff，只看翻转的几十条，人工确认每一条翻转是不是预期方向。至于「变好了」，回归集回答不了，得靠抽样复核的误报率曲线。CI 里跑一次全量大约 40 秒，比人工复核快两个数量级。</p>
 <h2 id="一个不太好量化的部分">一个不太好量化的部分</h2>
 <p>误报率的分母是「用户提交的工单」，而用户只在被拦住时才提交工单。所以放宽阈值之后，误报率看起来会下降，但只要还有人在被拦，就说明工作点还没到他们的痛点上。反过来收紧阈值，工单会涨，但涨的那部分里混着真实告警被误判成误报的情况。</p>
-<p>我现在的做法是把「工单」和「抽样复核」分开记：工单反映用户体验，抽样复核反映真实误报率。两个数一起看，才知道这次调阈值到底动了什么。只看工单，很容易把「用户懒得提了」误读成「误报没了」。</p>
+<p>可行的做法是把「工单」和「抽样复核」分开记：工单反映用户体验，抽样复核反映真实误报率。两个数一起看，才知道这次调阈值到底动了什么。只看工单，很容易把「用户懒得提了」误读成「误报没了」。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://scikit-learn.org/stable/modules/clustering.html">scikit-learn: 聚类算法总览</a>：相似度阈值合并那一步的口径</li>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>节假日扩容：从求人扩容到自己扛住 - farfood</title>
+<title>节假日扩容：从加机器到按放大倍数备容量 - farfood</title>
 <meta name="description" content="节前流量翻了三倍，机器提前加到位，CPU 却一直在 40% 以下。补上放大倍数、缓存预热、弱依赖隔离，峰值才不靠人守。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/holiday-capacity/">
@@ -15,16 +15,16 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "节假日扩容：从求人扩容到自己扛住", "description": "节前流量翻了三倍，机器提前加到位，CPU 却一直在 40% 以下。补上放大倍数、缓存预热、弱依赖隔离，峰值才不靠人守。", "datePublished": "2021-07-28T10:40:00+08:00", "dateModified": "2021-07-28T10:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/holiday-capacity/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "容量规划, 缓存, 降级, 熔断, 压测"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "节假日扩容：从加机器到按放大倍数备容量", "description": "节前流量翻了三倍，机器提前加到位，CPU 却一直在 40% 以下。补上放大倍数、缓存预热、弱依赖隔离，峰值才不靠人守。", "datePublished": "2021-07-28T10:40:00+08:00", "dateModified": "2021-07-28T10:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/holiday-capacity/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "容量规划, 缓存, 降级, 熔断, 压测"}</script>
 
 <meta property="og:site_name" content="farfood">
-<meta property="og:title" content="节假日扩容：从求人扩容到自己扛住 - farfood">
+<meta property="og:title" content="节假日扩容：从加机器到按放大倍数备容量 - farfood">
 <meta property="og:description" content="节前流量翻了三倍，机器提前加到位，CPU 却一直在 40% 以下。补上放大倍数、缓存预热、弱依赖隔离，峰值才不靠人守。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/holiday-capacity/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="节假日扩容：从求人扩容到自己扛住 - farfood">
+<meta name="twitter:title" content="节假日扩容：从加机器到按放大倍数备容量 - farfood">
 <meta name="twitter:description" content="节前流量翻了三倍，机器提前加到位，CPU 却一直在 40% 以下。补上放大倍数、缓存预热、弱依赖隔离，峰值才不靠人守。">
 <meta property="article:published_time" content="2021-07-28T10:40:00+08:00">
 <meta name="keywords" content="容量规划, 缓存, 降级, 熔断, 压测">
@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
-    <h1 class="post-title">节假日扩容：从求人扩容到自己扛住</h1>
-    <p class="meta"><time datetime="2021-07-28T10:40:00">2021-07-28</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2495 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <h1 class="post-title">节假日扩容：从加机器到按放大倍数备容量</h1>
+    <p class="meta"><time datetime="2021-07-28T10:40:00">2021-07-28</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2492 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个假设逐个被数据否掉">三个假设，逐个被数据否掉</a></li>
 <li class="h2"><a href="#容量账按放大倍数算">容量账按放大倍数算</a></li>
@@ -53,7 +53,7 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>节前一周的活动，流量按预估上来了。当天 20:58 开始抬升，21:07 订单服务的 P99 从 80ms 涨到 1.4s，21:12 下单失败率过 5%。值班台只有两个人，一个在扩容页面点机器，一个在群里逐个问下游是不是慢了。</p>
-<p>21:41 恢复。扩容本身没做错：按预估峰值 ×1.5 备的机器，21:05 就位，CPU 全程没超过 40%。<strong>加机器没用，瓶颈不在我们自己的 CPU 上。</strong></p>
+<p>21:41 恢复。扩容本身没做错：按预估峰值 ×1.5 备的机器，21:05 就位，CPU 全程没超过 40%。<strong>加机器没用，瓶颈不在应用自身的 CPU 上。</strong></p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>时间</th>
@@ -63,7 +63,7 @@
 <tr><td>20:58</td><td>入口 QPS 从 4.2w 抬到 7.8w，写请求占比 22% → 41%</td></tr>
 <tr><td>21:04</td><td>缓存命中率 96% → 71%，回源 QPS 涨了约 4 倍</td></tr>
 <tr><td>21:07</td><td>订单服务 P99 80ms → 1.4s，线程池排队数破千</td></tr>
-<tr><td>21:09</td><td>下游积分服务超时率 18%，我们这边还在同步重试</td></tr>
+<tr><td>21:09</td><td>下游积分服务超时率 18%，调用方仍在同步重试</td></tr>
 <tr><td>21:12</td><td>下单失败率过 5%，人工关掉两条非核心链路</td></tr>
 <tr><td>21:19</td><td>P99 回到 300ms，恢复部分流量</td></tr>
 <tr><td>21:41</td><td>缓存回填完毕，全量恢复</td></tr>
@@ -72,9 +72,9 @@
 <h2 id="三个假设逐个被数据否掉">三个假设，逐个被数据否掉</h2>
 <p>第一个假设是机器不够。前一晚 8w QPS 的压测跑得通，机器到位后曲线依然平，21:07 就该排除这条，但值班时没人去比对压测口径和线上口径的差别。</p>
 <p>第二个假设是缓存没问题。日常命中率 96%，余量看着很大。节前的请求形态变了：大量「刚下单立刻回详情页」的读，命中的是还没写进缓存的 key，写后读占比从 5% 涨到 30%；预热只灌了历史 TOP 2000 的 key，活动页新上的长尾商品全部穿透。总体 71% 底下，长尾那批 key 的命中率是 0。</p>
-<p>第三个假设是下游慢一点我们能忍。实际链路是共享线程池加同步重试：下游多花 200ms，这边排队攒到 1s，超时后又重试，把过载的下游再放大一倍。</p>
+<p>第三个假设是下游慢一点可以忍。实际链路是共享线程池加同步重试：下游多花 200ms，这边排队攒到 1s，超时后又重试，把过载的下游再放大一倍。</p>
 <h2 id="容量账按放大倍数算">容量账按放大倍数算</h2>
-<p>我后来把容量评估的公式改成这样，参数都写进发布前的容量单：</p>
+<p>容量评估的公式应当写成这样，参数都写进发布前的容量单：</p>
 <pre data-lang="text"><code class="language-text">peak_qps × fanout × (1 + retry_ratio) ≤ Σ downstream_capacity</code></pre>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -125,7 +125,7 @@
   timeout_ms: 120
   retries: 0        # 弱依赖不重试：重试等于再打一遍过载的下游
   breaker: {error_ratio: 0.5, window_s: 10, half_open_ratio: 0.05}</code></pre>
-<p>「弱依赖不重试」当时有争议，担心偶发失败丢掉积分。折中成写路径不重试，读路径失败后由离线补偿任务在 30 分钟内对齐，丢即时性不丢数据。</p>
+<p>「弱依赖不重试」常见的反对意见是偶发失败会丢掉积分。折中成写路径不重试，读路径失败后由离线补偿任务在 30 分钟内对齐，丢即时性不丢数据。</p>
 <h2 id="之后每年固定做的四件事">之后每年固定做的四件事</h2>
 <p>节前 T-14 按 1.2 倍预估峰值压测，流量走影子链路，读真实缓存、写影子库；T-3 跑预热并跟前一年同时段比命中率；T-1 演练预案开关，两种降级路径都真的按下去 5 分钟。值班看板只留六个数：入口 QPS、错误率、P99、缓存命中率、各弱依赖错误率、线程池排队。</p>
 <p>边界得说清楚：这套东西对「形态不变、只是变大」有效。如果节假日带来新的访问模式，比如新增一个入口或一类用户，放大倍数就会算错，只能靠影子流量提前几天验证。</p>
@@ -138,7 +138,7 @@
 </ul>
   </div>
   <p class="tag-list"><a class="tag" href="/tags/容量规划/">容量规划</a><a class="tag" href="/tags/缓存/">缓存</a><a class="tag" href="/tags/降级/">降级</a><a class="tag" href="/tags/熔断/">熔断</a><a class="tag" href="/tags/压测/">压测</a></p>
-  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E8%8A%82%E5%81%87%E6%97%A5%E6%89%A9%E5%AE%B9%EF%BC%9A%E4%BB%8E%E6%B1%82%E4%BA%BA%E6%89%A9%E5%AE%B9%E5%88%B0%E8%87%AA%E5%B7%B1%E6%89%9B%E4%BD%8F" target="_blank" rel="noopener">分享到 X</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E8%8A%82%E5%81%87%E6%97%A5%E6%89%A9%E5%AE%B9%EF%BC%9A%E4%BB%8E%E5%8A%A0%E6%9C%BA%E5%99%A8%E5%88%B0%E6%8C%89%E6%94%BE%E5%A4%A7%E5%80%8D%E6%95%B0%E5%A4%87%E5%AE%B9%E9%87%8F" target="_blank" rel="noopener">分享到 X</a></p>
   <nav class="post-nav"><a class="prev" href="/post/stateful-unit-data/">← 有状态单元：把运营能力做成数据</a><a class="next" href="/post/decouple-by-subscribe/">把「调用业务方」换成「订阅业务方」 →</a></nav>
 </article>
 <section class="comments">

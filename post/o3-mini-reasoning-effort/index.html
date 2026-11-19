@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍 - farfood</title>
-<meta name="description" content="一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。">
+<meta name="description" content="一份账本：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么最后只给 8% 的请求开了 high。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/o3-mini-reasoning-effort/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍", "description": "一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。", "datePublished": "2025-02-03T10:05:00+08:00", "dateModified": "2025-02-03T10:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-mini-reasoning-effort/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, API, 成本"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍", "description": "一份账本：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么最后只给 8% 的请求开了 high。", "datePublished": "2025-02-03T10:05:00+08:00", "dateModified": "2025-02-03T10:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/o3-mini-reasoning-effort/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "OpenAI, 推理模型, API, 成本"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍 - farfood">
-<meta property="og:description" content="一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。">
+<meta property="og:description" content="一份账本：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么最后只给 8% 的请求开了 high。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/o3-mini-reasoning-effort/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍 - farfood">
-<meta name="twitter:description" content="一份内部记账：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么我们最后只给 8% 的请求开了 high。">
+<meta name="twitter:description" content="一份账本：o3-mini 三档 effort 在真实流量上的成本与质量差异，以及为什么最后只给 8% 的请求开了 high。">
 <meta property="article:published_time" content="2025-02-03T10:05:00+08:00">
 <meta name="keywords" content="OpenAI, 推理模型, API, 成本">
 </head>
@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">o3-mini 上线三天：靠 effort 路由把成本从 2.3 倍压回 1.29 倍</h1>
-    <p class="meta"><time datetime="2025-02-03T10:05:00">2025-02-03</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1571 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2025-02-03T10:05:00">2025-02-03</time><span class="sep">·</span>4 分钟<span class="sep">·</span>1559 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先按默认接">先按默认接</a></li>
 <li class="h2"><a href="#加路由第一次降本">加路由，第一次降本</a></li>
@@ -52,17 +52,17 @@
 <li class="h2"><a href="#路由表上线之后的两个细节">路由表上线之后的两个细节</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>1 月 31 日 o3-mini 上线，2 月 1 日我们的模型网关就加了它。三天跑到现在的账单很难看，这篇是这三天的记录。</p>
+<p>1 月 31 日 o3-mini 上线，2 月 1 日模型网关就接上了它。三天下来账单很难看，这篇按三天的账记。</p>
 <h2 id="先按默认接">先按默认接</h2>
 <p>默认档是 medium。第一版接入很朴素——把所有 <code>gpt-4o</code> 的调用换成 <code>o3-mini</code>，<code>reasoning_effort</code> 不传。</p>
 <p>第一天跑完，成本比原来高 <strong>2.3 倍</strong>。原因不复杂：思考 token 也按输出计费，而输出单价 \$4.40 是 GPT-4o 的 40%——问题是思考 token 让输出量涨了 5～8 倍，一乘就超了。</p>
-<p>当时贴在图上的错误判断是“推理模型就是贵”。后来把 usage 拆开看才发现，<strong>8 成成本集中在 3 类短请求上</strong>：意图分类、字段抽取、改写润色。这三类根本不需要思考。</p>
+<p>最初最容易得到的错误判断是“推理模型就是贵”。把 usage 拆开看才会发现，<strong>8 成成本集中在 3 类短请求上</strong>：意图分类、字段抽取、改写润色。这三类根本不需要思考。</p>
 <h2 id="加路由第一次降本">加路由，第一次降本</h2>
 <p>改法很土：按 prompt 长度和任务类型打标，分类/抽取类强制 <code>low</code>，其余保持 <code>medium</code>。</p>
 <p>当天成本降到原来的 <strong>1.4 倍</strong>，但质量报警了——<code>low</code> 档在“多条件筛选”这类任务上开始漏条件（漏一个条件，下游全错）。</p>
 <p>这是个有用的教训：<strong>effort 不是“质量旋钮”，是“思考深度旋钮”</strong>。任务本身不需要多步推理时，降档无损；需要时，降档直接掉正确率。</p>
 <h2 id="把评估集补上">把评估集补上</h2>
-<p>之前我们只有一个“人工看 50 条”的土办法，没法支撑按档位决策。于是给三类任务各标了 200 条，加了两条判定：</p>
+<p>只有“人工看 50 条”这种土办法时，没法支撑按档位决策。补上三类任务各 200 条标注、两条判定之后才是可算的：</p>
 <ul>
 <li>严格匹配（分类/抽取）：字段完全一致才算过；</li>
 <li>语义等价（改写）：人工二选一。</li>
@@ -88,12 +88,12 @@ extract_compound / filter  -&gt; medium
 debug / math / code_review -&gt; high   (~8% of traffic)</code></pre>
 <p>三天累计账单：成本回到基线的 <strong>1.29 倍</strong>（2.3 → 1.29，省掉 44%），而人工抽检的通过率只降了 0.7 个百分点。</p>
 <h2 id="数字之外的两件事">数字之外的两件事</h2>
-<p><strong>一、延迟分布变了，重试策略得跟着改。</strong> 高 effort 的 P99 从 4 秒跳到 34 秒。我们原来“超时 10 秒就重试”的策略直接导致两次计费，改成“超时只上报不重试 + 前端显示进度”之后，成本才稳定。</p>
+<p><strong>一、延迟分布变了，重试策略得跟着改。</strong> 高 effort 的 P99 从 4 秒跳到 34 秒。“超时 10 秒就重试”的策略会直接导致两次计费，改成“超时只上报不重试 + 前端显示进度”之后，成本才稳定。</p>
 <p><strong>二、思考 token 不可缓存。</strong> 输入侧缓存命中能省一半（\$0.55 vs \$1.10），但思考部分每次都要重算。所以长 system prompt + 高 effort 的组合，边际成本比直觉高。</p>
 <h2 id="路由表上线之后的两个细节">路由表上线之后的两个细节</h2>
 <p>打标按 prompt 模板 ID，不按租户。同一个租户的意图分类和事故排查会同时进来，按用户分档两头得罪：便宜任务被抬档，贵任务被压档。模板 ID 的好处是规则可解释、可回滚，出问题能一眼看出是哪条规则改的。</p>
-<p>限流也要分档。<code>high</code> 档单独一条并发队列，我们试过共用一个池子，一批代码审查把 <code>low</code> 的分类请求挤到排队，P99 比降本之前还差。分池之后 <code>high</code> 队列的积压只影响那 8% 的请求，其余流量有独立的容量。</p>
-<p><code>reasoning_effort</code> 现在是我改得最频繁的一个字段：它把“推理”从旗舰能力变成了可以按请求调的参数，代价是每个月的账得按路由表估，按模型名估不准了。</p>
+<p>限流也要分档。<code>high</code> 档单独一条并发队列；共用一条池子时，一批代码审查会把 <code>low</code> 的分类请求挤到排队，P99 比降本之前还差。分池之后 <code>high</code> 队列的积压只影响那 8% 的请求，其余流量有独立的容量。</p>
+<p><code>reasoning_effort</code> 现在是改得最频繁的一个字段：它把“推理”从旗舰能力变成了可以按请求调的参数，代价是每个月的账得按路由表估，按模型名估不准了。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li>三档 effort 与定价：&lt;https://simonwillison.net/2025/Jan/31/o3-mini/&gt;</li>

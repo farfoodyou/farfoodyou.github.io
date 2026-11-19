@@ -38,18 +38,18 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">Qwen3.8：2.4T/95B 的旗舰，和一条 27B 的后路</h1>
-    <p class="meta"><time datetime="2026-07-20T22:30:00">2026-07-20</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1845 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2026-07-20T22:30:00">2026-07-20</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1855 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#24t95b稀疏度-4">2.4T/95B：稀疏度 4%</a></li>
 <li class="h2"><a href="#27b真正会被部署的那一档">27B：真正会被部署的那一档</a></li>
 <li class="h2"><a href="#在机房里看这件事">在机房里看这件事</a></li>
 <li class="h2"><a href="#开源旗舰的两段式发布">开源旗舰的&quot;两段式发布&quot;</a></li>
-<li class="h2"><a href="#预览上线-20-小时我们切了-3-流量过去">预览上线 20 小时，我们切了 3% 流量过去</a></li>
+<li class="h2"><a href="#预览期切-3-流量会看到什么">预览期切 3% 流量会看到什么</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav>
   <div class="post-content">
 <p>7 月 19 日，阿里放出 Qwen3.8-Max 的预览（<a href="https://qwen.ai/blog?id=qwen3.7">官方博客</a> 系列持续更新）。按公开记录，Qwen3.8 有 <strong>2.4T 总参数 / 95B 激活</strong>，同时预告了 2.4T 与 <strong>27B</strong> 两档权重（<a href="https://en.wikipedia.org/wiki/List_of_large_language_models">版本记录</a>），27B 说是 8 月跟进。</p>
@@ -114,13 +114,13 @@
 </tbody>
 </table></div>
 <p>对使用者的启示：<strong>别在预览期就写死选型</strong>，等权重和小尺寸都到位再定架构。</p>
-<h2 id="预览上线-20-小时我们切了-3-流量过去">预览上线 20 小时，我们切了 3% 流量过去</h2>
-<p>预览 API 在 19 日晚上就能调。我们把最难的那一档（长报告生成，单请求 8 万 token 输入）切了 3% 过去，跑了一晚：</p>
+<h2 id="预览期切-3-流量会看到什么">预览期切 3% 流量会看到什么</h2>
+<p>预览 API 在 19 日晚上就能调。这类预览期的验证通常按流量切片做：把最难的那一档（长报告生成，单请求 8 万 token 输入）切 3% 出去跑一晚，账单与延迟大致是这个量级：</p>
 <ul>
 <li>单请求成本是原方案的 2.4 倍，P50 从 11 秒变成 47 秒，P99 摸到 3 分钟；</li>
-<li>人工抽检 40 条：原方案 6 条需要返工，切过去的那批只有 1 条。</li>
+<li>抽检 40 条的返工量：原方案 6 条，切过去的那批 1 条。</li>
 </ul>
-<p>这个交换在我们这里只对一类任务成立：错一次要人工重写半小时的那种。其余 97% 的流量没必要动。等 27B 的权重真出来，要验的是同一件事，它在这类任务上还能不能维持那 1/40 的返工率——而不是它在公开基准上离 2.4T 差几分。</p>
+<p>这个交换只对一类任务成立：错一次要人工重写半小时的那种。其余 97% 的流量没必要动。等 27B 的权重真出来，要验的是同一件事，它在这类任务上还能不能维持那 1/40 的返工率——而不是它在公开基准上离 2.4T 差几分。</p>
 <h2 id="出处">出处</h2>
 <ul>
 <li>官方博客（Qwen 系列版本说明）：<a href="https://qwen.ai/blog?id=qwen3.7">qwen.ai/blog</a></li>
@@ -178,7 +178,7 @@
 <li class="h2"><a href="#27b真正会被部署的那一档">27B：真正会被部署的那一档</a></li>
 <li class="h2"><a href="#在机房里看这件事">在机房里看这件事</a></li>
 <li class="h2"><a href="#开源旗舰的两段式发布">开源旗舰的&quot;两段式发布&quot;</a></li>
-<li class="h2"><a href="#预览上线-20-小时我们切了-3-流量过去">预览上线 20 小时，我们切了 3% 流量过去</a></li>
+<li class="h2"><a href="#预览期切-3-流量会看到什么">预览期切 3% 流量会看到什么</a></li>
 <li class="h2"><a href="#出处">出处</a></li></ol></nav></div><div class="rail-box rail-heat-box"><p class="rail-title">近 40 天</p><div class="rail-heat"><i class="rhm l0" title="2026-10-11 · 0 篇"></i><i class="rhm l0" title="2026-10-12 · 0 篇"></i><i class="rhm l0" title="2026-10-13 · 0 篇"></i><i class="rhm l0" title="2026-10-14 · 0 篇"></i><i class="rhm l0" title="2026-10-15 · 0 篇"></i><i class="rhm l0" title="2026-10-16 · 0 篇"></i><i class="rhm l0" title="2026-10-17 · 0 篇"></i><i class="rhm l0" title="2026-10-18 · 0 篇"></i><i class="rhm l0" title="2026-10-19 · 0 篇"></i><i class="rhm l0" title="2026-10-20 · 0 篇"></i><i class="rhm l0" title="2026-10-21 · 0 篇"></i><i class="rhm l0" title="2026-10-22 · 0 篇"></i><i class="rhm l0" title="2026-10-23 · 0 篇"></i><i class="rhm l0" title="2026-10-24 · 0 篇"></i><i class="rhm l0" title="2026-10-25 · 0 篇"></i><i class="rhm l0" title="2026-10-26 · 0 篇"></i><i class="rhm l0" title="2026-10-27 · 0 篇"></i><i class="rhm l1" title="2026-10-28 · 1 篇"></i><i class="rhm l0" title="2026-10-29 · 0 篇"></i><i class="rhm l0" title="2026-10-30 · 0 篇"></i><i class="rhm l0" title="2026-10-31 · 0 篇"></i><i class="rhm l0" title="2026-11-01 · 0 篇"></i><i class="rhm l0" title="2026-11-02 · 0 篇"></i><i class="rhm l0" title="2026-11-03 · 0 篇"></i><i class="rhm l0" title="2026-11-04 · 0 篇"></i><i class="rhm l1" title="2026-11-05 · 1 篇"></i><i class="rhm l0" title="2026-11-06 · 0 篇"></i><i class="rhm l0" title="2026-11-07 · 0 篇"></i><i class="rhm l0" title="2026-11-08 · 0 篇"></i><i class="rhm l0" title="2026-11-09 · 0 篇"></i><i class="rhm l0" title="2026-11-10 · 0 篇"></i><i class="rhm l0" title="2026-11-11 · 0 篇"></i><i class="rhm l0" title="2026-11-12 · 0 篇"></i><i class="rhm l0" title="2026-11-13 · 0 篇"></i><i class="rhm l0" title="2026-11-14 · 0 篇"></i><i class="rhm l0" title="2026-11-15 · 0 篇"></i><i class="rhm l0" title="2026-11-16 · 0 篇"></i><i class="rhm l0" title="2026-11-17 · 0 篇"></i><i class="rhm l1" title="2026-11-18 · 1 篇"></i><i class="rhm l1" title="2026-11-19 · 1 篇"></i></div></div><nav class="rail-box rail-recent"><p class="rail-title">最近更新</p><ul class="rail-list recent"><li><a href="/post/small-vram-limits-ninfer-strata/">小显存的极限：125B 跑在 12GB 显卡…</a></li><li><a href="/post/inference-stack-2026-review/">2026 推理栈答卷：缓存、稀疏、并行、量化</a></li><li><a href="/post/open-source-2026-yearbook/">2026 开源年表：从 744B 到 2.8…</a></li><li><a href="/post/on-device-inference-designs/">端侧推理的几种设计：从 30B 本地模型到手…</a></li><li><a href="/post/mistral-large-4-1.05t/">Mistral Large 4：1.05T …</a></li><li><a href="/post/sparse-attention-shootout/">六种稀疏注意力摆在一起：DSA / MSA …</a></li></ul></nav><aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/qwen3-hybrid-thinking-open-weights/">Qwen3：把 thinking 开关做进开源权重</a><time>2025-04</time></li><li><a href="/post/qwen3.8-27b-vs-35b-a3b/">Qwen3.8-27B 与 3.6-35B-A3B：两种身材，怎么选</a><time>2026-08</time></li><li><a href="/post/mistral-small-4-6b-active/">Mistral Small 4：119B 里只激活 6B，欧洲的「一张卡」策略</a><time>2026-03</time></li></ul></aside></aside>
 </main>
 <footer class="site-footer">

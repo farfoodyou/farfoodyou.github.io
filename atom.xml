@@ -105,7 +105,7 @@
     <summary>744B/40B 不变，两个改动：IndexShare 让每四层稀疏注意力复用同一个索引器（1M 上下文下每 token FLOPs 降 2.9×），MTP 接受长度 +20%。SWE-bench Pro 62.1，MIT。</summary>
   </entry>
   <entry>
-    <title>投机解码踩坑记：开了之后反而慢了 30%</title>
+    <title>投机解码的账：开了之后反而慢了 30%</title>
     <link href="https://farfoodyou.github.io/post/speculative-decoding-economics/"/>
     <id>https://farfoodyou.github.io/post/speculative-decoding-economics/</id>
     <updated>2026-05-30T22:15:00+08:00</updated>

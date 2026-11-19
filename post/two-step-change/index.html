@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">可回滚的变更：把一次上线拆成三步</h1>
-    <p class="meta"><time datetime="2020-06-02T22:15:00">2020-06-02</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <p class="meta"><time datetime="2020-06-02T22:15:00">2020-06-02</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2496 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据">判据</a></li>
 <li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
@@ -53,11 +53,11 @@
 <li class="h2"><a href="#删代码为什么必须单独一次">删代码为什么必须单独一次</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>三月给订单服务换金额字段：原来存带小数的字符串，改成整数分。对账侧一直按分算，每次转换都在四舍五入的边缘上吵。改动不大，麻烦在它同时触及写入和读取。</p>
-<p>第一版把两件事放进同一个发布：读写都走新字段，旧字段不再维护。上线四十分钟后，一类历史订单的金额差了 100 倍，原因是迁移脚本对一批老数据没有转换单位。回滚包准备好了，但回滚后新写入的订单只在新字段里，旧代码读不到，服务直接报错。最后写了个回刷脚本把四十分钟的数据补回旧字段才退回去。</p>
-<p>变更的危险不在改错，而在改错之后没有回到上一个状态的路径。那次之后，我给这类改动定了个规矩：<strong>先做加法，再做切换，删除单独发一次。</strong></p>
+<p>订单服务换过一次金额格式：原来存带小数的字符串，改成整数分。对账侧按分算，两个口径每次转换都在四舍五入的边缘上吵。改动不大，麻烦在它同时触及读写。</p>
+<p>常见做法是把两件事放进同一个发布：读写都走新字段，旧字段不再维护。上线四十分钟后，一类历史订单的金额差了 100 倍，原因是迁移脚本对一批老数据没有转换单位。回滚包是现成的，但退回去之后，新写入的订单只在新字段里，旧代码读不到，服务直接报错。最后只能补一个回刷脚本，把四十分钟里落进新列的数据写回旧列。</p>
+<p>危险不在改错，而在改错之后没有回到上一个状态的路径。这类改动由此定下一条顺序：<strong>先做加法，再做切换，删除单独发一次。</strong></p>
 <h2 id="判据">判据</h2>
-<p>拆不拆、拆几步，我用四条标准决定，按重要性排：</p>
+<p>拆不拆、拆几步，判据是四条，按重要性排：</p>
 <ul>
 <li><strong>回滚要多久</strong>：从决定回滚到流量走回旧逻辑。分钟级可接受，要跑脚本就不算回滚。</li>
 <li><strong>回滚要不要动数据</strong>：要动数据的一律按不可回滚处理，因为脚本本身也会出错。</li>
@@ -107,7 +107,7 @@ func (s *store) load(id string) (*Order, error) {
 <p>改法是把灰度维度从流量换成数据特征：先跑一遍全量只读的差异统计，按订单类型分组，哪一类 diff 不为零就先不切那一类；切的顺序是先切占比最大、逻辑最简单的一类，再切小的。每一档的样本量都可控。</p>
 <p>前几档还要看延迟：新读路径多一次字段解析，单看不大，但订单详情页一次要读几十条，P99 会动。切换本身走滚动更新，新旧实例短暂共存（<a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">官方文档</a>讲得清楚），两种代码同时在跑，读路径必须都能工作。</p>
 <h2 id="判据什么时候算切完">判据：什么时候算切完</h2>
-<p>我用的门槛是三个条件同时满足：</p>
+<p>往下走的门槛是三个条件同时满足：</p>
 <ul>
 <li>diff 计数连续 24 小时为 0，且抽样比例不低于 5%；</li>
 <li>新读路径的 P99 不超过旧路径的 1.1 倍；</li>
@@ -117,7 +117,7 @@ func (s *store) load(id string) (*Order, error) {
 <h2 id="删代码为什么必须单独一次">删代码为什么必须单独一次</h2>
 <p>旧列和旧读路径是兼容期里唯一的退路：只要它还在，任何问题都能在五分钟内切回去。删掉之后，回滚代码时数据已经不写旧列，读出来是空值。</p>
 <p>删除单独发一次，而且只包含删除：删常量、删分支、删旧列、删对应测试。范围小，review 容易看清。</p>
-<p>时间上我一般放在切换完成后两周。短了数据样本不够，长了没人记得这段代码是干什么的，删的时候还得重新考古。</p>
+<p>时间通常放在切换完成后两周。短了数据样本不够，长了没人记得这段代码是干什么的，删的时候还得重新考古。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://martinfowler.com/articles/feature-toggles.html">Feature Toggles（分支与开关的成本）</a></li>
@@ -128,7 +128,7 @@ func (s *store) load(id string) (*Order, error) {
   </div>
   <p class="tag-list"><a class="tag" href="/tags/发布策略/">发布策略</a><a class="tag" href="/tags/灰度/">灰度</a><a class="tag" href="/tags/兼容性/">兼容性</a><a class="tag" href="/tags/回滚/">回滚</a></p>
   <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8F%AF%E5%9B%9E%E6%BB%9A%E7%9A%84%E5%8F%98%E6%9B%B4%EF%BC%9A%E6%8A%8A%E4%B8%80%E6%AC%A1%E4%B8%8A%E7%BA%BF%E6%8B%86%E6%88%90%E4%B8%89%E6%AD%A5" target="_blank" rel="noopener">分享到 X</a></p>
-  <nav class="post-nav"><a class="prev" href="/post/solo-refactor-plan/">← 半年重构复盘：一个人怎么排重构的期</a><a class="next" href="/post/go-hot-reload-config/">Go 里做配置热更新的三种姿势 →</a></nav>
+  <nav class="post-nav"><a class="prev" href="/post/solo-refactor-plan/">← 单人的重构排期：周切片、可逆性与删代码</a><a class="next" href="/post/go-hot-reload-config/">Go 里做配置热更新的三种姿势 →</a></nav>
 </article>
 <section class="comments">
   <h2 class="comments-title">// 评论区</h2>

@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">动态沙箱的日志里到底有什么</h1>
-    <p class="meta"><time datetime="2022-11-15T10:40:00">2022-11-15</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2496 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2022-11-15T10:40:00">2022-11-15</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#日志里到底有什么">日志里到底有什么</a></li>
 <li class="h2"><a href="#丢掉的不是记录是配对">丢掉的不是记录，是配对</a></li>
@@ -53,7 +53,7 @@
   <div class="post-content">
 <p>02:47，日志写入延迟的 p99 从 40 ms 爬到 900 ms。03:01 日志卷水位告警。03:06 值班的人判断是「量涨了」，把采样比例从 1 调到 1/8，队列恢复。</p>
 <p>09:20，一个样本的人工复核出结果：沙箱里只有读文件、创建进程、退出，没有写盘、没有外连，判 clean。15:40，同一批样本出现在另一条投放链路上，落地行为是往用户目录写自启动项。回头查沙箱日志，那个时间窗里一条 <code>openat</code> 都没有。</p>
-<p>复盘会上这被当成容量问题和漏报问题，其实是同一个：采样器按记录条数均匀丢弃，而沙箱日志的信息量分布极度不均匀，均匀丢弃在这类分布上等价于优先丢证据。</p>
+<p>复盘时这常被当成容量问题和漏报问题，其实是同一个：采样器按记录条数均匀丢弃，而沙箱日志的信息量分布极度不均匀，均匀丢弃在这类分布上等价于优先丢证据。</p>
 <h2 id="日志里到底有什么">日志里到底有什么</h2>
 <p>采集侧只有三个来源，全部挂在系统调用上。用 seccomp 把感兴趣的系统调用返回成 <code>SECCOMP_RET_TRACE</code>，配 <code>PTRACE_O_TRACESECCOMP</code>，tracer 就在每次调用的入口和出口各停一次，拿到编号、六个参数、返回值。</p>
 <p>网络事件从 <code>socket</code> / <code>connect</code> / <code>sendto</code> / <code>bind</code> 推出来，加上 UDP 53 载荷里的 qname。文件事件从 <code>openat</code> / <code>openat2</code> / <code>execve</code> / <code>renameat2</code> 推出。进程事件是 <code>clone</code> / <code>fork</code> / <code>mmap(PROT_EXEC)</code>。另有一类单独标：<code>prctl</code>、<code>io_uring_setup</code>、<code>socket(AF_PACKET)</code>，不常见，但单条出现就值得看一眼。</p>
@@ -112,7 +112,7 @@
 <tr><td>日志卷常驻</td><td>132 GB / 200 GB 开始降载</td><td>26 GB</td></tr>
 </tbody>
 </table></div>
-<p>改完两个月没再出现降载。代价有两处。写入路径从「追加字符串」变成「维护字典和计数窗口」，实现复杂了约三倍，中间出过一次引用计数泄漏，跑三天才把内存上涨的现象对上。另外对象 id 只有 16 位，超过 65535 个不同对象的样本会退化到溢出表，这一档在复核工具里单独标了出来。</p>
+<p>改完两个月没再出现降载。代价有两处。写入路径从「追加字符串」变成「维护字典和计数窗口」，实现复杂了约三倍，常见的失败形态是引用计数泄漏，内存缓慢上涨要跑三天才看得出来。另外对象 id 只有 16 位，超过 65535 个不同对象的样本会退化到溢出表，这一档在复核工具里单独标了出来。</p>
 <p>日志变小后，全量留存窗口从 7 天拉到 30 天，「三周前那个样本当时到底干了什么」第一次能被回答，这比省磁盘有用。</p>
 <h2 id="参考">参考</h2>
 <ul>

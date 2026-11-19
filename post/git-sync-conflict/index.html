@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">多端同步：Git 版本化与冲突合并</h1>
-    <p class="meta"><time datetime="2024-09-17T22:30:00">2024-09-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1992 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <p class="meta"><time datetime="2024-09-17T22:30:00">2024-09-17</time><span class="sep">·</span>5 分钟<span class="sep">·</span>1984 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#自动提交的边际成本">自动提交的边际成本</a></li>
 <li class="h2"><a href="#冲突率的账">冲突率的账</a></li>
@@ -77,13 +77,13 @@
 <p>实现刻意做得笨：<code>git add -A</code> 后看 <code>diff --cached --quiet</code>，无变更退出，有变更提交，信息取 <code>--stat</code> 前几行。不用 <code>commit -a</code>，它不看新增文件；也不自动 push，推送由另一个定时器负责。</p>
 <h2 id="冲突率的账">冲突率的账</h2>
 <p>主要成本在冲突。冲突天数占比近似 <code>1 − (1 − p)^n</code>，p 是「某文件某天被两台以上机器各改一次」的概率，n 是每天被改的文件数。早期按日期分文件（一天一个 <code>2024-09-17.md</code>），p 约 2.5%，n 平均 6，代入得 1 − 0.975^6 ≈ 14%，实测工作日 12%。改成一篇笔记一个文件后，n 涨到 25，p 掉到 0.08%，1 − 0.9992^25 ≈ 2%，实测 3.2%：模型没算改标题会连带改两篇的链接。</p>
-<p>再压一档是按端分目录，每台设备只写自己的 <code>inbox/</code>，冲突率降到 0.2%，代价是整理成本转嫁给人。我用的折中：手机端只写 <code>inbox/</code>，桌面端有全库写权限——手机上的输入本来就是碎片。</p>
+<p>再压一档是按端分目录，每台设备只写自己的 <code>inbox/</code>，冲突率降到 0.2%，代价是整理成本转嫁给人。常见的折中是手机端只写 <code>inbox/</code>，桌面端有全库写权限：手机上的输入本来就是碎片。</p>
 <p>冲突之后按文件类型分流：</p>
 <pre data-lang="conf"><code class="language-conf">*.md              merge=notes
 journal/*.md      merge=union
 index/*.sqlite    -diff merge=binary</code></pre>
 <p><code>merge=notes</code> 是自写的驱动，先用 <code>git merge-file</code> 走三方合并，失败则把两版留成 <code>name.mine.md</code> 与 <code>name.theirs.md</code> 并让 rebase 失败退出。这比留一屏 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> 好：笔记是给人读的，冲突标记留在正文里迟早被误提交。<code>journal/*.md</code> 是只追加的流水，<code>union</code> 直接拼接。索引文件不参与合并，二进制冲突没有意义。</p>
-<p>注册命令是 <code>git config merge.notes.driver &quot;./tools/merge-note %O %A %B&quot;</code>：<code>%O</code> 是共同祖先，<code>%A</code> 是当前分支版本（驱动原地改写它），<code>%B</code> 是对方版本。我第一次把顺序搞反了，结局是合并成功但内容退回祖先版本，两边改动一起消失。</p>
+<p>注册命令是 <code>git config merge.notes.driver &quot;./tools/merge-note %O %A %B&quot;</code>：<code>%O</code> 是共同祖先，<code>%A</code> 是当前分支版本（驱动原地改写它），<code>%B</code> 是对方版本。把顺序写反，结局是合并成功但内容退回祖先版本，两边改动一起消失。</p>
 <h2 id="索引对齐到哪个提交">索引对齐到哪个提交</h2>
 <p>索引（全文、任务状态、反向链接）不入库，38 MB 二进制每天变几十次，进 Git 没有 delta 可压。它还得回答「搜到的是哪个 commit 的内容」，三端各建一份，答案不落进文件，同步完没人说得清是哪一代。</p>
 <pre data-lang="sh"><code class="language-sh"># post-merge / post-rewrite
@@ -91,10 +91,10 @@ changed=$(git diff --name-only ORIG_HEAD..HEAD -- &#x27;*.md&#x27;)
 [ -z &quot;$changed&quot; ] &amp;&amp; exit 0
 echo &quot;$changed&quot; | python3 tools/index.py --update   # 6 ms/文件
 git rev-parse HEAD &gt; index/HEAD</code></pre>
-<p>rebase 重放提交，同一批文件被处理两三遍，<code>--update</code> 因此要幂等。每天 25 个变更文件，25 × 6 ms ≈ 150 ms。冲突分流留下的 <code>name.mine.md</code> 会被 <code>git add -A</code> 提交；索引若在合并前跑过，临时文件先被收进去，搜索里多出几十条 <code>.mine</code> 结尾的标题；按后缀过滤，比指望自己记得清理可靠。</p>
+<p>rebase 重放提交，同一批文件被处理两三遍，<code>--update</code> 因此要幂等。每天 25 个变更文件，25 × 6 ms ≈ 150 ms。冲突分流留下的 <code>name.mine.md</code> 会被 <code>git add -A</code> 提交；索引若在合并前跑过，临时文件先被收进去，搜索里多出几十条 <code>.mine</code> 结尾的标题；按后缀过滤，比指望人工记得清理可靠。</p>
 <p>全量重建 14 s，9 s 是分词；按内容 hash 缓存、命中率 92% 时那 9 s 缩到 0.7 s，全量 5.7 s。</p>
 <h2 id="push-被拒的形状">push 被拒的形状</h2>
-<p>三端同步里 push 被拒比冲突更常见。手机在电梯里提交 3 个 commit，桌面推了 5 个，手机恢复网络后 push 失败；此时脚本若执行 <code>push --force</code>，桌面那 5 个 commit 就没了。推送脚本遇到非 fast-forward 一律 <code>pull --rebase</code> 再重试，上限 3 次，超过就停下等人。<code>--force</code> 在任何脚本里都不出现，包括我自己的。</p>
+<p>三端同步里 push 被拒比冲突更常见。手机在电梯里提交 3 个 commit，桌面推了 5 个，手机恢复网络后 push 失败；此时脚本若执行 <code>push --force</code>，桌面那 5 个 commit 就没了。推送脚本遇到非 fast-forward 一律 <code>pull --rebase</code> 再重试，上限 3 次，超过就停下等人。<code>--force</code> 在任何脚本里都不出现。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://git-scm.com/docs/gitattributes">gitattributes：自定义合并驱动</a>：<code>merge=union</code>、<code>binary</code> 与自定义驱动的配置项</li>

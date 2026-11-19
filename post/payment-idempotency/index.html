@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">支付幂等的三层防线</h1>
-    <p class="meta"><time datetime="2021-03-16T10:20:00">2021-03-16</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2600 字 <a class="cat" href="/categories/后端/">后端</a></p>
+    <p class="meta"><time datetime="2021-03-16T10:20:00">2021-03-16</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/后端/">后端</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三层各挡什么">三层各挡什么</a></li>
 <li class="h2"><a href="#第一层唯一索引是仲裁者缓存只是前缀">第一层：唯一索引是仲裁者，缓存只是前缀</a></li>
@@ -52,11 +52,11 @@
 <li class="h2"><a href="#数字与几个坑">数字与几个坑</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>对账那天差了 11 笔，点开看全是同一笔订单扣了两次：两条流水号不同，request_no 相同。去重表里只有一条记录——主从切换那一刻这条 INSERT 还没同步过去，客户端重试正好打在新主库上。</p>
-<p>半年后又出了一次，形态完全不一样：单子只有一个，金额也只扣了一次，但状态从「处理中」被推进了两遍，第二遍来自一条迟到的补偿任务回调，它拿着三天前的快照又跑了一次。</p>
-<p>两次都不是「没加 SETNX」造成的。幂等在入口上是一个判断，在整条交易链路上却是一种性质：入口挡的是「同一个请求进来两次」，挡不住「一次请求在中间被执行了两次」。</p>
+<p>对账差出 11 笔，形态是同一笔订单扣了两次：两条流水号不同，request_no 相同。去重表里只有一条记录——主从切换那一刻这条 INSERT 还没同步过去，客户端重试正好打在新主库上。</p>
+<p>第二次形态不同：单子只有一个，金额也只扣一次，但状态从「处理中」被推进两遍，第二遍来自迟到的补偿任务回调，拿着三天前的快照又跑了一次。</p>
+<p>两次都不是「没加 SETNX」造成的。幂等在入口是一个判断，在整条链路上是一种性质：入口挡「同一个请求进来两次」，挡不住「一次请求在中间被执行了两次」。</p>
 <h2 id="三层各挡什么">三层各挡什么</h2>
-<p>把链路切开看，能重复执行的位置有三段，挡法不一样，代价也不一样：</p>
+<p>链路里能重复执行的位置有三段，挡法与代价都不一样：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>层</th>
@@ -70,13 +70,13 @@
 <tr><td>下游幂等</td><td>出口</td><td>上游重试、消息重投</td><td>上游换了新请求号</td></tr>
 </tbody>
 </table></div>
-<p>最常见的错误是只做第一层就认为问题解决了。第一层只保证同一请求号进不来第二次，而一次请求内部完全可以调两次下游——重试、补偿、回调处理都是高发地段。</p>
+<p>只做第一层就认为问题解决，是最常见的错误：它只保证同一请求号进不来第二次，一次请求内部却完全可以调两次下游，重试、补偿、回调处理都是高发地段。</p>
 <h2 id="第一层唯一索引是仲裁者缓存只是前缀">第一层：唯一索引是仲裁者，缓存只是前缀</h2>
-<p>去重表的关键不在表结构，在「谁说了算」。缓存挡在前面能省掉绝大多数回表，但最终判定必须落到唯一索引：主从切换丢写、过期、淘汰，三种失效任何一种发生，重复请求都会穿过去。</p>
+<p>去重表的关键不在表结构，在「谁说了算」：缓存挡在前面能省掉绝大多数回表，但最终判定必须落到唯一索引，主从切换丢写、过期、淘汰三种失效任何一种发生，重复请求都会穿过去。</p>
 <pre data-lang="sql"><code class="language-sql">-- 唯一索引就是仲裁者；主键冲突 = 这个请求号来过
 INSERT INTO pay_request (request_no, user_id, amount, state, expire_at)
 VALUES (?, ?, ?, &#x27;PROCESSING&#x27;, DATE_ADD(NOW(3), INTERVAL 7 DAY));</code></pre>
-<p>请求号必须由发起方生成并持久化，服务端生成意味着重试时拿不到同一个号，后面两层全废；客户端首次进支付页生成 UUID 写本地，重试、切网络、杀进程重进都复用。</p>
+<p>请求号必须由发起方生成并持久化，服务端生成意味着重试拿不到同一个号，后面两层全废；客户端首次进支付页生成 UUID 写本地，重试、切网络、杀进程重进都复用。</p>
 <p>另一种失败跟技术无关：请求号被复用。同号配不同金额或收款方，本质是客户端 bug，只能拒绝加告警，不能覆盖旧记录。</p>
 <h2 id="第二层状态机-条件更新">第二层：状态机 + 条件更新</h2>
 <p>状态机的价值不是记录状态，而是把「什么情况下允许改」写成带前置条件的 SQL，让并发暴露成影响行数：</p>
@@ -84,11 +84,11 @@ VALUES (?, ?, ?, &#x27;PROCESSING&#x27;, DATE_ADD(NOW(3), INTERVAL 7 DAY));</cod
    SET state = &#x27;SUCCESS&#x27;, updated_at = NOW(3)
  WHERE request_no = ? AND state = &#x27;PROCESSING&#x27;;
 -- 影响行数 0：并发已推进或已终态。读回来判断，不要重试这条 UPDATE</code></pre>
-<p>这条语句是一次比较并交换（compare-and-swap），和 <a href="https://www.rfc-editor.org/rfc/rfc7232.html">HTTP 条件请求里 If-Match 的语义</a> 同源：拿着你以为的版本去改，改不上就说明世界变了。</p>
+<p>这条语句是一次比较并交换，与 <a href="https://www.rfc-editor.org/rfc/rfc7232.html">HTTP 条件请求里 If-Match 的语义</a> 同源：拿着以为的版本去改，改不上就说明世界变了。</p>
 <p>三条约束要写进迁移表：只有 PROCESSING 能迁出，SUCCESS 和 FAILED 是终态，任何「改回」都是 bug；回调只认「当前状态 + 期望状态」的组合，重复回调从第二次起影响行数为 0；终态转换单独判定，别写「除 X 之外都允许」，否则新增状态会静默放行。</p>
-<p>状态机挡不住下游调用本身：正常路径和补偿路径各有一处调下游时，它只能保证状态没被改两次。</p>
+<p>状态机挡不住下游调用本身：正常路径与补偿路径各调一次下游时，它只能保证状态没被改两次。</p>
 <h2 id="第三层下游幂等或者承认它不幂等">第三层：下游幂等，或者承认它不幂等</h2>
-<p>出口必须把请求号传下去，让下游用自己的去重机制挡。现实是：不是所有下游都支持。</p>
+<p>出口必须把请求号传下去，让下游用自己的去重机制挡；不是所有下游都支持。</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>下游能力</th>
@@ -101,15 +101,14 @@ VALUES (?, ?, ?, &#x27;PROCESSING&#x27;, DATE_ADD(NOW(3), INTERVAL 7 DAY));</cod
 <tr><td>都不支持</td><td>串行化 + 对账</td><td>靠 T+1 冲正兜底</td></tr>
 </tbody>
 </table></div>
-<p>「先查后写」的窗口真实存在，分布式锁只能把它缩到单实例范围，锁自身在租约到期、主从切换时并不安全——<a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html">关于分布式锁的经典分析</a> 的结论是要 fencing token。我的选择是把这类下游调用串行化到单线程、接受吞吐下降，也不靠一把不可靠的锁声称幂等。</p>
+<p>「先查后写」的窗口真实存在，分布式锁只能把它缩到单实例，锁自身在租约到期、主从切换时并不安全，<a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html">关于分布式锁的经典分析</a> 的结论是要 fencing token。另一种做法是把这类下游调用串行化到单线程，接受吞吐下降，不靠一把不可靠的锁声称幂等。</p>
 <h2 id="数字与几个坑">数字与几个坑</h2>
-<p>去重命中率（重试进来的比例）日常 0.5%~2%，大促到 5%，主要来自用户连点。同号并发插入互相等行锁，应用侧加了单飞：同号并发只有一个协程写库，其余等结果，写库从最坏 5 次降到 1 次。</p>
-<p>坑按踩到的顺序：</p>
+<p>去重命中率（重试进来的比例）日常 0.5%~2%，大促 5%，主要来自用户连点。同号并发插入互相等行锁，应用侧加单飞，只有一个协程写库，其余等结果，写库从最坏 5 次降到 1 次。</p>
 <p><strong>只回 code 不回 body</strong>。幂等返回必须带流水号，否则客户端拿不到凭证会换新号重试。</p>
 <p><strong>把 FAILED 缓存下来</strong>。失败被缓存后用户换号重试，而第一次其实成功了。FAILED 必须严格到「确认没扣款」。</p>
-<p><strong>幂等表没有过期策略</strong>。涨到几亿行后唯一索引写放大开始影响 P99。我们按天分区保留 7 天，超期归档冷表，可查但不参与在线判定。</p>
-<p><strong>补单绕过三层</strong>。人工补单生成新号最容易破坏幂等，最后在流程上硬约束：必须携带原请求号。</p>
-<p>三层里最便宜的是第一层，最容易被忽视的是第三层，最能防止「看起来成功」的是第二层。三者到位后，重复扣款的事故形态会从「偶发、查不到原因」变成「要么不发生，要么告警里指得出哪一层漏了」。重复写入的普遍性在 <a href="https://dataintensive.net/">Designing Data-Intensive Applications</a> 第 8 章讲得比多数内部文档清楚。</p>
+<p><strong>幂等表没有过期策略</strong>。涨到几亿行后唯一索引写放大开始影响 P99。按天分区保留 7 天，超期归档冷表，可查但不参与在线判定。</p>
+<p><strong>补单绕过三层</strong>。人工补单生成新号最容易破坏幂等，流程上硬约束：必须携带原请求号。</p>
+<p>三层里最便宜的是第一层，最容易忽视的是第三层，最能防止「看起来成功」的是第二层。三者到位后，重复扣款的事故形态会从「偶发、查不到原因」变成「告警里指得出哪一层漏了」。重复写入的普遍性见 <a href="https://dataintensive.net/">Designing Data-Intensive Applications</a> 第 8 章。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://www.rfc-editor.org/rfc/rfc7232.html">RFC 7232: Conditional Requests（If-Match 与版本校验）</a></li>

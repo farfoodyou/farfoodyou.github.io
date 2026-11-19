@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>覆盖率 85% 是怎么来的：哪些测试值得写 - farfood</title>
-<meta name="description" content="覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，我把测试从 service 挪到了领域对象上。">
+<meta name="description" content="覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，测试的落点会从 service 挪到领域对象上。">
 <meta name="author" content="farfood">
 <link rel="canonical" href="https://farfoodyou.github.io/post/what-tests-to-write/">
 <link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
@@ -15,17 +15,17 @@
 <meta name="robots" content="index,follow">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "覆盖率 85% 是怎么来的：哪些测试值得写", "description": "覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，我把测试从 service 挪到了领域对象上。", "datePublished": "2021-06-01T10:20:00+08:00", "dateModified": "2021-06-01T10:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/what-tests-to-write/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "单元测试, 测试覆盖率, 表驱动测试, 领域模型"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "覆盖率 85% 是怎么来的：哪些测试值得写", "description": "覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，测试的落点会从 service 挪到领域对象上。", "datePublished": "2021-06-01T10:20:00+08:00", "dateModified": "2021-06-01T10:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/what-tests-to-write/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "单元测试, 测试覆盖率, 表驱动测试, 领域模型"}</script>
 
 <meta property="og:site_name" content="farfood">
 <meta property="og:title" content="覆盖率 85% 是怎么来的：哪些测试值得写 - farfood">
-<meta property="og:description" content="覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，我把测试从 service 挪到了领域对象上。">
+<meta property="og:description" content="覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，测试的落点会从 service 挪到领域对象上。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://farfoodyou.github.io/post/what-tests-to-write/">
 <meta property="og:locale" content="zh_CN">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="覆盖率 85% 是怎么来的：哪些测试值得写 - farfood">
-<meta name="twitter:description" content="覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，我把测试从 service 挪到了领域对象上。">
+<meta name="twitter:description" content="覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，测试的落点会从 service 挪到领域对象上。">
 <meta property="article:published_time" content="2021-06-01T10:20:00+08:00">
 <meta name="keywords" content="单元测试, 测试覆盖率, 表驱动测试, 领域模型">
 </head>
@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">覆盖率 85% 是怎么来的：哪些测试值得写</h1>
-    <p class="meta"><time datetime="2021-06-01T10:20:00">2021-06-01</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2471 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <p class="meta"><time datetime="2021-06-01T10:20:00">2021-06-01</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2478 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#85-是怎么攒出来的">85% 是怎么攒出来的</a></li>
 <li class="h2"><a href="#一条规则是怎么从-sql-里被救出来的">一条规则是怎么从 SQL 里被救出来的</a></li>
@@ -56,11 +56,11 @@
 order/pricing.go:53.2,54.19 2 0
 order/pricing.go:55.2,55.22 1 1</code></pre>
 <p>每行是 <code>文件:起始行.列,结束行.列 语句数 执行次数</code>。第一行说 41 行 31 列到 52 行 3 列这个基本块有 14 个语句，整块执行 1 次；第二块 2 个语句，0 次。</p>
-<p>盯着这三行才想清楚：这个数字数的是语句，按「顺序执行、无分支」的基本块打包。一个 <code>if</code> 的两侧是两个块，测试进过其中一侧，那侧就算覆盖，另一侧是 0。这两侧的组合对不对，工具不知道。</p>
+<p>盯着这三行能看清：这个数字数的是语句，按「顺序执行、无分支」的基本块打包。一个 <code>if</code> 的两侧是两个块，测试进过其中一侧，那侧就算覆盖，另一侧是 0。这两侧的组合对不对，工具不知道。</p>
 <h2 id="85-是怎么攒出来的">85% 是怎么攒出来的</h2>
-<p>重构刚接手时，service 层 210 个集成测试，每个起内存数据库、灌数据、调一次接口、校验返回 JSON。全量跑 4 分 20 秒，语句覆盖 71%。</p>
+<p>一套跑了两年的订单服务，重构前 service 层 210 个集成测试，每个起内存数据库、灌数据、调一次接口、校验返回 JSON。全量跑 4 分 20 秒，语句覆盖 71%。</p>
 <p>想拉到 85%，最省力的路径是把 DTO 的 getter、构造函数、错误分支全覆盖一遍。这些语句占比高，测试又不用想：给个零值、判断不 panic、结束。半天能从 71% 干到 79%，业务规则一行都没验证。</p>
-<p>我走的是另一条：把计价和分摊规则从 service 剥出来，做成不带 IO 的领域对象，补 130 个单测。5 秒跑完，整体覆盖 85%，领域对象那层 88%，service 层还是 71%。</p>
+<p>另一条路是把计价和分摊规则从 service 剥出来，做成不带 IO 的领域对象，补 130 个单测。5 秒跑完，整体覆盖 85%，领域对象那层 88%，service 层还是 71%。</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>被测对象</th>
@@ -112,11 +112,11 @@ order/pricing.go:55.2,55.22 1 1</code></pre>
 <p>5 个用例覆盖了 210 个集成测试碰不到的那一条。第四行在线上真出过：旧代码先判门槛再减折扣，顺序反了，用户付的钱比券上写的多。</p>
 <h2 id="别为覆盖率写断言">别为覆盖率写断言</h2>
 <p>覆盖率掉一个点，最容易做的动作是找一段没执行的代码补个测试跑过去。这种测试没有判别力：跑过去就算成功，断言只有 <code>require.NoError</code>，或者断言一个自己刚写死的值。</p>
-<p>做过一次抽查，把领域对象里 12 处条件逐个取反再跑测试：单测抓出 11 个，漏的是「券额大于剩余时截断到 0」：第 5 行当时只断言结果不大于券额，取反之后它照样通过，后来才把期望值写成具体的 0。同一批改动跑 service 集成测试只抓到 4 个，另外 8 个因上层 mock 或数据没构造到而安静通过。口径粗糙，但结论够用：覆盖率不变时，判别力可以差三倍。</p>
+<p>判别力可以这样抽查：把领域对象里 12 处条件逐个取反再跑测试：单测抓出 11 个，漏的是「券额大于剩余时截断到 0」：第 5 行只断言结果不大于券额，取反之后它照样通过，后来才把期望值写成具体的 0。同一批改动跑 service 集成测试只抓到 4 个，另外 8 个因上层 mock 或数据没构造到而安静通过。口径粗糙，但结论够用：覆盖率不变时，判别力可以差三倍。</p>
 <p>后来的两条规矩：写完测试先问「实现改错了它会不会红」，只能靠改期望值才红的，测的是自己；用例表写在测试文件顶部，改规则先改表再补用例。</p>
 <h2 id="哪些地方不写单测">哪些地方不写单测</h2>
 <p>胶水代码不写：纯转发的 handler、依赖注入的装配、只做字段复制的 converter。它们的失效模式是「漏了一个字段」，跑一次全链路比逐个写单测便宜。序列化和 SQL 也不在领域对象的范围里，由集成测试兜。</p>
-<p><a href="https://martinfowler.com/bliki/TestPyramid.html">测试金字塔</a> 讲各层比例，我更在意单位成本：差三个数量级的地方，规则就该往下挪。</p>
+<p><a href="https://martinfowler.com/bliki/TestPyramid.html">测试金字塔</a> 讲各层比例，决定落点的是单位成本：差三个数量级的地方，规则就该往下挪。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://pkg.go.dev/cmd/cover">Go 文档：cmd/cover</a>：基本块与语句数的计数口径出自这里</li>

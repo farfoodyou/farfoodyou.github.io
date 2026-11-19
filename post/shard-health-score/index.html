@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">分片健康度怎么算：成功率、延迟、主动探测</h1>
-    <p class="meta"><time datetime="2021-01-27T22:10:00">2021-01-27</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/数据/">数据</a></p>
+    <p class="meta"><time datetime="2021-01-27T22:10:00">2021-01-27</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/数据/">数据</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个信号各自的偏差">三个信号各自的偏差</a></li>
 <li class="h2"><a href="#滑动窗口分桶-指数衰减-置信下界">滑动窗口：分桶 + 指数衰减 + 置信下界</a></li>
@@ -52,7 +52,7 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>跳单上线之后，健康度判定从「辅助面板」变成了关键路径上的一环：判错一次，要么白跳（把健康分片摘掉，容量掉八分之一），要么不跳（那批用户付不了款）。压力压在一个布尔值上。</p>
-<p>第一版规则很简单：一分钟错误率超过 5% 就摘掉。两周误摘四次，其中两次的原因一样——那个分片流量低，一分钟只有三个请求，一个超时就顶到 33%。另一次是上游发版导致所有分片同时抖动，八个分片被摘了六个。</p>
+<p>第一版规则很简单：一分钟错误率超过 5% 就摘掉。头两周误摘四次，其中两次的原因一样——那个分片流量低，一分钟只有三个请求，一个超时就顶到 33%。另一次是上游发版导致所有分片同时抖动，八个分片被摘了六个。</p>
 <p>结论是：<strong>健康度不是布尔值，是一个要按样本量打折、带滞回、并且要区分「谁看到的」的分数。</strong></p>
 <h2 id="三个信号各自的偏差">三个信号各自的偏差</h2>
 <div class="table-wrap"><table>
@@ -86,7 +86,7 @@ def success_score(buckets):            # buckets 从旧到新
     for ok, n in buckets:
         r = ALPHA * wilson_lower(ok, n) + (1 - ALPHA) * r
     return r</code></pre>
-<p>置信下界是这套东西里最值钱的十行。取样本比例的威尔逊下界之后，1 次成功只值 0.21 分，5 次全对 0.57，100 次全对 0.96（置信水平 95%）。含义是「样本越少，我越不敢说它健康」——低流量分片不会再因为一次超时被判死，也不会因为一次成功被判满分。零样本给 0.5，比给 1 分保守，比给 0 分诚实。</p>
+<p>置信下界是这套东西里最值钱的十行。取样本比例的威尔逊下界之后，1 次成功只值 0.21 分，5 次全对 0.57，100 次全对 0.96（置信水平 95%）。含义是「样本越少，越不能断言它健康」——低流量分片不会再因为一次超时被判死，也不会因为一次成功被判满分。零样本给 0.5，比给 1 分保守，比给 0 分诚实。</p>
 <p>指数衰减解决的是另一件事：五分钟窗口里，二十秒前的失败和四分半前的失败不该同权。α 取 0.3 时，有效窗口大约是三四桶，也就是三十到四十秒，足够覆盖一次抖动，又不至于把十分钟前的问题拖着不放。</p>
 <h2 id="分数合成与滞回">分数合成与滞回</h2>
 <p>合成按业务后果加权，不按美感：</p>
@@ -110,7 +110,7 @@ baseline = 同一分钟内所有分片 p99 的中位数</code></pre>
 <p>进入和退出用不同阈值（40 进、70 出）不是保守，是防抖。单阈值时分数在阈值附近抖，路由反复切换，每次切换都要重建连接池、让缓存失效，切换本身的成本比「多撑三十秒」高得多。带滞回的成本也很明确：一个坏了一半的分片会在观察区里多待一阵，用户体验是「偶尔慢」而不是「直接失败」。</p>
 <p>恢复是另一套条件：70 分以上、连续 5 次探测成功、驻留超过一个窗口。刚恢复那一秒的分数是旧窗口的残留，直接按分数放量会把刚爬起来的实例再压死一次。</p>
 <h2 id="主动探测是单向证据">主动探测是单向证据</h2>
-<p>这一点当时踩过：探针全绿，业务侧大面积超时。原因是分区只切断了部分调用方到分片的路径，探针恰好在那条没断的路径上。</p>
+<p>一个反例：探针全绿，业务侧大面积超时。原因是分区只切断了部分调用方到分片的路径，探针恰好在那条没断的路径上。</p>
 <p>所以探针的用法只能是单向的：<strong>探测失败可以单独作为降级依据，探测成功不能单独作为恢复依据。</strong> 反面证据可信，正面证据不可信。</p>
 <p>探针本身也是负载，这条容易被忽略：</p>
 <ul>

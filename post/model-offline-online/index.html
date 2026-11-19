@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">离线 AUC 好，线上不一定有用</h1>
-    <p class="meta"><time datetime="2023-05-09T20:30:00">2023-05-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2324 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-05-09T20:30:00">2023-05-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2321 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#四笔账各自能否掉谁">四笔账，各自能否掉谁</a></li>
 <li class="h2"><a href="#三个候选各自的账">三个候选各自的账</a></li>
@@ -53,8 +53,8 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>一个检测模型的处置动作分成三档：分数高直接阻断，中间进人工复核队列，低的放过。这个结构决定了评估指标必须落在「档位边界」上，而不是整条 ROC 曲线下面那块面积。</p>
-<p>误报和漏报的代价差得很远。按当时的口径，一份误报的代价是复核队列里 30 秒的人工时间；一份漏报被利用之后，处置加上影响回收是几个人小时，中间还夹着一次对外说明。代价比在 100 比 1 上下，这个比值直接把阈值推到低误报的那一端，而 AUC 对这个位置完全不敏感。</p>
-<p>那次的选型写成四笔账算完的：代价比、延迟预算、回滚粒度、灰度样本量。四笔里只有一笔能否掉候选，一笔否掉的是验收标准，剩下两笔只调工作点和优先级。</p>
+<p>误报和漏报的代价差得很远。按一种常见的口径，一份误报的代价是复核队列里 30 秒的人工时间；一份漏报被利用之后，处置加上影响回收是几个人小时，中间还夹着一次对外说明。代价比在 100 比 1 上下，这个比值直接把阈值推到低误报的那一端，而 AUC 对这个位置完全不敏感。</p>
+<p>这类选型可以写成四笔账：代价比、延迟预算、回滚粒度、灰度样本量。四笔里只有一笔能否掉候选，一笔否掉的是验收标准，剩下两笔只调工作点和优先级。</p>
 <h2 id="四笔账各自能否掉谁">四笔账，各自能否掉谁</h2>
 <div class="table-wrap"><table>
 <thead><tr>
@@ -89,13 +89,13 @@
 </table></div>
 <p>方案 B 的 AUC 提升是真的，代价也是：延迟 18ms 把链路 p99 顶到 76ms，只剩 4ms 余量，任何一次 GC 抖动都会超。它还有一个隐性成本，排序器换了之后分数分布整体平移，原来的人工复核队列配额要重算。</p>
 <p>方案 C 的 AUC 掉了 0.01，但在同一工作点上漏报率最低，因为它把「阻断」和「复核」拆成两个阈值，中间那档交给人工，等于用 3800 条复核量换回 0.5 个百分点的漏报。</p>
-<p>表里那三个漏报率都是离线回归集上的数，不是线上。这一点后面单独算，它是这次选型里最容易做错的一步。</p>
+<p>表里那三个漏报率都是离线回归集上的数，不是线上。这一点后面单独算，它是这类选型里最容易做错的一步。</p>
 <h2 id="阈值该落在哪">阈值该落在哪</h2>
 <p>单份样本的期望代价写成：</p>
 <pre data-lang="text"><code class="language-text">E(s) = p * C_fn * (1 - recall(s)) + (1 - p) * C_fp * FPR(s)
 p = 阳性率（线上实测 0.2%），C_fn = 200，C_fp = 0.5
 最优处满足: p * C_fn * f1(s) = (1 - p) * C_fp * f0(s)</code></pre>
-<p>把线上阳性率 0.2% 代进去，阈值落在 FPR 约 1.5% 的位置，而不是让 F1 最大的那个点。当时离线数据里阳性率是 3.5%，同一份分数分布算出来的最优阈值是 FPR 约 6%，两者差了四倍。<strong>这就是离线 AUC 好看而线上没用的第一个原因：样本先验变了，工作点跟着变，而 AUC 是不随先验变的排序指标。</strong></p>
+<p>把线上阳性率 0.2% 代进去，阈值落在 FPR 约 1.5% 的位置，而不是让 F1 最大的那个点。离线数据里阳性率是 3.5%，同一份分数分布算出来的最优阈值是 FPR 约 6%，两者差了四倍。<strong>这就是离线 AUC 好看而线上没用的第一个原因：样本先验变了，工作点跟着变，而 AUC 是不随先验变的排序指标。</strong></p>
 <p>第二个原因是分数校准。训练集和线上样本的阳性率差 17 倍，模型输出的绝对值整体偏高，直接拿离线算好的阈值上线，实际阻断量会是预估的 5 到 8 倍。要么在训练时按线上先验重加权，要么上线后按分数分位数定阈值，<a href="https://scikit-learn.org/stable/modules/calibration.html">概率校准那一节</a>讲的就是这件事，可靠性曲线比 AUC 更能暴露这类偏移。</p>
 <h2 id="灰度那笔账560-份阳性">灰度那笔账：560 份阳性</h2>
 <p>上面表格里的 8.2%、5.1%、4.6% 如果当成「两周线上验证」的数据，这一页就不用写了。它站不住。</p>
@@ -103,9 +103,9 @@ p = 阳性率（线上实测 0.2%），C_fn = 200，C_fp = 0.5
 <pre data-lang="text"><code class="language-text">n ≈ 16 * p * (1 - p) / δ²
   = 16 * 0.08 * 0.92 / (0.008)² ≈ 1.84 万（每组阳性数）</code></pre>
 <p>1.84 万份阳性在 5% 灰度下要跑 460 天。这个数一算出来，就知道「灰度两周看漏报率」这条路根本走不通。</p>
-<p>能看的只剩下三类代理指标：分数分布的分位数偏移、复核队列的命中密度、单份判定的延迟。漏报只能靠影子模式跑全量、事后回溯复核结论，或者等样本回流攒够量再看。灰度期间我改成了每天抽 2 万份被模型判为负的样本进盲复核，用这个子集的漏报率做代理，代价是复核人力翻倍，换到的是两周内能给出方向性结论。</p>
+<p>能看的只剩下三类代理指标：分数分布的分位数偏移、复核队列的命中密度、单份判定的延迟。漏报只能靠影子模式跑全量、事后回溯复核结论，或者等样本回流攒够量再看。一种做法是灰度期间每天抽 2 万份被模型判为负的样本进盲复核，用这个子集的漏报率做代理，代价是复核人力翻倍，换到的是两周内能给出方向性结论。</p>
 <h2 id="退得回去才叫选完">退得回去才叫选完</h2>
-<p>当时的决定是方案 C，理由是延迟预算硬、代价比大、标注量够。方案 A 作为兜底一直留着，它不需要重新训练，出问题时是最快的一条退路。</p>
+<p>落地的方案是 C，理由是延迟预算硬、代价比大、标注量够。方案 A 作为兜底一直留着，它不需要重新训练，出问题时是最快的一条退路。</p>
 <p>如果标注量不足以训轻量模型，选 A；如果复核人力充足而阻断代价极高，选 B，但要先把延迟预算重新谈一遍。判据不是哪个方案指标高，是哪个方案在最差的情况下还能退回去。</p>
 <h2 id="参考">参考</h2>
 <ul>

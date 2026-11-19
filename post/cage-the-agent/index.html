@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">把 Agent 关进笼子：禁网、只读、超时、审计</h1>
-    <p class="meta"><time datetime="2024-08-06T09:40:00">2024-08-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2487 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+    <p class="meta"><time datetime="2024-08-06T09:40:00">2024-08-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2486 字 <a class="cat" href="/categories/agent/">Agent</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#定位花了六个小时因为日志里没有命令">定位花了六个小时，因为日志里没有命令</a></li>
 <li class="h2"><a href="#笼子的四根柱子">笼子的四根柱子</a></li>
@@ -51,11 +51,11 @@
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
 <p>02:41，采集机一块数据盘水位到 91%，告警进了值班群。</p>
-<p>02:44，我把一条「清理过期临时目录」的工单转给执行 Agent。它绑定的服务账号有那台机器的 <code>/data</code> 读写权限，出网无限制，单步超时 30 分钟。这类任务之前跑过十几次，都干净。</p>
+<p>02:44，一条「清理过期临时目录」的工单被转给执行 Agent。它绑定的服务账号有那台机器的 <code>/data</code> 读写权限，出网无限制，单步超时 30 分钟。这类任务之前跑过十几次，都干净。</p>
 <p>02:52，它回了一段三行摘要：删除 12,438 个文件，回收 41 GB，无异常。</p>
 <p>03:10，下游对账报缺文件：前一天刚采完、还没入库的原始包，目录名带当天日期，父目录叫 <code>collect_tmp</code>。</p>
 <h2 id="定位花了六个小时因为日志里没有命令">定位花了六个小时，因为日志里没有命令</h2>
-<p>审计那一栏只有三项：工具名 <code>shell</code>、开始时间、退出码，参数没记。我知道它执行过 27 次 shell，不知道执行了什么。</p>
+<p>审计那一栏只有三项：工具名 <code>shell</code>、开始时间、退出码，参数没记。能查到它执行过 27 次 shell，查不到执行了什么。</p>
 <p>最后从上下文日志里翻出来：该日志为排查模型问题把每轮消息全文落了盘。27 条命令按顺序摆着：它先按 <code>-mtime +3</code> 找过期文件，候选太少，就改成按目录名匹配 <code>*tmp*</code>、<code>*cache*</code>，判据从时间滑到「名字像临时」。第 19 步，它对着 <code>collect_tmp/2024-08-05</code> 执行了 <code>rm -rf</code>。</p>
 <p>这一路推断谈不上离谱：工单原文是「清理过期临时目录」，而「临时」没有可执行的定义。换人来做会先问一句这目录能不能删。差别是人问的时候有成本感，Agent 没有：删错了没东西拦，删完也没东西要求它解释。</p>
 <p>盘完能力清单，问题很清楚：</p>
@@ -87,7 +87,7 @@ cmd.SysProcAttr = &amp;syscall.SysProcAttr{
 cmd.Dir = taskRoot
 out := io.LimitReader(stdout, 4&lt;&lt;20)  // 输出也有上限</code></pre>
 <h2 id="失败安全是设计出来的">失败安全是设计出来的</h2>
-<p>改成这套之后，任务成功率从 71% 掉到 58%，掉的全是需要联网自取数据、或要写回共享盘的活。有人提议给「可信任务」开放宽预算的通道，被我否了：只要存在「这种情况可以例外」的分支，模型迟早会构造出那种情况。</p>
+<p>改成这套之后，任务成功率从 71% 掉到 58%，掉的全是需要联网自取数据、或要写回共享盘的活。一种提议是给「可信任务」开放宽预算的通道，被否掉：只要存在「这种情况可以例外」的分支，模型迟早会构造出那种情况。</p>
 <p>三个具体决定：</p>
 <ul>
 <li>判断默认拒绝。白名单为空就是没网，不存在「先放通再收紧」。代理连不上就失败退出，不退回直连。</li>

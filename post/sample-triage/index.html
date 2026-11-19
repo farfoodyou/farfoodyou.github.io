@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">样本分级：118 万份文件该怎么花算力</h1>
-    <p class="meta"><time datetime="2023-11-07T20:15:00">2023-11-07</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2496 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-11-07T20:15:00">2023-11-07</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#第一页全量跑各要多少核">第一页：全量跑各要多少核</a></li>
 <li class="h2"><a href="#第二页廉价特征能砍掉多少">第二页：廉价特征能砍掉多少</a></li>
@@ -52,7 +52,7 @@
 <li class="h2"><a href="#账算完剩下的判断">账算完剩下的判断</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>工作日的入库量是 118 万份文件，峰值小时占 9%，也就是 29 份每秒。这个数不大，但每种手段都「全量跑一遍」，账立刻就不对了。我在白板上把三档算力列出来，从那以后就不再讲「检测成本高」，直接报数。</p>
+<p>以一个工作日 118 万份文件的入库量为例（示例口径）：峰值小时占 9%，也就是 29 份每秒。这个数不大，但每种手段都「全量跑一遍」，账立刻不对。把三档算力列成一张表之后，「检测成本高」这种说法就不必讲了，直接报数。</p>
 <h2 id="第一页全量跑各要多少核">第一页：全量跑各要多少核</h2>
 <p>日核小时 = 日份数 × 单份核秒 / 3600。单份核秒按单核独占算，不含排队。</p>
 <div class="table-wrap"><table>
@@ -93,7 +93,7 @@
 </tbody>
 </table></div>
 <p>「影子外推」：24 小时里所有样本额外跑一遍全量模型，只记录不处置，看被第一级判为良性的那批里模型给高分、人工确认恶意的有多少，再乘上流量周期。</p>
-<p>我选 0.80：从 0.70 到 0.80，第二级每天多花 5 个核小时，漏检从 4 份降到 1.2 份。再往上抬到 0.9，第二级会涨到 30 万份、22 核小时，漏检只再降 0.4 份，边际收益已经不成立。</p>
+<p>选 0.80：从 0.70 到 0.80，第二级每天多花 5 个核小时，漏检从 4 份降到 1.2 份。再往上抬到 0.9，第二级会涨到 30 万份、22 核小时，漏检只再降 0.4 份，边际收益已经不成立。</p>
 <p>顺手把沙箱的入口也定在这一级：第二级分数超过 0.93 才进沙箱，占总量 0.6%，约 7000 份，日耗 29.5 核小时。这条线比第一级更宽松，因为沙箱单份 15 秒，动一格就是几十核小时。</p>
 <h2 id="第四页回退全量要花多少">第四页：回退全量要花多少</h2>
 <p>分级器是省算力的前提，一旦漂了，省下来的就是漏检。三种情况会关掉分级、回退全量：</p>
@@ -115,10 +115,10 @@
         return &quot;queued-for-night&quot;, 2       # 配额用完就排队，不降级判定
     budget.left -= 15
     return sandbox(f), 2</code></pre>
-<p><code>budget</code> 那段是后来加的。配额打满时，最省事的做法是降级成只记录，但那等于在高峰期悄悄降低判定强度，还没人看得见；排队到夜间窗口至少留一条待办。</p>
+<p><code>budget</code> 那段不能省。配额打满时，最省事的做法是降级成只记录，但那等于在高峰期悄悄降低判定强度，还没人看得见；排队到夜间窗口至少留一条待办。</p>
 <h2 id="账算完剩下的判断">账算完剩下的判断</h2>
 <p>这套分级省下来的大头是沙箱那 4900 核小时，模型那部分从 82 降到 9.5，属于顺带。如果检测链路里没有动态执行，只有规则加模型，那么分级的性价比要重新算一遍：省 72 核小时，代价是两套判据、一次分位点拟合和一条影子链路，很可能不划算。</p>
-<p>另一个反直觉的地方：第一级的耗时上限比它的准确率重要。3ms 能全量跑，30ms 就只能抽样，一旦变成抽样，第一级就不再是「筛子」，而是「采样器」，后面所有关于通过率的推导都不成立。所以廉价特征我给它划了一条硬线：单份不超过 5ms，超了就从特征集里删掉，不管它多有区分度。</p>
+<p>另一个反直觉的地方：第一级的耗时上限比它的准确率重要。3ms 能全量跑，30ms 就只能抽样，一旦变成抽样，第一级就不再是「筛子」，而是「采样器」，后面所有关于通过率的推导都不成立。所以廉价特征要划一条硬线：单份不超过 5ms，超了就从特征集里删掉，不管它多有区分度。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://numpy.org/doc/stable/reference/generated/numpy.percentile.html">numpy.percentile</a>：分位点阈值怎么算</li>

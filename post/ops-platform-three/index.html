@@ -38,7 +38,7 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
@@ -52,7 +52,7 @@
 <li class="h2"><a href="#发布权给出去之后还缺什么">发布权给出去之后，还缺什么</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>去年底开始，运营后台的配置发布不再经过研发：改完点发布，一分钟内生效。省掉的排期实打实，代价是事故结构变了。三个月里七次线上问题，五次是配置或数据写错，只有两次跟代码有关。研发排障时最常说的一句话变成了「这个字段是谁改的」。</p>
+<p>去年底开始，运营后台的配置发布不再经过研发：改完点发布，一分钟内生效。省掉的排期实打实，代价是事故结构变了。按经验口径，三个月里七次线上问题，五次是配置或数据写错，只有两次跟代码有关。研发排障时最常说的一句话变成了「这个字段是谁改的」。</p>
 <p>于是补预发、灰度、回滚。三件事经常被当成一个东西做，其实判据完全不同。先说判据，再比方案。</p>
 <h2 id="判据">判据</h2>
 <p>四条，按重要性排：</p>
@@ -79,7 +79,7 @@
 <tr><td>适合谁操作</td><td>研发</td><td>研发</td><td>运营</td></tr>
 </tbody>
 </table></div>
-<p>我们最后是三件都用，但分工明确：全量预发只做「配置能不能渲染出来」的硬校验，跑自动化用例，不指望它发现业务问题；影子流量预发用来在活动前一天验证依赖和数据规模；生产上的版本指针承担真正的灰度。</p>
+<p>实践里三件都用，但分工明确：全量预发只做「配置能不能渲染出来」的硬校验，跑自动化用例，不指望它发现业务问题；影子流量预发用来在活动前一天验证依赖和数据规模；生产上的版本指针承担真正的灰度。</p>
 <p>版本指针这个词值得解释一下。运营侧的单元配置本身就是数据，每次发布生成一个新版本，线上读的是「当前指向哪个版本」这么一个指针。灰度改指针的指向，回滚也是改指针。发布和回滚因此变成了同一个操作的两个方向，这也是它比前两种方案便宜的原因。</p>
 <h2 id="灰度分桶加门禁">灰度：分桶加门禁</h2>
 <p>灰度最容易做错的地方是按比例随机。同一份配置在不同请求上取到不同版本，用户刷新一次页面就换了样子。分桶键必须选「一段时间内稳定」的维度：用户 id 或者内容 id，不能是请求 id。</p>
@@ -94,7 +94,7 @@
   rollback:
     pointer: previous
     data: compensating_events</code></pre>
-<p>三个参数是踩坑换来的。<code>buckets</code> 从小到大、<code>dwell</code> 每档至少停 30 分钟，因为业务指标要一个完整周期才看得出偏移；门禁里除了错误率和延迟，必须有一条业务指标，配置错了往往技术指标完全正常，只是转化掉了；<code>data</code> 单独一行，因为它和指针不是一回事，见下一节。</p>
+<p>三个参数的取值各自防一类问题。<code>buckets</code> 从小到大、<code>dwell</code> 每档至少停 30 分钟，因为业务指标要一个完整周期才看得出偏移；门禁里除了错误率和延迟，必须有一条业务指标，配置错了往往技术指标完全正常，只是转化掉了；<code>data</code> 单独一行，因为它和指针不是一回事，见下一节。</p>
 <p>门禁的判定逻辑放在发布系统之外的一个只读服务里，发布系统只负责查。原因很实际：发布系统本身出故障时，你还需要它告诉你现在指标是不是正常的。同一个系统既当裁判又当运动员，出事时两边一起坏。</p>
 <h2 id="回滚三件事别当成一个按钮">回滚：三件事，别当成一个按钮</h2>
 <div class="table-wrap"><table>
@@ -112,11 +112,11 @@
 </table></div>
 <p>麻烦的是第三行。运营把奖励额度多写一个零，指针切回去只让新请求按旧配置走，已发出去的额度还在账上，只能靠补偿事件冲正；冲正之前，止损手段是关掉领取入口，属于第四种操作。</p>
 <p>所以权限表要分成四栏，不是三栏：发布、指针回切、冻结入口、数据冲正。前两个给运营，后两个需要两个人确认。冻结入口那一栏必须是独立的开关通道，不能依赖发布系统，因为发布系统在事故里往往就是嫌疑对象。</p>
-<p>审计也在这时候补上：每次指针变更记录操作人、原因、前值和后值，原因必填，一句话就行。这条规则拦下过两次「我以为改的是测试环境」的误操作，因为它们发生在同一分钟内的两次互相覆盖，没有前值根本查不出来。</p>
+<p>审计也在这时候补上：每次指针变更记录操作人、原因、前值和后值，原因必填，一句话就行。这条规则拦下过两次「以为改的是测试环境」的误操作，因为它们发生在同一分钟内的两次互相覆盖，没有前值根本查不出来。</p>
 <h2 id="发布权给出去之后还缺什么">发布权给出去之后，还缺什么</h2>
-<p>缺的不是功能，是演练。三件套上线后我们安排了一次季度演练：由运营同学自己操作一次回滚，研发在旁边只看不动。第一次演练暴露了两个问题，一是回滚按钮藏在第二层菜单里，二是没人知道业务指标门禁的阈值是谁定的。这两个问题都不是技术问题，但它们决定了事故当天能不能在五分钟内止血。</p>
+<p>缺的不是功能，是演练。三件套上线后需要配一次季度演练：由运营自己操作一次回滚，研发只看不动。第一次演练一般会暴露两个问题，一是回滚按钮藏在第二层菜单里，二是没人知道业务指标门禁的阈值是谁定的。这两个问题都不是技术问题，但它们决定了事故当天能不能在五分钟内止血。</p>
 <p>第二个缺口是版本可视。配置页面上要能看到「当前版本、上一版本、每个版本的发布时间和人物」，否则运营在发布时不敢灰，回滚时不知道该切回哪个。这个信息页做起来半天，效果比任何监控看板都直接。</p>
-<p>第三个缺口是停止发布的能力。上线一年多之后真用上过一次：一个共享组件出问题，所有发布暂停两小时。这个按钮要能被最不熟悉系统的人找到，这属于设计问题，不是权限问题。</p>
+<p>第三个缺口是停止发布的能力。一年里总会有一次真用上：一个共享组件出问题，所有发布暂停两小时。这个按钮要能被最不熟悉系统的人找到，这属于设计问题，不是权限问题。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment">Kubernetes Deployment 的滚动更新与回退</a>：版本历史与回退的语义参考</li>

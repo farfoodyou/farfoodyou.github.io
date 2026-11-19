@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">PWA 离线可用：Service Worker 的取舍</h1>
-    <p class="meta"><time datetime="2024-10-08T21:40:00">2024-10-08</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <p class="meta"><time datetime="2024-10-08T21:40:00">2024-10-08</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2496 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#时间线">时间线</a></li>
 <li class="h2"><a href="#定位三处状态互相矛盾">定位：三处状态互相矛盾</a></li>
@@ -52,8 +52,8 @@
 <li class="h2"><a href="#现在的边界">现在的边界</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>10 月 2 日 08:47，高铁进隧道，我把网页版知识库切回前台，阅读页是一个空骨架，三秒后列表出来了，点进去却是上一次读的那篇。当时以为没网，开热点重进一次，还是同一篇。</p>
-<p>那天在车上改了 3 篇笔记，回网后队列清空，界面显示「已保存」。第二天早上，其中一篇退回了我上车前的版本，少了两个小节，约 400 字。</p>
+<p>10 月 2 日 08:47，高铁进隧道，网页版知识库切回前台，阅读页是一个空骨架，三秒后列表出来了，点进去却是上一次读的那篇。先判成没网，开热点重进一次，还是同一篇。</p>
+<p>同一天离线改了 3 篇笔记，回网后队列清空，界面显示「已保存」。第二天早上，其中一篇退回了离线前的版本，少了两个小节，约 400 字。</p>
 <p>两件事是同一个系统的两面：读的路径缓存得太狠，写的路径假设得太乐观。离线可用不只是加个 Service Worker，它把「客户端持有一份状态」变成事实，一致性得自己负责。</p>
 <h2 id="时间线">时间线</h2>
 <div class="table-wrap"><table>
@@ -63,7 +63,7 @@
 <th>当时判断</th>
 </tr></thead>
 <tbody>
-<tr><td>10-02 08:47</td><td>阅读页停在骨架，回退到旧文章</td><td>以为没网</td></tr>
+<tr><td>10-02 08:47</td><td>阅读页停在骨架，回退到旧文章</td><td>判成没网</td></tr>
 <tr><td>10-02 全天</td><td>离线写 3 篇，提示「已保存（待同步）」</td><td>正常</td></tr>
 <tr><td>10-02 22:30</td><td>回网，队列清空无报错</td><td>正常</td></tr>
 <tr><td>10-03 08:20</td><td>一篇内容退回旧版，400 字丢失</td><td>事故</td></tr>

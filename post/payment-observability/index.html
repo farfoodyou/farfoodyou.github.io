@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">支付链路的可观测三件套：日志、指标、追踪</h1>
-    <p class="meta"><time datetime="2022-04-12T09:15:00">2022-04-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2492 字 <a class="cat" href="/categories/工程/">工程</a></p>
+    <p class="meta"><time datetime="2022-04-12T09:15:00">2022-04-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/工程/">工程</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据三个问题三件套">判据：三个问题，三件套</a></li>
 <li class="h2"><a href="#关键路径上打什么">关键路径上打什么</a></li>
@@ -94,7 +94,7 @@
     return mq.Send(ctx, msg)
 }</code></pre>
 <h2 id="采样先算一遍">采样：先算一遍</h2>
-<p>当时峰值 3000 TPS（口径：压测目标，大促按 1.5 倍估），单笔链路平均 12 个 span，一个 span 落盘约 1.1KB（含属性与事件）。全量采集的写入量是：</p>
+<p>示例口径：峰值 3000 TPS（压测目标，大促按 1.5 倍估），单笔链路平均 12 个 span，一个 span 落盘约 1.1KB（含属性与事件）。全量采集的写入量是：</p>
 <p>3000 × 12 × 1.1KB ≈ 40MB/s ≈ 3.4TB/天</p>
 <p>这个量级的成本不在存储费上，贵在查询：按订单号反查要扫过太多索引。降到 1% 头采样，写入量 34GB/天，代价是错误和慢请求一起被丢掉，恰恰是最需要的那部分。</p>
 <div class="table-wrap"><table>
@@ -110,7 +110,7 @@
 <tr><td>尾部采样：错误与超阈值全留，其余 0.1%</td><td>能</td><td>约 60GB</td><td>本地缓冲全量 span，按 trace 决策后上报</td></tr>
 </tbody>
 </table></div>
-<p>选了第三种。缓冲的代价：每个实例要容纳「一个决策窗口内全部 span」的内存，窗口 30 秒，峰值下单实例约 400MB。这笔开销要进容量预算，否则第一次内存告警就有人把它关掉。</p>
+<p>可行的选择是第三种。缓冲的代价：每个实例要容纳「一个决策窗口内全部 span」的内存，窗口 30 秒，峰值下单实例约 400MB。这笔开销要进容量预算，否则第一次内存告警就有人把它关掉。</p>
 <p>还有个陷阱：采样按 trace id 哈希，同一用户的一批请求要么全进要么全不进，定位「这个用户偶发失败」时可能一条样本都没有。补救是让应用给错误请求打强制保留标记，不靠哈希碰运气。</p>
 <h2 id="告警分层">告警分层</h2>
 <p>三件套各有各的告警，混在一层里就成了什么都响、什么都不看。</p>
@@ -127,7 +127,7 @@
 <tr><td>预算</td><td>错误预算燃烧率、对账差异笔数</td><td>周会</td><td>高，允许滞后一天</td></tr>
 </tbody>
 </table></div>
-<p>分层判据是「被叫醒的人能不能立刻动手」。症状层只看用户可感知结果，指标必须从订单状态算，不能从 trace 派生：采样后 trace 计数不等于真实笔数，用它算成功率会系统性偏低。这条踩过一次，一次采样率调整让成功率曲线下移 0.3 个百分点，值班照这个数排查了两小时。</p>
+<p>分层判据是「被叫醒的人能不能立刻动手」。症状层只看用户可感知结果，指标必须从订单状态算，不能从 trace 派生：采样后 trace 计数不等于真实笔数，用它算成功率会系统性偏低。这条有现成的例子：一次采样率调整让成功率曲线下移 0.3 个百分点，值班照这个数排查了两小时。</p>
 <p>原因层每个指标要配处置动作，没有动作的不配告警，只进看板。</p>
 <h2 id="剩下的问题">剩下的问题</h2>
 <p>时钟。跨机器比对 span 开始时间依赖时钟同步，偏差几十毫秒就能让「慢在哪一跳」的结论反过来。做法是不看绝对时间，只看 span 自身耗时与父子重叠比例。</p>

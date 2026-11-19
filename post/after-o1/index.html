@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">什么时候「多想一会儿」不值：推理档位的账</h1>
-    <p class="meta"><time datetime="2024-10-22T22:10:00">2024-10-22</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2338 字 <a class="cat" href="/categories/模型/">模型</a></p>
+    <p class="meta"><time datetime="2024-10-22T22:10:00">2024-10-22</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2325 字 <a class="cat" href="/categories/模型/">模型</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一次请求里发生了什么">一次请求里发生了什么</a></li>
 <li class="h2"><a href="#三个档位放在一张表上">三个档位放在一张表上</a></li>
@@ -51,7 +51,7 @@
 <li class="h2"><a href="#把档位做成可降级的东西">把档位做成可降级的东西</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>上个月对账，有一条请求让我停下来看了两遍：账单记了 5,800 个输出 token，聊天记录里模型的回答不到 400 字。差额不是缓存、不是重试，是思考过程——它被生成、被计费、被丢弃。</p>
+<p>对账时有一类请求值得多看一眼：账单记了 5,800 个输出 token，聊天记录里模型的回答不到 400 字。差额不是缓存、不是重试，是思考过程——它被生成、被计费、被丢弃。</p>
 <p>用量统计里现在多了一个明细字段，各家的命名不同，位置一样：</p>
 <pre data-lang="json"><code class="language-json">{
   &quot;usage&quot;: {
@@ -71,7 +71,7 @@
 每 1,000 思考 token ≈ 4,000 输入 token 的钱</code></pre>
 <p>单次多花三分钱不算什么，乘上每天 6 万次调用就是 1,800 块，再乘上「失败重试两次」是 5,400 块。</p>
 <h2 id="三个档位放在一张表上">三个档位放在一张表上</h2>
-<p>同一个任务集（120 道我自己的排障题，有标准答案，自动判分）跑三档，每档三次取中位：</p>
+<p>同一个任务集（120 道排障题，有标准答案，自动判分）跑三档，每档三次取中位：</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>档位</th>
@@ -92,7 +92,7 @@
 <p><strong>结果可自动验证，且验证比推理便宜。</strong> 单元测试、编译、schema 校验、链接探活都属于这类。这时候把预算挪到采样上更划算：同一提示采样 8 次，用验证器筛，取第一个通过的。公开评测里这个做法在可验证题目上的收益曲线比单次长思考更陡，而且成本线性、中途可截断；长思考是一口气花完，没有中途退出的机会。</p>
 <p><strong>缺的是知识，不是推理步数。</strong> 问「这个错误码在哪个版本引入的」，模型不知道就是不知道；让它多想 5,000 token，多出来的是围绕错误前提搭起来的链条，而且链条越长越有说服力。这类问题该做检索和引用，加思考预算只会让错的答案更像对的。</p>
 <p><strong>答案确定且会被重复问。</strong> 同一份日志、同一个报错，第二次调用就该命中缓存。缓存键取提示 + 模型 + 档位，思考过程不进键（它每次都不一样），进键的是最终答案。</p>
-<p>反过来，这几个场景我确实开高档：多约束的排期与迁移方案取舍（约束之间互相让，答案短、验收靠人）、跨文件的重构计划（要先建立全局依赖图）、以及我自己说不清楚但一眼能判对错的设计评审。</p>
+<p>反过来，这几个场景值得开高档：多约束的排期与迁移方案取舍（约束之间互相让，答案短、验收靠人）、跨文件的重构计划（要先建立全局依赖图）、以及说不清需求、但一眼能判对错的设计评审。</p>
 <h2 id="把档位做成可降级的东西">把档位做成可降级的东西</h2>
 <p>调用封装里档位不是常量，是任务类型带出来的默认值，外加两条运行时规则：</p>
 <ul>
@@ -100,7 +100,7 @@
 <li>重试不升级档位。第一次答错往往是题目读错了，把同样的预算再烧一遍不会更好，改成换提示或补上下文。</li>
 </ul>
 <p>跑满一个月的分布大致是：78% 走直答，17% 走中档，5% 走高档。成本比「全部高档」低一个数量级，等待反而更少，因为长时间等待只发生在用户主动要求的场景里。</p>
-<p>一个反面观察：把高档用在「看这段代码有没有并发问题」上，效果不稳定。它能列出七八种可能，但手里没有运行的证据，最后还是要人去复现。这类任务我现在用直答 + 一个最小复现脚本的模板，人跑一遍比模型多想十分钟管用。</p>
+<p>一个反面观察：把高档用在「看这段代码有没有并发问题」上，效果不稳定。它能列出七八种可能，但手里没有运行的证据，最后还是要人去复现。这类任务更适合直答 + 一个最小复现脚本的模板，人跑一遍比模型多想十分钟管用。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://arxiv.org/abs/2408.03314">Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters</a>：思考预算与采样预算的换算关系</li>

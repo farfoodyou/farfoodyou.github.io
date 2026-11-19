@@ -38,12 +38,12 @@
   </div>
 </header>
 <main class="wrap layout">
-<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,846 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
+<aside class="rail rail-left"><div class="rail-box ident"><p class="ident-name">~/farfood</p><p class="ident-desc">后端 / 基础设施 · 大模型推理系统</p><p class="ident-meta">152 篇 · 349,719 字</p></div><nav class="rail-box"><p class="rail-title">分类</p><ul class="rail-list"><li><a href="/categories/模型/">模型<i>43</i></a></li><li><a href="/categories/安全/">安全<i>28</i></a></li><li><a href="/categories/工程/">工程<i>17</i></a></li><li><a href="/categories/架构/">架构<i>16</i></a></li><li><a href="/categories/数据/">数据<i>13</i></a></li><li><a href="/categories/推理系统/">推理系统<i>9</i></a></li><li><a href="/categories/agent/">Agent<i>7</i></a></li><li><a href="/categories/后端/">后端<i>6</i></a></li></ul></nav><nav class="rail-box"><p class="rail-title">归档</p><ul class="rail-list"><li><a href="/archives/2026/">2026<i>25</i></a></li><li><a href="/archives/2025/">2025<i>24</i></a></li><li><a href="/archives/2024/">2024<i>20</i></a></li><li><a href="/archives/2023/">2023<i>17</i></a></li><li><a href="/archives/2022/">2022<i>17</i></a></li><li><a href="/archives/2021/">2021<i>19</i></a></li><li><a href="/archives/2020/">2020<i>17</i></a></li><li><a href="/archives/2019/">2019<i>1</i></a></li><li><a href="/archives/2017/">2017<i>12</i></a></li></ul></nav><div class="rail-box"><p class="rail-title">入口</p><ul class="rail-list"><li><a href="/search/">搜索<i>/</i></a></li><li><a href="/random/">随机一篇<i>dice</i></a></li><li><a href="/calendar/">写作日历<i>heat</i></a></li><li><a href="/atom.xml">RSS<i>xml</i></a></li></ul></div></aside>
 <div class="col-main">
 <article class="post">
   <header class="post-header">
     <h1 class="post-title">检测延迟：从收到文件到给出结论的每一毫秒</h1>
-    <p class="meta"><time datetime="2023-12-12T21:10:00">2023-12-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2211 字 <a class="cat" href="/categories/安全/">安全</a></p>
+    <p class="meta"><time datetime="2023-12-12T21:10:00">2023-12-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2205 字 <a class="cat" href="/categories/安全/">安全</a></p>
   </header>
   <nav class="toc toc-inline"><p class="toc-title">目录</p><ol><li class="h2"><a href="#四段各占多少">四段各占多少</a></li>
 <li class="h2"><a href="#三个可以当场改掉的东西">三个可以当场改掉的东西</a></li>
@@ -51,9 +51,9 @@
 <li class="h2"><a href="#改完之后的数字">改完之后的数字</a></li>
 <li class="h2"><a href="#参考">参考</a></li></ol></nav>
   <div class="post-content">
-<p>接口契约写的是「95% 的文件 5 秒内出结论」，这个数当年是拿旧链路压测结果往后取整定的，之后没再复核。规则包换一次版本、加了二十几条针对脚本类文档的规则，从提交到出结论的 p99 就从 3.4 秒涨到 11.2 秒，积压 4200 个，第一个争起来的问题成了「5 秒还是 6 秒算违约」。</p>
+<p>接口契约写的是「95% 的文件 5 秒内出结论」，这个数是按旧链路压测结果往后取整定的，之后没再复核。规则包换一次版本、加了二十几条针对脚本类文档的规则，从提交到出结论的 p99 就从 3.4 秒涨到 11.2 秒，积压 4200 个，第一个争起来的问题成了「5 秒还是 6 秒算违约」。</p>
 <p>延迟难定位，因为它不是一次调用的耗时。一份文件要经过取件、解析、静态规则、模型评分四段，四段共享同一个 worker 池。任何一段变慢，用户看到的都是整体慢；p50 几乎不动，因为只有一小部分文件踩到慢路径。</p>
-<p>延迟预算只能按段算，按整条链算会得到「平均两百毫秒」这种没用的结论。下面这笔账全部取 p99，口径是那天抽的 200 个样本在单机上重放。</p>
+<p>延迟预算只能按段算，按整条链算会得到「平均两百毫秒」这种没用的结论。下面这笔账全部取 p99，口径是抽 200 个样本在单机上重放。</p>
 <h2 id="四段各占多少">四段各占多少</h2>
 <p>单位毫秒：</p>
 <div class="table-wrap"><table>
@@ -103,7 +103,7 @@ def analyze(blob, t0):
 <li>队列积压：峰值 4200 降到按分钟计的几十个。</li>
 </ul>
 <p>单规则预算上线后多了一个指标：每条规则的超时次数。一周内被截断超过 300 次的规则进复核，要么改写成原子字符串匹配，要么下线。它比总延迟更早发现问题，因为直接指向哪条规则在吃 CPU。</p>
-<p>没解决的部分：模型段预算 400ms，但特征提取仍在解析阶段同步完成，特征维度一涨，parse 段跟着涨。正确形态是按需算特征，当时没做，因为特征定义散在三个模块里，改动面比延迟收益大。</p>
+<p>没解决的部分：模型段预算 400ms，但特征提取仍在解析阶段同步完成，特征维度一涨，parse 段跟着涨。正确形态是按需算特征，没做的原因是特征定义散在三个模块里，改动面比延迟收益大。</p>
 <h2 id="参考">参考</h2>
 <ul>
 <li><a href="https://www.rfc-editor.org/rfc/rfc1952.html">RFC 1952: GZIP file format specification</a>：递归解压的成本上限从哪来</li>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>免杀率 60% 的今天，为什么还在用签名检测 - farfood</title>
+<meta name="description" content="把签名层摘掉的四小时里，延迟降了一半、误报没变，但沙箱队列积压到四万条。签名层的价值不在命中率，在它是最便宜的那道闸。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/why-signature-still/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "免杀率 60% 的今天，为什么还在用签名检测", "description": "把签名层摘掉的四小时里，延迟降了一半、误报没变，但沙箱队列积压到四万条。签名层的价值不在命中率，在它是最便宜的那道闸。", "datePublished": "2022-07-20T10:40:00+08:00", "dateModified": "2022-07-20T10:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/why-signature-still/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "签名检测, 检测分层, 沙箱, 误报, 成本"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="免杀率 60% 的今天，为什么还在用签名检测 - farfood">
+<meta property="og:description" content="把签名层摘掉的四小时里，延迟降了一半、误报没变，但沙箱队列积压到四万条。签名层的价值不在命中率，在它是最便宜的那道闸。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/why-signature-still/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="免杀率 60% 的今天，为什么还在用签名检测 - farfood">
+<meta name="twitter:description" content="把签名层摘掉的四小时里，延迟降了一半、误报没变，但沙箱队列积压到四万条。签名层的价值不在命中率，在它是最便宜的那道闸。">
+<meta property="article:published_time" content="2022-07-20T10:40:00+08:00">
+<meta name="keywords" content="签名检测, 检测分层, 沙箱, 误报, 成本">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">免杀率 60% 的今天，为什么还在用签名检测</h1>
+    <p class="meta"><time datetime="2022-07-20T10:40:00">2022-07-20</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2480 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#1410-停机1440-看起来赢了">14:10 停机，14:40 看起来赢了</a></li>
+<li class="h2"><a href="#1620-未知从-11-涨到-34">16:20 未知从 11% 涨到 34%</a></li>
+<li class="h2"><a href="#2000-沙箱配额打满">20:00 沙箱配额打满</a></li>
+<li class="h2"><a href="#各层的代价和覆盖">各层的代价和覆盖</a></li>
+<li class="h2"><a href="#根因命中率是被算错的指标">根因：命中率是被算错的指标</a></li>
+<li class="h2"><a href="#改了什么">改了什么</a></li>
+<li class="h2"><a href="#留一条判据">留一条判据</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>七月中旬拿到一份统计：过去 30 天提交的文件里，签名命中 38%，哈希黑名单 12%，结构启发式 9%，沙箱 30%，剩下 11% 进了人工队列。评审会上有人顺口问，命中率不到四成、改个字符串常量就能绕过，这层还值得每周投两个人维护吗。</p>
+<p>没人接得上话。维护成本实打实：每周新规则几百条，每条都要看样本、写条件、跑白样本；沙箱是黑盒，喂进去给个分就行。</p>
+<p>于是我提了个实验：灰度 10% 流量，把签名层从判定链路摘掉，其他层不动，跑满一天。记录取自工单和监控。</p>
+<h2 id="1410-停机1440-看起来赢了">14:10 停机，14:40 看起来赢了</h2>
+<p>14:10 部署完成，灰度组的判定路径只剩三段：哈希黑名单 → 轻量结构启发式 → 沙箱。半小时后数字很好看：p99 从 176ms 掉到 94ms，p50 从 21ms 到 12ms，误报率 0.31% 对 0.29%，落在噪声里，CPU 占用降了约 9%。我在群里说「签名层似乎可以省」，然后去吃晚饭。</p>
+<h2 id="1620-未知从-11-涨到-34">16:20 未知从 11% 涨到 34%</h2>
+<p>未知不是错误答案，它极贵：这类样本要进人工队列，队列每天消化 200 条左右。灰度只有 10% 流量，未知量翻了三倍。原本签名层连同哈希和启发式，把约六成文件的判定提前结束了，其中一多半会落到这个队列里。</p>
+<p>方法论上的失误是：把「10% 流量」当成了「10% 成本」。被签名层挡住的文件本来就不进沙箱，摘掉后省下的容量全释放进队列，10% 的流量 4 小时吃掉了整天的额度。灰度得按资源消耗切。</p>
+<h2 id="2000-沙箱配额打满">20:00 沙箱配额打满</h2>
+<p>沙箱有并发上限，当时 120 个执行槽，单样本最多跑 90 秒墙钟。签名层在时六成文件走不到这一层，摘掉后它们全排到前面。队列深度到 4.2 万，中位等待 22 分钟，最老的一条排了 51 分钟。上传是交互式的，22 分钟等于不可用。次日 09:30 回滚。</p>
+<h2 id="各层的代价和覆盖">各层的代价和覆盖</h2>
+<p>回滚后我把四层拆开量了一遍，单文件按 2MB 计，单机 4 核：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>层</th>
+<th>单文件代价（经验值）</th>
+<th>提前出结论的比例</th>
+<th>输出形态</th>
+</tr></thead>
+<tbody>
+<tr><td>哈希黑名单</td><td>3 次查表，微秒级</td><td>12%</td><td>布尔</td></tr>
+<tr><td>签名（字符串 + 结构条件）</td><td>2–8ms</td><td>38%</td><td>规则 ID、命中偏移</td></tr>
+<tr><td>结构启发式</td><td>1–3ms</td><td>9%</td><td>若干布尔标志</td></tr>
+<tr><td>沙箱</td><td>90s / 占一个执行槽</td><td>30%</td><td>分数 + 行为日志</td></tr>
+</tbody>
+</table></div>
+<p>签名层的单文件代价比沙箱低四个数量级，却承担了近六成的「提前出结论」：它把文件挡在贵的那层外面。那 38% 里约四分之三是家族级判定，摘层时被拖慢的恰恰是这类文件。</p>
+<h2 id="根因命中率是被算错的指标">根因：命中率是被算错的指标</h2>
+<p>签名层在这条链路上的位置是闸门。用「命中率」考核它，等于让它去和沙箱抢同一个活，而它必输：沙箱看行为，签名看字节。</p>
+<p>三个东西是摘不掉的：</p>
+<p><strong>成本。</strong> 一次沙箱执行按 CPU 秒折算，约等于 40 万次签名字符串匹配。签名层每拦下一个文件，省下的是一整个执行槽的 90 秒。</p>
+<p><strong>速度。</strong> p50 从 900ms 变成 22 分钟，这决定产品能不能让用户等。</p>
+<p><strong>可解释。</strong> 分析师拿到的是规则 id、命中字符串和文件偏移，可以直接跳到那段字节看；沙箱给的是 0.87 的分数和三百条 syscall 日志。用户来投诉误判时这条最要紧：你得能说清为什么。</p>
+<p>签名层自己的毛病也具体。最常见的误报来自规则写得太好用：一条命中常见打包器特征的规则，半年内会慢慢命中所有用那个打包器的正常软件。这类误报没有单点事故，直到某个用户的正常文件被拦。后来给每条规则记月命中量，环比涨过 3 倍就冻结待审。</p>
+<h2 id="改了什么">改了什么</h2>
+<p>回滚之后没再讨论要不要留这一层，改的是它的定位和上下游：</p>
+<ol>
+<li>不再背命中率，改看单位 CPU 秒挡掉的沙箱执行次数，和有规则 ID 支撑的判定占比。</li>
+<li>加一条「签名未命中但有结构证据」的快速通道：低置信判定加复核排队，不进沙箱。</li>
+<li>沙箱准入分级：可执行结构加高熵的先进，其余按 5 分钟批窗口合并。</li>
+<li>未知比例进告警，超 15% 说明前面某层退化了。</li>
+</ol>
+<pre data-lang="go"><code class="language-go">func route(f *File, ev *Evidence) Decision {
+    if id, ok := hashlist.Lookup(f.Digest); ok {
+        return Decision{Verdict: Malicious, Rule: id, Conf: 0.99}
+    }
+    m := yara.Scan(f.Buf, compiled)
+    if len(m) &gt; 0 {
+        ev.Add(&quot;yara&quot;, m[0].Rule, m[0].Offset) // 偏移留着，人工可复现
+        if m[0].Severity &gt;= High {
+            return Decision{Verdict: Malicious, Rule: m[0].Rule, Conf: 0.90}
+        }
+    }
+    if ev.Structural() &lt; 0.2 &amp;&amp; len(m) &gt; 0 {
+        return Decision{Verdict: Suspicious, Conf: 0.55} // 不进沙箱，进复核
+    }
+    return Decision{Verdict: Pending, Queue: &quot;sandbox&quot;}
+}</code></pre>
+<h2 id="留一条判据">留一条判据</h2>
+<p>签名会被绕过：改字符串常量、插填充、换编译器版本都能让某条规则失效。但要让一个文件躲过全部四层，得同时躲开哈希、字节模式、结构异常、运行行为，成本是相乘的。</p>
+<p>我后来用的判据是：一层的命中率低于 20% 仍值得留，前提是单次代价比下一层低两个数量级以上。分层检测的收益来自层与层之间的成本差，跟每层有多准关系不大。签名层在这条链路里会一直在，只是它不该背 KPI。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc6234.txt">RFC 6234: US Secure Hash Algorithms</a>：黑名单那层的摘要定义与填充规则</li>
+<li><a href="https://csrc.nist.gov/publications/detail/sp/800-83/rev-1/final">NIST SP 800-83 Rev.1: Guide to Malware Incident Prevention and Handling</a>：分层的定位与运维代价</li>
+<li><a href="https://yara.readthedocs.io/en/stable/writingrules.html">YARA 文档：Writing YARA rules</a>：字符串、条件与 meta 的语义</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/签名检测/">签名检测</a><a class="tag" href="/tags/检测分层/">检测分层</a><a class="tag" href="/tags/沙箱/">沙箱</a><a class="tag" href="/tags/误报/">误报</a><a class="tag" href="/tags/成本/">成本</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%85%8D%E6%9D%80%E7%8E%87+60%25+%E7%9A%84%E4%BB%8A%E5%A4%A9%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%98%E5%9C%A8%E7%94%A8%E7%AD%BE%E5%90%8D%E6%A3%80%E6%B5%8B" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/yara-in-product/">← 把 YARA 接进产品：编译、性能、误报</a><a class="next" href="/post/static-scan-pipeline/">静态扫描流水线：从收到文件到给出判定 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/sandbox-logs/">动态沙箱的日志里到底有什么</a><time>2022-11</time></li><li><a href="/post/sandbox-escape-ml/">沙箱逃逸检测：从日志特征到随机森林</a><time>2022-11</time></li><li><a href="/post/anti-sandbox/">反沙箱手法算账：90 秒的预算对上 600 秒的等待</a><time>2023-03</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

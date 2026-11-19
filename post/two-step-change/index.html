@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>可回滚的变更：把一次上线拆成三步 - farfood</title>
+<meta name="description" content="把「加新字段」和「切读路径」塞进同一个版本，回滚就变成一次数据事故；拆成三步后最坏结果只是多跑几天旧代码。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/two-step-change/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "可回滚的变更：把一次上线拆成三步", "description": "把「加新字段」和「切读路径」塞进同一个版本，回滚就变成一次数据事故；拆成三步后最坏结果只是多跑几天旧代码。", "datePublished": "2020-06-02T22:15:00+08:00", "dateModified": "2020-06-02T22:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/two-step-change/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "发布策略, 灰度, 兼容性, 回滚"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="可回滚的变更：把一次上线拆成三步 - farfood">
+<meta property="og:description" content="把「加新字段」和「切读路径」塞进同一个版本，回滚就变成一次数据事故；拆成三步后最坏结果只是多跑几天旧代码。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/two-step-change/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="可回滚的变更：把一次上线拆成三步 - farfood">
+<meta name="twitter:description" content="把「加新字段」和「切读路径」塞进同一个版本，回滚就变成一次数据事故；拆成三步后最坏结果只是多跑几天旧代码。">
+<meta property="article:published_time" content="2020-06-02T22:15:00+08:00">
+<meta name="keywords" content="发布策略, 灰度, 兼容性, 回滚">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">可回滚的变更：把一次上线拆成三步</h1>
+    <p class="meta"><time datetime="2020-06-02T22:15:00">2020-06-02</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/工程/">工程</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据">判据</a></li>
+<li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
+<li class="h2"><a href="#每一步的退回点">每一步的退回点</a></li>
+<li class="h2"><a href="#灰度按数据分布切">灰度按数据分布切</a></li>
+<li class="h2"><a href="#判据什么时候算切完">判据：什么时候算切完</a></li>
+<li class="h2"><a href="#删代码为什么必须单独一次">删代码为什么必须单独一次</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>三月给订单服务换金额字段：原来存带小数的字符串，改成整数分。对账侧一直按分算，每次转换都在四舍五入的边缘上吵。改动不大，麻烦在它同时触及写入和读取。</p>
+<p>第一版把两件事放进同一个发布：读写都走新字段，旧字段不再维护。上线四十分钟后，一类历史订单的金额差了 100 倍，原因是迁移脚本对一批老数据没有转换单位。回滚包准备好了，但回滚后新写入的订单只在新字段里，旧代码读不到，服务直接报错。最后写了个回刷脚本把四十分钟的数据补回旧字段才退回去。</p>
+<p>变更的危险不在改错，而在改错之后没有回到上一个状态的路径。那次之后，我给这类改动定了个规矩：<strong>先做加法，再做切换，删除单独发一次。</strong></p>
+<h2 id="判据">判据</h2>
+<p>拆不拆、拆几步，我用四条标准决定，按重要性排：</p>
+<ul>
+<li><strong>回滚要多久</strong>：从决定回滚到流量走回旧逻辑。分钟级可接受，要跑脚本就不算回滚。</li>
+<li><strong>回滚要不要动数据</strong>：要动数据的一律按不可回滚处理，因为脚本本身也会出错。</li>
+<li><strong>兼容期谁在跑旧逻辑</strong>：旧代码必须还能正常工作，否则第一步没意义。</li>
+<li><strong>能不能判断「可以往下走」</strong>：靠人点几下试试不算判据，要有差异率这类数字。</li>
+</ul>
+<p>这四条里最容易忽略第二条。代码回滚是切版本，几分钟的事；数据回滚要遍历、校验、和上游对账，时间不可控。</p>
+<h2 id="三个方案并排">三个方案并排</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th>一次性切换</th>
+<th>同版本双路径 + 开关</th>
+<th>分步发布（加／切／删）</th>
+</tr></thead>
+<tbody>
+<tr><td>发布次数</td><td>1</td><td>1（逻辑留两套）</td><td>3 次（加、切、删）</td></tr>
+<tr><td>回滚动作</td><td>回滚代码并回刷数据</td><td>关开关，秒级</td><td>回滚版本，旧列数据仍完整</td></tr>
+<tr><td>回滚耗时</td><td>取决于数据量</td><td>秒级</td><td>分钟级</td></tr>
+<tr><td>兼容期</td><td>无</td><td>有，靠 if/else 维持</td><td>有，靠两次发布之间的窗口</td></tr>
+<tr><td>主要风险</td><td>数据不一致时无处可退</td><td>开关组合爆炸，旧分支没人维护</td><td>兼容期长，代码里同时有两套读写</td></tr>
+<tr><td>适用条件</td><td>改动不碰存量数据</td><td>改动小、分支差异少</td><td>改动触及数据格式或语义</td></tr>
+</tbody>
+</table></div>
+<p>第二个方案在实践中容易走形：开关为临时共存而设，没人负责删旧分支，半年后读代码的人要同时理解两套金额语义；开关一多，测试也覆盖不了所有组合。</p>
+<p>第三个方案的成本是发布次数和兼容期长度，收益是每一步都可以单独回滚。</p>
+<h2 id="每一步的退回点">每一步的退回点</h2>
+<p>第一步只做加法：加列、双写、读旧列。写入多写一份，读路径一行不动，所以旧代码、旧脚本、旧报表任务照常工作。它的退回点在发布之前：回滚时新列只是多出来的废数据，一行历史数据不碰。</p>
+<pre data-lang="sql"><code class="language-sql">ALTER TABLE orders ADD COLUMN amount_cent BIGINT NULL;</code></pre>
+<pre data-lang="go"><code class="language-go">func (s *store) save(o *Order) error {
+    // 双写：旧列照旧，新列同时写入
+    return s.db.Exec(
+        `UPDATE orders SET amount = ?, amount_cent = ? WHERE id = ?`,
+        o.AmountText, o.AmountCent(), o.ID)
+}
+
+func (s *store) load(id string) (*Order, error) {
+    if s.readCent() {          // 开关，默认 false
+        return s.loadFromCent(id)
+    }
+    return s.loadFromText(id)
+}</code></pre>
+<p>第二步才是切读，退回点是一个开关。开关放在「读哪一列」这一层，不能放在「要不要双写」：后者一旦关掉，回滚窗口里的新写入没人补旧列，退回去照样缺数据。</p>
+<p>切读之前加一段比对逻辑：按比例抽样请求，同时读新旧两列，算差值并计数。它的位置是发布闸门，不是迁移验收：差异率决定下一次发布能不能发。两类差异要分开：数值相等但精度不同（老数据只有两位小数，预期内）记 known；数值不等（漏转换或舍入方向不一致）记 diff。只有 diff 归零才算通过。</p>
+<h2 id="灰度按数据分布切">灰度按数据分布切</h2>
+<p>按流量百分比切是最省事的做法，但比例和风险对不上：如果出问题的是「退款单」这类只占千分之几的单据，1% 的流量里可能一单都没有，灰度和没灰一样。</p>
+<p>改法是把灰度维度从流量换成数据特征：先跑一遍全量只读的差异统计，按订单类型分组，哪一类 diff 不为零就先不切那一类；切的顺序是先切占比最大、逻辑最简单的一类，再切小的。每一档的样本量都可控。</p>
+<p>前几档还要看延迟：新读路径多一次字段解析，单看不大，但订单详情页一次要读几十条，P99 会动。切换本身走滚动更新，新旧实例短暂共存（<a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">官方文档</a>讲得清楚），两种代码同时在跑，读路径必须都能工作。</p>
+<h2 id="判据什么时候算切完">判据：什么时候算切完</h2>
+<p>我用的门槛是三个条件同时满足：</p>
+<ul>
+<li>diff 计数连续 24 小时为 0，且抽样比例不低于 5%；</li>
+<li>新读路径的 P99 不超过旧路径的 1.1 倍；</li>
+<li>至少覆盖一个完整的对账周期，跨过 T+1 的批处理，最好再跨一次月末结账。</li>
+</ul>
+<p>第三条最容易砍掉，也最容易被打脸：批量任务常常是唯一读老数据的路径，白天流量碰不到。</p>
+<h2 id="删代码为什么必须单独一次">删代码为什么必须单独一次</h2>
+<p>旧列和旧读路径是兼容期里唯一的退路：只要它还在，任何问题都能在五分钟内切回去。删掉之后，回滚代码时数据已经不写旧列，读出来是空值。</p>
+<p>删除单独发一次，而且只包含删除：删常量、删分支、删旧列、删对应测试。范围小，review 容易看清。</p>
+<p>时间上我一般放在切换完成后两周。短了数据样本不够，长了没人记得这段代码是干什么的，删的时候还得重新考古。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://martinfowler.com/articles/feature-toggles.html">Feature Toggles（分支与开关的成本）</a></li>
+<li><a href="https://martinfowler.com/bliki/CanaryRelease.html">Canary Release</a></li>
+<li><a href="https://12factor.net/disposability">The Twelve-Factor App：Disposability</a></li>
+<li><a href="https://martinfowler.com/bliki/ParallelChange.html">Parallel Change：先扩展再收缩</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/发布策略/">发布策略</a><a class="tag" href="/tags/灰度/">灰度</a><a class="tag" href="/tags/兼容性/">兼容性</a><a class="tag" href="/tags/回滚/">回滚</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8F%AF%E5%9B%9E%E6%BB%9A%E7%9A%84%E5%8F%98%E6%9B%B4%EF%BC%9A%E6%8A%8A%E4%B8%80%E6%AC%A1%E4%B8%8A%E7%BA%BF%E6%8B%86%E6%88%90%E4%B8%89%E6%AD%A5" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/solo-refactor-plan/">← 半年重构复盘：一个人怎么排重构的期</a><a class="next" href="/post/go-hot-reload-config/">Go 里做配置热更新的三种姿势 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/ops-platform-three/">运营平台三件套：预发、灰度、回滚</a><time>2021-09</time></li><li><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a><time>2020-02</time></li><li><a href="/post/wallet-page-platform/">钱包页平台化：页面、分组、单元三层抽象</a><time>2021-06</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

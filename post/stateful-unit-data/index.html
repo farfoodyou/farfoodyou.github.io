@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>有状态单元：把运营能力做成数据 - farfood</title>
+<meta name="description" content="运营能力从发版变成写数据，问题也从代码写错变成写入没约定。一次整块覆盖清零领取记录，逼出 append-only 协议。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/stateful-unit-data/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "有状态单元：把运营能力做成数据", "description": "运营能力从发版变成写数据，问题也从代码写错变成写入没约定。一次整块覆盖清零领取记录，逼出 append-only 协议。", "datePublished": "2021-08-17T14:05:00+08:00", "dateModified": "2021-08-17T14:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/stateful-unit-data/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "数据驱动, 状态管理, 渲染, 灰度, schema"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="有状态单元：把运营能力做成数据 - farfood">
+<meta property="og:description" content="运营能力从发版变成写数据，问题也从代码写错变成写入没约定。一次整块覆盖清零领取记录，逼出 append-only 协议。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/stateful-unit-data/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="有状态单元：把运营能力做成数据 - farfood">
+<meta name="twitter:description" content="运营能力从发版变成写数据，问题也从代码写错变成写入没约定。一次整块覆盖清零领取记录，逼出 append-only 协议。">
+<meta property="article:published_time" content="2021-08-17T14:05:00+08:00">
+<meta name="keywords" content="数据驱动, 状态管理, 渲染, 灰度, schema">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">有状态单元：把运营能力做成数据</h1>
+    <p class="meta"><time datetime="2021-08-17T14:05:00">2021-08-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2491 字 <a class="cat" href="/categories/架构/">架构</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#写入协议约定比校验重要">写入协议：约定比校验重要</a></li>
+<li class="h2"><a href="#渲染先解析成中间树">渲染：先解析成中间树</a></li>
+<li class="h2"><a href="#灰度分两个维度">灰度分两个维度</a></li>
+<li class="h2"><a href="#回滚的边界数据回不去">回滚的边界：数据回不去</a></li>
+<li class="h2"><a href="#代价">代价</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>运营侧的玩法需求以前是排期发版：新客首单立减、满三单返券、连签进度条，每个都要研发改渲染逻辑。后来把这些做成有状态单元：一个单元有 id、类型、状态字段、渲染模板和生效条件，运营在后台编辑，端上按模板渲染。上线三个月，发版频率从每周一次降到每月一次。</p>
+<p>然后出了一次数据事故。两个运营同时在两个 tab 里编辑同一个活动单元，一个在改文案，一个在补发奖励。后保存的那份把整个 <code>state</code> 字段整块覆盖，几万个用户的领取记录被清零，客服在半小时后收到第一批投诉。</p>
+<p>排查下来代码没错，错在写入接口：<code>PUT /unit/{id}/state</code> 把状态当成一个文档，谁最后写谁赢。</p>
+<h2 id="写入协议约定比校验重要">写入协议：约定比校验重要</h2>
+<p>校验只能保证格式对，管不住语义对。那次提交的确实是一个合法的状态对象，只是别人的记录没了。所以补的第一层是写入协议，六条约定，每条对应一个真踩过的坑：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>约定</th>
+<th>踩过的反例</th>
+<th>修法</th>
+</tr></thead>
+<tbody>
+<tr><td>状态只追加不覆盖</td><td>整块 PUT 清空他人进度</td><td>事件追加 <code>+1/-1</code>，服务端折叠成快照</td></tr>
+<tr><td>幂等键由业务动作生成</td><td>网络重试导致重复发券</td><td>幂等键 = 用户 + 单元 + 动作 + 业务单号</td></tr>
+<tr><td>引用用稳定 id</td><td>删掉一个分组后数组下标全部错位</td><td>引用 <code>group_id</code> 而不是序号</td></tr>
+<tr><td>金额用整数分</td><td>浮点累加出现 0.30000000000000004</td><td>定点整数，展示层再除</td></tr>
+<tr><td>时间存 UTC 加显式时区</td><td>跨时区活动提前 8 小时结束</td><td>存 UTC，另存活动时区用于展示</td></tr>
+<tr><td>未知字段拒收</td><td>旧渲染器丢掉新字段后回写</td><td>写入端 <code>additionalProperties: false</code></td></tr>
+</tbody>
+</table></div>
+<p>最后一条要配另一半：<strong>写入严格、读取宽容</strong>。服务端收到没见过的单元类型要跳过并计数，不能整页报错；但写入时多一个字段直接 400，因为那一刻我们还有机会告诉运营改。</p>
+<p>单元描述本身是数据，演进靠版本号：</p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;unit_id&quot;: &quot;u_1042&quot;,
+  &quot;type&quot;: &quot;progress_reward&quot;,
+  &quot;version&quot;: 7,
+  &quot;state&quot;: {&quot;claimed_steps&quot;: [1, 3]},
+  &quot;write_policy&quot;: &quot;append_only&quot;,
+  &quot;render&quot;: {&quot;template&quot;: &quot;progress_card&quot;, &quot;bind&quot;: {&quot;done&quot;: &quot;len(claimed_steps)&quot;}}
+}</code></pre>
+<p><code>version</code> 单调递增，不跟时间戳走。渲染缓存、灰度比对、回滚指针全都以它做 key，时钟回拨过一次之后再不用时间排序。</p>
+<h2 id="渲染先解析成中间树">渲染：先解析成中间树</h2>
+<p>渲染分两段。第一段把单元描述解析成中间树：校验 schema、归一化字段、把模板表达式编译成白名单函数的调用序列，不允许出现任意求值。第二段拿用户状态填进中间树，输出端上能直接消费的结构。</p>
+<p>中间树的必要性来自一次线上白屏：模板里写了 <code>unit.state.items[0].name</code>，用户没有 items，渲染抛异常，整页返回空。改成「节点渲染失败退化成占位节点」之后，坏一个单元只坏一块卡片。</p>
+<p>端上的兼容是另一半麻烦。数据的生命力比客户端长，一个单元配出去要在三个版本的客户端上同时活着。网关因此多了一层类型协商：客户端启动上报支持的单元类型集合，服务端渲染时过滤掉不认识的并单独打点。没有这层，新单元在老客户端上就是空白。</p>
+<h2 id="灰度分两个维度">灰度分两个维度</h2>
+<p>单元是数据，灰度自然分两条线：</p>
+<ul>
+<li><strong>版本维度</strong>：新渲染逻辑先只服务 1% 的单元（按 <code>unit_id</code> 取模），验证逻辑本身没写错；</li>
+<li><strong>人群维度</strong>：同一单元区分新老用户时按 <code>hash(user_id) % 10000</code> 分桶，保证灰度期内同一个人始终在同一侧，否则进度条会跳变。</li>
+</ul>
+<p>两个维度不能合成一个。版本灰度关心的是「代码对不对」，人群灰度关心的是「策略对不对」，混在一起出问题时无法区分是渲染 bug 还是策略问题。</p>
+<p>比对用双跑：新旧渲染器各算一遍，只返回旧结果，差异计数上报，差异率超 0.5% 自动停止扩大灰度。这比看业务指标灵敏，业务指标有波动，结构差异没有。</p>
+<h2 id="回滚的边界数据回不去">回滚的边界：数据回不去</h2>
+<p>代码回滚是切指针，秒级。数据不行：<code>append_only</code> 意味着事件已经落库、已经参与折叠，删掉事件等于否认用户已经看到的事实。所以设计上接受「数据前滚」：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>变更类型</th>
+<th>回滚方式</th>
+<th>耗时量级</th>
+</tr></thead>
+<tbody>
+<tr><td>渲染模板</td><td>版本指针切回 v6</td><td>秒级</td></tr>
+<tr><td>单元配置</td><td>配置版本指针 + 缓存失效</td><td>秒级</td></tr>
+<tr><td>状态写入逻辑</td><td>指针回切，但新事件要能被 v6 读懂</td><td>分钟级</td></tr>
+<tr><td>写坏的状态数据</td><td>补偿事件抵消，人工确认</td><td>小时级</td></tr>
+</tbody>
+</table></div>
+<p>由此推出一条要求：新版本写入的事件，旧版本必须读得懂，窗口至少两个版本。做不到就让新逻辑先只写影子字段，双跑比对之后再切。</p>
+<h2 id="代价">代价</h2>
+<p>灵活性不免费。schema 演化、兼容窗口、脏数据清理、按类型打点这些活，以前由发版流程吃掉，现在落在平台自己身上。后来把单元描述的变更也纳入发布流程：有预发、有灰度、有审计，运营的一次误操作和研发的一次改代码同等对待。</p>
+<p>出问题的形态也变了。以前是「新功能上线报错」，现在是「一条数据写错，几天后才被发现」；后者发现成本高得多，所以写入协议、幂等键、状态快照比渲染做得多花哨都重要。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://json-schema.org/draft/2020-12/json-schema-core.html">JSON Schema Core（2020-12）</a>：<code>additionalProperties</code> 的语义</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259：JSON 数据交换格式</a>：数字精度与成员唯一性</li>
+<li><a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/">Kubernetes 对象与声明式 API</a>：资源版本与期望状态</li>
+<li><a href="https://martinfowler.com/articles/feature-toggles.html">Feature Toggles（Martin Fowler）</a>：开关的分类与灰度、实验的区别</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/数据驱动/">数据驱动</a><a class="tag" href="/tags/状态管理/">状态管理</a><a class="tag" href="/tags/渲染/">渲染</a><a class="tag" href="/tags/灰度/">灰度</a><a class="tag" href="/tags/schema/">schema</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%9C%89%E7%8A%B6%E6%80%81%E5%8D%95%E5%85%83%EF%BC%9A%E6%8A%8A%E8%BF%90%E8%90%A5%E8%83%BD%E5%8A%9B%E5%81%9A%E6%88%90%E6%95%B0%E6%8D%AE" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/ops-platform-three/">← 运营平台三件套：预发、灰度、回滚</a><a class="next" href="/post/holiday-capacity/">节假日扩容：从求人扩容到自己扛住 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/wallet-page-platform/">钱包页平台化：页面、分组、单元三层抽象</a><time>2021-06</time></li><li><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a><time>2020-02</time></li><li><a href="/post/two-step-change/">可回滚的变更：把一次上线拆成三步</a><time>2020-06</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

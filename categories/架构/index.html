@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分类：架构 - farfood</title>
+<meta name="description" content="记模型、记系统、记踩过的坑。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/categories/架构/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="分类：架构 - farfood">
+<meta property="og:description" content="记模型、记系统、记踩过的坑。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://farfoodyou.github.io/categories/架构/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分类：架构 - farfood">
+<meta name="twitter:description" content="记模型、记系统、记踩过的坑。">
+</head>
+<body class="">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/" class="active">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<h1 class="page-title">分类：架构 <span class="count">16 篇</span></h1>
+<article class="card">
+  <h2><a href="/post/task-state-machine/">任务清单的三种存法：把一个方括号字符当状态源</a></h2>
+  <p class="meta"><time datetime="2024-05-14T20:30:00">2024-05-14</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">扫文件、文件加旁路索引、索引当源，三种存法在编辑性、可重建性、写路径上各有硬伤；判据先摆出来再选。</p>
+  <a class="more" href="/post/task-state-machine/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/local-first-layers/">索引被当成了源：一次知识库重建事故</a></h2>
+  <p class="meta"><time datetime="2024-04-02T10:40:00">2024-04-02</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">摘要字段只写进索引，索引就成了唯一副本。崩溃后重建跑出一个空库，水位线还宣布一切正常。</p>
+  <a class="more" href="/post/local-first-layers/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/markdown-source-of-truth/">把 Markdown 当唯一真源：索引、版本与重建</a></h2>
+  <p class="meta"><time datetime="2024-03-12T20:15:00">2024-03-12</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">索引的风险偏在悄悄落后于源：三个版本号加一份抽样对账，才能回答查到的数据是不是当前这一代。</p>
+  <a class="more" href="/post/markdown-source-of-truth/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/when-to-merge/">微服务的反向操作：什么时候该合</a></h2>
+  <p class="meta"><time datetime="2022-03-08T20:40:00">2022-03-08</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">上下文边界决定规则归谁管，部署边界决定故障半径。把两条线当一条用，就会拆出一对必须同版发布的同步服务。</p>
+  <a class="more" href="/post/when-to-merge/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/exposure-slot-config/">把曝光位做成可配置：一次活动投放的事故与改造</a></h2>
+  <p class="meta"><time datetime="2022-02-15T10:05:00">2022-02-15</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">运营自助配曝光位之后，同优先级活动按 map 顺序命中，报表归因全错。改法：优先级由系统分配，每个位固定一条兜底链。</p>
+  <a class="more" href="/post/exposure-slot-config/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/stateful-unit-data/">有状态单元：把运营能力做成数据</a></h2>
+  <p class="meta"><time datetime="2021-08-17T14:05:00">2021-08-17</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">运营能力从发版变成写数据，问题也从代码写错变成写入没约定。一次整块覆盖清零领取记录，逼出 append-only 协议。</p>
+  <a class="more" href="/post/stateful-unit-data/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/decouple-by-subscribe/">把「调用业务方」换成「订阅业务方」</a></h2>
+  <p class="meta"><time datetime="2021-07-13T22:40:00">2021-07-13</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">0.999 的九次方是 0.9910，每月三百八十九分钟。这笔账算清楚之后，支付成功后的九个下游调用全改成了订阅。</p>
+  <a class="more" href="/post/decouple-by-subscribe/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/wallet-page-platform/">钱包页平台化：页面、分组、单元三层抽象</a></h2>
+  <p class="meta"><time datetime="2021-06-22T21:05:00">2021-06-22</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。</p>
+  <a class="more" href="/post/wallet-page-platform/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/module-boundary-in-code/">包结构与模块边界：让「不该调用」变成编译不过</a></h2>
+  <p class="meta"><time datetime="2020-12-29T21:40:00">2020-12-29</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">分层图画在文档里没人看，接口声明拦不住实现类型外泄。能让「不该调用」真的编译不过的手段只有那么几种，每种都有摩擦成本。</p>
+  <a class="more" href="/post/module-boundary-in-code/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/domain-event-vs-mq/">领域事件不是消息队列</a></h2>
+  <p class="meta"><time datetime="2020-12-08T10:05:00">2020-12-08</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">领域事件是「领域里发生了什么」，消息队列只是把它送出去的手段。混在一起，语义和事务正确性会一起丢。</p>
+  <a class="more" href="/post/domain-event-vs-mq/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/aggregate-invariant/">聚合根与不变式：把规则焊在对象里</a></h2>
+  <p class="meta"><time datetime="2020-11-17T11:20:00">2020-11-17</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">规则只有被唯一入口守住才算存在。一个事务只改一个聚合，跨聚合的保证交给事件和对账，而不是更大的事务。</p>
+  <a class="more" href="/post/aggregate-invariant/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/bounded-context-ownership/">限界上下文：按「谁的规则谁负责」切，而不是按表切</a></h2>
+  <p class="meta"><time datetime="2020-10-09T10:40:00">2020-10-09</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">额度这条规则的生命周期在用户域，订单只该问「能不能付」。边界画在规则归属上，而不是画在表的归属上。</p>
+  <a class="more" href="/post/bounded-context-ownership/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/anemia-model-debt/">订单服务是怎么变成贫血模型的</a></h2>
+  <p class="meta"><time datetime="2020-09-16T21:00:00">2020-09-16</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">贫血是事务边界、复用压力和表结构先行共同长出来的形状；动 DDD 之前得先把规则从 service 里考古出来。</p>
+  <a class="more" href="/post/anemia-model-debt/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/event-storming-intro/">事件风暴入门：一场会能产出什么</a></h2>
+  <p class="meta"><time datetime="2020-08-20T20:10:00">2020-08-20</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">事件风暴的产出不是模型图，而是事件序列、命令归属和一张争议清单；贴纸的物理约束才是它和普通评审会的区别。</p>
+  <a class="more" href="/post/event-storming-intro/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a></h2>
+  <p class="meta"><time datetime="2020-03-05T10:20:00">2020-03-05</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">演练里真正出问题的不是「配置错了」，是「配置还没到」。前者是语义问题，后者是时序问题，而时序问题在切换窗口里被放大。</p>
+  <a class="more" href="/post/config-eventual-consistency/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：一次调度配置下发改造</a></h2>
+  <p class="meta"><time datetime="2020-01-06T09:20:00">2020-01-06</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">调度系统把配置从 controller 推给 server 时，一次网络抖动就会让某台机器永久停在旧规则上。改成定期拉取 + 版本对比之后，失效模式从「永不收敛」变成了「延迟收敛」。</p>
+  <a class="more" href="/post/pull-not-push-config/">阅读全文 →</a>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

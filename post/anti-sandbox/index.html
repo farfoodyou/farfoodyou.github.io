@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>反沙箱手法算账：90 秒的预算对上 600 秒的等待 - farfood</title>
+<meta name="description" content="样本被识别时行为报告是空的。把时间、CPU、指纹三类手法的成本算成账，能看到双方拼的不是判据数量而是边际成本。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/anti-sandbox/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "反沙箱手法算账：90 秒的预算对上 600 秒的等待", "description": "样本被识别时行为报告是空的。把时间、CPU、指纹三类手法的成本算成账，能看到双方拼的不是判据数量而是边际成本。", "datePublished": "2023-03-07T20:50:00+08:00", "dateModified": "2023-03-07T20:50:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/anti-sandbox/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "反沙箱, 时间检测, 设备指纹, 对抗成本, 沙箱"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="反沙箱手法算账：90 秒的预算对上 600 秒的等待 - farfood">
+<meta property="og:description" content="样本被识别时行为报告是空的。把时间、CPU、指纹三类手法的成本算成账，能看到双方拼的不是判据数量而是边际成本。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/anti-sandbox/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="反沙箱手法算账：90 秒的预算对上 600 秒的等待 - farfood">
+<meta name="twitter:description" content="样本被识别时行为报告是空的。把时间、CPU、指纹三类手法的成本算成账，能看到双方拼的不是判据数量而是边际成本。">
+<meta property="article:published_time" content="2023-03-07T20:50:00+08:00">
+<meta name="keywords" content="反沙箱, 时间检测, 设备指纹, 对抗成本, 沙箱">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">反沙箱手法算账：90 秒的预算对上 600 秒的等待</h1>
+    <p class="meta"><time datetime="2023-03-07T20:50:00">2023-03-07</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个数先摆出来">三个数先摆出来</a></li>
+<li class="h2"><a href="#加速时钟是唯一选项也就是可测的选项">加速时钟是唯一选项，也就是可测的选项</a></li>
+<li class="h2"><a href="#cpu-与内存误判率的不对称">CPU 与内存：误判率的不对称</a></li>
+<li class="h2"><a href="#设备指纹一小时对三人日">设备指纹：一小时对三人日</a></li>
+<li class="h2"><a href="#账本的结论">账本的结论</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>一批样本进沙箱之后行为报告几乎是空的：没有文件落地，没有网络连接，进程起了两个就没下文。值班的人先怀疑沙箱坏了，在同一个镜像里手动跑，报告还是空。</p>
+<p>这批样本在最初两秒内做了一件事：确认自己在不在分析环境里，结果是「在」，然后退出。</p>
+<p>反沙箱的技术面不复杂：时间、CPU、设备指纹三类，每类几十行代码。难的是判断值不值得防、防到哪层停手。这篇用账本写，因为胜负最终由成本决定，不由判据数量决定。</p>
+<h2 id="三个数先摆出来">三个数先摆出来</h2>
+<p>沙箱集群的配置：400 个并发实例，单样本墙钟 90 秒、CPU 120 秒、内存 2GB、磁盘 60GB；日提交 12 万份。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>量</th>
+<th>数值</th>
+<th>说明</th>
+</tr></thead>
+<tbody>
+<tr><td>单样本墙钟预算</td><td>90 秒</td><td>超时即终止</td></tr>
+<tr><td>单样本 CPU 预算</td><td>120 秒</td><td>多线程可跑满</td></tr>
+<tr><td>并发实例数</td><td>400</td><td>受宿主资源限制</td></tr>
+<tr><td>日提交量</td><td>12 万</td><td>峰值在工作日白天</td></tr>
+</tbody>
+</table></div>
+<p>吞吐和实际覆盖的差距，全部来自单个样本占用墙钟的长短：</p>
+<pre data-lang="text"><code class="language-text">吞吐 = 并发 × 86400 / 单样本墙钟
+     = 400 × 86400 / 90  ≈ 384000 份/天    (覆盖 12 万，利用率 31%)
+     = 400 × 86400 / 600 ≈  57600 份/天    (覆盖 48%，且开始积压)</code></pre>
+<p>样本若先等 600 秒再干活，每天只能分析 5.7 万份，积压一周内会涨到两天以上。这是「睡眠」最便宜的地方：一行等待，沙箱侧要么多付 6.7 倍机器，要么改时钟。</p>
+<h2 id="加速时钟是唯一选项也就是可测的选项">加速时钟是唯一选项，也就是可测的选项</h2>
+<p>真实等 600 秒跑不完 12 万份，所以沙箱普遍做时间加速：<code>sleep</code> 直接返回，虚拟时钟快进。10 倍是经验值，600 秒压到 60 秒，吞吐回到 57.6 万份/天。</p>
+<p>代价是加速本身能被测出来。判据只要两个时钟的比值：</p>
+<pre data-lang="text"><code class="language-text">m  = CLOCK_MONOTONIC 的差值      (被加速)
+c  = 周期计数器的差值 / 主频    (接近真实，读 TSC 或等价计数)
+α  = m / c
+α &gt; 1.2 判为加速；正常机器上 α 落在 0.98 到 1.02</code></pre>
+<p>这个判据的对抗成本很低：几十行代码加两次读寄存器。沙箱的反制是只对「显式等待」加速，不让单调时钟整体快进；攻击者于是把 <code>sleep</code> 换成空转循环，用真实时间等待。</p>
+<p>空转循环会打穿 CPU 预算：120 秒的预算，循环 130 秒就超时。沙箱可以把预算抬到 300 秒，吞吐按同一条算式掉 3.3 倍，降到 11.5 万份/天。到这里双方的账都清楚了：<strong>时间这一维度上，沙箱的每一点防守都在消耗自己的吞吐，攻击者的每一点试探只消耗一次编译。</strong></p>
+<h2 id="cpu-与内存误判率的不对称">CPU 与内存：误判率的不对称</h2>
+<p>环境类判据的写法是「或」：核心数少于 2、物理内存小于 2GB、磁盘小于 60GB、无输入设备、无电池——命中任意一条就认定在分析环境里。</p>
+<p>单条判据在真实用户里的误判率，按我们的样本统计约 2%（一台正常机器是单核、内存 2GB 以下的比例）。五条「或」起来，真实机器被误判的比例是：</p>
+<pre data-lang="text"><code class="language-text">P(误判) = 1 - (1 - 0.02)^5 ≈ 9.6%</code></pre>
+<p>9.6% 的感染被自己放弃，对攻击者是可以接受的代价，因为换来的是在被分析环境里 100% 的识别率。沙箱侧的要求正好相反：漏判一条，整个判据组就失效。</p>
+<p>同样的数字放在两边结论不同，这是最核心的不对称——<strong>容忍误判的一方可以靠「或」堆判据，不能容忍漏判的一方堆判据只会增加维护面。</strong></p>
+<p>沙箱能做的不是加判据，是让判据取值不再是常量：核心数、内存、磁盘、分辨率、时区、安装时间都按真实分布抽样，每个实例一套。攻击者的「或」判断不再稳定命中，只能写成概率判断，验证成本跟着上去。</p>
+<h2 id="设备指纹一小时对三人日">设备指纹：一小时对三人日</h2>
+<p>指纹类更依赖细节：网卡地址的厂商号段、磁盘序列号是否全零、主板序列号格式、系统安装时间与文件时间戳是否自洽、分辨率是否落在常见集合、机器名与用户名词表。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>手法</th>
+<th>测量对象</th>
+<th>攻击者成本</th>
+<th>沙箱侧反制成本</th>
+</tr></thead>
+<tbody>
+<tr><td>睡眠等待</td><td>墙钟与单调时钟</td><td>1 行，几分钟</td><td>改调度与超时，1 人周</td></tr>
+<tr><td>双时钟比值</td><td>TSC 与单调时钟</td><td>30 行，半天</td><td>只对显式等待加速，3 人日</td></tr>
+<tr><td>资源下限</td><td>核心数、内存、磁盘</td><td>10 行，1 小时</td><td>按真实分布随机化，2 人日</td></tr>
+<tr><td>厂商号段</td><td>网卡地址前缀</td><td>5 行，20 分钟</td><td>真实硬件池，硬件采购</td></tr>
+<tr><td>序列号格式</td><td>磁盘与主板</td><td>20 行，半天</td><td>每镜像模板校对，3 人日</td></tr>
+<tr><td>交互缺失</td><td>输入事件、鼠标轨迹</td><td>10 行，1 小时</td><td>注入合成输入，5 人日</td></tr>
+</tbody>
+</table></div>
+<p>右边的成本摊开看：</p>
+<pre data-lang="text"><code class="language-text">模板真实化 24 人日 = 192 小时 ≈ 691200 秒
+年样本量 12 万 × 365 = 4380 万份
+每样本分摊 ≈ 0.016 秒人力</code></pre>
+<p>一次性投入摊到 4380 万份样本上，每份不到 0.02 秒。攻击者那边，一条检查写完 1 小时，但每换一个环境就要重新验证，还得真跑一遍分析流程。规模效应在防守方这里。</p>
+<p>反沙箱的投入因此该落在「环境真实性的规模化」上：真实硬件池、指纹随机化、合成输入，做一次覆盖所有样本；再加第十一条判据只覆盖一小类构造。</p>
+<h2 id="账本的结论">账本的结论</h2>
+<p>时间类的对抗最伤吞吐，成本直接乘在墙钟上；资源与指纹类伤的是维护面，判据边际收益递减而误判叠加。预算该优先给「让环境不可区分」，行为侧判据留给跑起来的样本。</p>
+<p>攻击者也会算账：绕过要每样本多花 2 小时人工，沙箱更新只要 30 分钟，这个变体的生命周期就只有一两天。节奏由两条曲线交叉的位置决定，不看手法是否花哨。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.usenix.org/system/files/conference/usenixsecurity14/sec14-paper-kirat.pdf">BareCloud：裸金属分析与逃逸样本检测</a>：环境差异作为判据的量化</li>
+<li><a href="https://www.felixcloutier.com/x86/cpuid">CPUID 指令参考</a>：型号字符串与特性位是常见指纹来源</li>
+<li><a href="https://pubs.opengroup.org/onlinepubs/9699919799/functions/clock_getres.html">POSIX <code>clock_getres</code></a>：时钟分辨率决定比值判据的下限</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc5905">RFC 5905：网络时间协议</a>：系统时钟会被逐步调整</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/反沙箱/">反沙箱</a><a class="tag" href="/tags/时间检测/">时间检测</a><a class="tag" href="/tags/设备指纹/">设备指纹</a><a class="tag" href="/tags/对抗成本/">对抗成本</a><a class="tag" href="/tags/沙箱/">沙箱</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8F%8D%E6%B2%99%E7%AE%B1%E6%89%8B%E6%B3%95%E7%AE%97%E8%B4%A6%EF%BC%9A90+%E7%A7%92%E7%9A%84%E9%A2%84%E7%AE%97%E5%AF%B9%E4%B8%8A+600+%E7%A7%92%E7%9A%84%E7%AD%89%E5%BE%85" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/yara-perf/">← 规则匹配引擎的性能：原子与字符串的选择</a><a class="next" href="/post/streaming-parse-cpp/">大文件怎么进检测引擎：整读、mmap 与增量流式 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a><time>2022-07</time></li><li><a href="/post/sandbox-logs/">动态沙箱的日志里到底有什么</a><time>2022-11</time></li><li><a href="/post/sandbox-escape-ml/">沙箱逃逸检测：从日志特征到随机森林</a><time>2022-11</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

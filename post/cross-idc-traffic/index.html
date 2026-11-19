@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>跨机房调用为什么慢：条带化与同机房收敛 - farfood</title>
+<meta name="description" content="条带化之后跨机房概率按跳数相乘，尾延迟由最慢一跳决定；同机房优先加按跳分配的预算，才把 p99 拉回来。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/cross-idc-traffic/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "跨机房调用为什么慢：条带化与同机房收敛", "description": "条带化之后跨机房概率按跳数相乘，尾延迟由最慢一跳决定；同机房优先加按跳分配的预算，才把 p99 拉回来。", "datePublished": "2020-04-10T09:40:00+08:00", "dateModified": "2020-04-10T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/cross-idc-traffic/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "跨机房, 延迟, 负载均衡, 超时预算"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="跨机房调用为什么慢：条带化与同机房收敛 - farfood">
+<meta property="og:description" content="条带化之后跨机房概率按跳数相乘，尾延迟由最慢一跳决定；同机房优先加按跳分配的预算，才把 p99 拉回来。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/cross-idc-traffic/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="跨机房调用为什么慢：条带化与同机房收敛 - farfood">
+<meta name="twitter:description" content="条带化之后跨机房概率按跳数相乘，尾延迟由最慢一跳决定；同机房优先加按跳分配的预算，才把 p99 拉回来。">
+<meta property="article:published_time" content="2020-04-10T09:40:00+08:00">
+<meta name="keywords" content="跨机房, 延迟, 负载均衡, 超时预算">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">跨机房调用为什么慢：条带化与同机房收敛</h1>
+    <p class="meta"><time datetime="2020-04-10T09:40:00">2020-04-10</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/后端/">后端</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#跨机房的概率是乘出来的">跨机房的概率是乘出来的</a></li>
+<li class="h2"><a href="#条带化没错错在没管概率">条带化没错，错在没管概率</a></li>
+<li class="h2"><a href="#同机房优先失败再跨机房">同机房优先，失败再跨机房</a></li>
+<li class="h2"><a href="#超时预算怎么被级联放大">超时预算怎么被级联放大</a></li>
+<li class="h2"><a href="#三个反噬">三个反噬</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>调度系统上线「条带化」之后，均值几乎没变，p99 从 45ms 涨到 210ms。</p>
+<p>条带化指把每个服务的实例均匀撒到所有机房：4 个机房、每服务 32 个实例就是每机房 8 个。理由是单机房故障只损失四分之一容量，而不是整个服务不可用。上线一周后均值平稳，尾部炸了。</p>
+<p>先怀疑新加的中间层和 GC，查了两天没结论；把 span 的机房字段打出来才看明白：<strong>p99 的请求几乎都至少跨了一次机房</strong>，均值被同机房请求稀释，尾部被那一跳决定。</p>
+<h2 id="跨机房的概率是乘出来的">跨机房的概率是乘出来的</h2>
+<p>纯随机选实例时，单次调用落同机房的概率是 1/4；3 跳全同机房是 0.25 的三次方，1.6%：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>跳数</th>
+<th>每跳同机房概率</th>
+<th>全同机房</th>
+<th>期望跨机房次数</th>
+</tr></thead>
+<tbody>
+<tr><td>1</td><td>0.25</td><td>25%</td><td>0.75</td></tr>
+<tr><td>2</td><td>0.25</td><td>6.3%</td><td>1.5</td></tr>
+<tr><td>3</td><td>0.25</td><td>1.6%</td><td>2.25</td></tr>
+<tr><td>3</td><td>0.75</td><td>42%</td><td>0.75</td></tr>
+</tbody>
+</table></div>
+<p>最后一行是「同机房优先」生效后的样子（经验值，75% 命中）：跨机房次数 2.25 → 0.75。</p>
+<p>跨机房的代价不只是 RTT。实测口径：同城两机房往返 1.5–2ms，跨城 25–40ms；更要紧的是跨机房链路共享，一排队就丢包，而 TCP 丢包后的重传超时是百毫秒量级（RFC 6298 初始 RTO 为 1 秒，实际实现普遍压到 200ms）。210ms 的来源在这里，不是 45ms 加几个毫秒。</p>
+<p>尾延迟不是平均值乘以跳数，它是<strong>最慢那一跳的重传定时器</strong>。</p>
+<h2 id="条带化没错错在没管概率">条带化没错，错在没管概率</h2>
+<p>有人提议把服务整体放进一个机房，就没有跨机房调用。方向是错的：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th>服务级部署（整体在某机房）</th>
+<th>条带化</th>
+</tr></thead>
+<tbody>
+<tr><td>单机房故障</td><td>该服务整体不可用</td><td>1/N 容量</td></tr>
+<tr><td>同机房调用</td><td>天然 100%，依赖拓扑对齐</td><td>需显式偏好</td></tr>
+<tr><td>容量利用率</td><td>各机房重复部署</td><td>高</td></tr>
+</tbody>
+</table></div>
+<p>跨机房因此从 0/1 变成比例项，前提是真的去调。</p>
+<h2 id="同机房优先失败再跨机房">同机房优先，失败再跨机房</h2>
+<p>改法是把选择顺序固化成有序候选：</p>
+<ol>
+<li>本机房有健康实例 → 只从本机房选；</li>
+<li>本机房没有 → 同城其他机房；</li>
+<li>同城也不可用 → 跨城，并允许降级（放弃次要校验）。</li>
+</ol>
+<p>这套顺序在 Envoy 里对应 zone-aware routing 加 priority levels。关键是<strong>每级花费不同，预算也不同</strong>：</p>
+<pre data-lang="go"><code class="language-go">func (c *client) Do(ctx context.Context, req *Request) (*Response, error) {
+    deadline, _ := ctx.Deadline()
+    for _, tier := range c.tiers(req.Key) { // local → same-city → remote
+        left := time.Until(deadline)
+        if left &lt; tier.minCost {
+            break // 预算连最低成本都不够
+        }
+        sub, cancel := context.WithTimeout(ctx, tier.budget) // 父预算更短则收窄
+        resp, err := c.call(sub, tier, req)
+        cancel()
+        if err == nil {
+            return resp, nil
+        }
+        if !retryable(err) { // 业务错误换机房也没用
+            return nil, err
+        }
+    }
+    return nil, ErrBudgetExhausted
+}</code></pre>
+<p>两个易错点：</p>
+<ul>
+<li><strong>超时之后不要立刻跨机房重试。</strong> 本机房超时说明对端慢或过载，跨机房只会更慢，重试还吃掉后面几跳的预算。只有连接层失败（拒绝连接、被重置）才值得换。</li>
+<li><strong>预算按跳分配，不平均分。</strong> 总预算 200ms、3 跳，我给同机房 40ms、跨机房 60ms、留 40ms 收尾。跨机房跳成本高，更不能给它在本地同样的短超时，否则永远超时、永远白跑。</li>
+</ul>
+<h2 id="超时预算怎么被级联放大">超时预算怎么被级联放大</h2>
+<p>最危险的配置：入口超时 200ms，下游每跳都设 500ms。</p>
+<p>入口 200ms 就放弃，下游还在跑，占着连接、goroutine 和并发配额直到 500ms。量一高，「没人要的结果」把容量吃干，成功请求也开始超时。</p>
+<p>判据只有一条：<strong>下游超时必须小于上游剩余预算</strong>。实现是把 deadline 一路传下去，而不是每个服务写死超时。</p>
+<h2 id="三个反噬">三个反噬</h2>
+<p><strong>容量倾斜。</strong> 同机房优先假设各机房实例数差不多。扩缩容不同步时大机房先满，请求溢到小机房再溢回来；兜底要按目标机房剩余容量加权。</p>
+<p><strong>故障瞬间的流量放大。</strong> 一个机房挂掉，四分之一流量几秒内摊到另外三个，跨机房流量涨三倍。预留不够就是丢包、重传、再丢包。经验值：跨机房链路按常态峰值的 3 倍预留，或者接受故障时限流。</p>
+<p><strong>拓扑信息会错。</strong> 注册中心把机房标错，偏好逻辑会把流量锁在错误位置且看起来一切正常。拓扑缺失时退化成全随机而非报错，拓扑与实测 RTT 冲突时以 RTT 为准。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8305">RFC 8305 · Happy Eyeballs Version 2</a>：先试首选、延迟后再试备选，与同机房优先同语义</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc6298">RFC 6298 · Computing TCP&#x27;s Retransmission Timer</a>：丢包代价为何是百毫秒级</li>
+<li><a href="https://www.envoyproxy.io/docs/envoy/v1.13.0/intro/arch_overview/upstream/load_balancing/zone_aware">Envoy · Zone aware routing</a>：locality 权重与跨 zone 溢出</li>
+<li><a href="https://www.envoyproxy.io/docs/envoy/v1.13.0/intro/arch_overview/upstream/load_balancing/priority">Envoy · Priority levels</a>：层级与健康度降级</li>
+<li><a href="https://sre.google/sre-book/addressing-cascading-failures/">Google SRE Book · Addressing Cascading Failures</a>：超时、重试、队列如何互相放大</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/跨机房/">跨机房</a><a class="tag" href="/tags/延迟/">延迟</a><a class="tag" href="/tags/负载均衡/">负载均衡</a><a class="tag" href="/tags/超时预算/">超时预算</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E8%B7%A8%E6%9C%BA%E6%88%BF%E8%B0%83%E7%94%A8%E4%B8%BA%E4%BB%80%E4%B9%88%E6%85%A2%EF%BC%9A%E6%9D%A1%E5%B8%A6%E5%8C%96%E4%B8%8E%E5%90%8C%E6%9C%BA%E6%88%BF%E6%94%B6%E6%95%9B" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/go-hot-reload-config/">← Go 里做配置热更新的三种姿势</a><a class="next" href="/post/config-form-not-json/">配置单为什么难填：把「写 JSON」换成「点菜单」 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/o3-pro-minute-scale-reasoning/">o3-pro：当推理从「秒」变成「分钟」，产品形态就得改</a><time>2025-06</time></li><li><a href="/post/json-as-database/">拿 JSON 字段当表用，是怎么把配置平台拖死的</a><time>2020-01</time></li><li><a href="/post/go-hot-reload-config/">Go 里做配置热更新的三种姿势</a><time>2020-05</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

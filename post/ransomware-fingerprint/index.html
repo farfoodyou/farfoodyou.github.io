@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>勒索软件的加密指纹：非对称文件头识别 - farfood</title>
+<meta name="description" content="加密后文件里没有 magic，可用指纹只有熵、长度算术和密钥块字节数；三种判据误报源不同，混用会判掉正常压缩包。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/ransomware-fingerprint/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "勒索软件的加密指纹：非对称文件头识别", "description": "加密后文件里没有 magic，可用指纹只有熵、长度算术和密钥块字节数；三种判据误报源不同，混用会判掉正常压缩包。", "datePublished": "2022-08-30T15:20:00+08:00", "dateModified": "2022-08-30T15:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/ransomware-fingerprint/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "加密特征, 熵, 文件格式, 误报治理, 勒索软件"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="勒索软件的加密指纹：非对称文件头识别 - farfood">
+<meta property="og:description" content="加密后文件里没有 magic，可用指纹只有熵、长度算术和密钥块字节数；三种判据误报源不同，混用会判掉正常压缩包。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/ransomware-fingerprint/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="勒索软件的加密指纹：非对称文件头识别 - farfood">
+<meta name="twitter:description" content="加密后文件里没有 magic，可用指纹只有熵、长度算术和密钥块字节数；三种判据误报源不同，混用会判掉正常压缩包。">
+<meta property="article:published_time" content="2022-08-30T15:20:00+08:00">
+<meta name="keywords" content="加密特征, 熵, 文件格式, 误报治理, 勒索软件">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">勒索软件的加密指纹：非对称文件头识别</h1>
+    <p class="meta"><time datetime="2022-08-30T15:20:00">2022-08-30</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2494 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#加密之后还剩什么">加密之后还剩什么</a></li>
+<li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
+<li class="h2"><a href="#误报从哪来">误报从哪来</a></li>
+<li class="h2"><a href="#落成一函数">落成一函数</a></li>
+<li class="h2"><a href="#一句判断">一句判断</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>判断文件是否被加密过，可用证据只有三类：熵的形状、长度的算术、两段本来不该同时出现的结构。内容这条线是断的：加密输出就是伪随机字节，magic、版本号、明文串一个都不剩。</p>
+<p>三类证据的可靠程度差得远：第一类在压缩包和媒体上大面积误报，第二类只对分组模式成立，第三类要求程序把密钥块留在文件里，但它来自密码学参数的算术约束，跟实现风格关系不大。</p>
+<h2 id="加密之后还剩什么">加密之后还剩什么</h2>
+<p>对称加密的输出没有格式可言。AES-CBC 按 16 字节分组、PKCS#7 填充，密文长度必然是 16 的倍数且比明文多 1 到 16 字节；CTR 和 GCM 是流式的，长度等于明文。所以「长度能被 16 整除」只在分组模式下成立。</p>
+<p>非对称这块有硬约束：RSA-2048 用 PKCS#1 v1.5 填充时一个块最多加密 245 字节（模长 256 减 11 字节填充，见 <a href="https://www.rfc-editor.org/rfc/rfc8017.txt">RFC 8017</a> §7.2）。拿它加密 2MB 要上万次运算，没有实现会这么干。实际是两层结构：每个文件生成对称密钥加密本体，再用公钥把密钥加密成 256 或 512 字节的块，这个块必须存在某处，否则文件解不开。</p>
+<p>这 256 字节是最结实的指纹，长度固定等于模长。位置有三种：文件尾、文件头、独立索引文件。前两种能单文件判定，第三种只能靠同目录批量行为判。</p>
+<h2 id="三个方案并排">三个方案并排</h2>
+<p>可用的加密指纹要同时满足三条：不依赖家族知识就能算、单文件毫秒级算完、在正常文件上有排除条件。第三条最容易漏，它决定上线后会不会被误报淹没。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th></th>
+<th>A：全段熵 + 对齐</th>
+<th>B：头部合法但结构坏</th>
+<th>C：尾部密钥块</th>
+</tr></thead>
+<tbody>
+<tr><td>判据内核</td><td>64KB 窗口熵 &gt; 7.95 且长度是 16 的倍数</td><td>头 magic 合法，紧随的头字段自相矛盾</td><td>末尾 256/512 字节熵 ≈ 8，且不是已知尾结构</td></tr>
+<tr><td>覆盖形态</td><td>整文件覆写的实现</td><td>只加密前 N MB、保留头部的实现</td><td>带密钥块的实现，多数变种属于这类</td></tr>
+<tr><td>单文件代价（2MB）</td><td>1.2ms</td><td>3ms，要跑解析器</td><td>0.3ms</td></tr>
+<tr><td>主要误报</td><td>压缩包、媒体、加密容器</td><td>损坏的正常文件、截断下载</td><td>自带固定长度尾部的格式</td></tr>
+<tr><td>依赖类型识别</td><td>是</td><td>是</td><td>部分</td></tr>
+</tbody>
+</table></div>
+<p>A 最粗也最好实现。实测口径：2MB 随机数据按 64KB 滑窗算香农熵，中位数 7.998；deflate 压过的可执行文件 7.4 到 7.8；JPEG 主体 7.9 以上。阈值必须配类型识别，单靠熵值分不清「加密」和「压过」。</p>
+<p>B 的判据是错配：头里写着节表偏移，那个偏移上没有任何合法结构；或者大小字段和实际大小差了一整个 16 的倍数。部分加密的实现必然留下这类错配，它保留头部只为迷惑用户。代价是要解析格式，而解析器本身是攻击面，得跑在隔离进程里。</p>
+<p>C 最便宜也最准：从尾部取 512 字节算熵，同时检查这个位置是不是某个格式的合法结尾。它对把密钥块写进独立索引文件的实现无效。</p>
+<h2 id="误报从哪来">误报从哪来</h2>
+<p>把高熵的正常文件列一遍，误报来源就清楚了：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>正常东西</th>
+<th>熵为什么高</th>
+<th>排除条件</th>
+</tr></thead>
+<tbody>
+<tr><td>zip / gzip / 7z</td><td>载荷已被压缩</td><td>容器 magic 在前几百字节内命中</td></tr>
+<tr><td>JPEG / 视频</td><td>变换编码后的系数</td><td>同上，且尾部有结束标记</td></tr>
+<tr><td>全盘加密卷里的文件</td><td>落盘前就是密文</td><td>卷级信息在文件系统层，跳过</td></tr>
+<tr><td>抓包、内存转储</td><td>混有压缩和随机数据</td><td>扩展名 + 容器头</td></tr>
+<tr><td>已加密的备份分片</td><td>本来就是密文</td><td>命名规则 + 同批长度一致</td></tr>
+</tbody>
+</table></div>
+<p>更隐蔽的误报源是采样窗口。4KB 窗口在混合数据上抖动很大，全零填充紧挨着密文，窗口跨过去就得到中间值。后来固定 64KB 窗口、取 8 个等距位置看中位数，单点异常翻不动结论。</p>
+<h2 id="落成一函数">落成一函数</h2>
+<p>判定顺序按代价排：长度算术、尾部密钥块、最后才是需要类型识别的全段熵。</p>
+<pre data-lang="python"><code class="language-python">import math, collections
+
+def entropy(b):
+    if not b: return 0.0
+    c = collections.Counter(b)
+    n = len(b)
+    return -sum(v / n * math.log2(v / n) for v in c.values())  # 上限 8.0
+
+def fingerprint(buf, declared_type):
+    body, tail = buf[:-512], buf[-512:]
+    # 1) 分组模式密文的长度必然是 16 的倍数
+    aligned = len(buf) % 16 == 0
+    # 2) 尾部密钥块：256/512 字节、熵接近 8、且不是已知尾结构
+    key_block = entropy(tail) &gt; 7.98 and not known_trailer(declared_type, tail)
+    # 3) 全段熵：只在已排除压缩容器的前提下有意义
+    high = median_window_entropy(body, win=65536, samples=8) &gt; 7.95
+    score = 0.5 * key_block + 0.3 * (aligned and high) + 0.2 * high
+    return round(score, 2)</code></pre>
+<p>阈值是经验值，写死前先跑正常文件集合看 99 分位。40 万个文件里 <code>key_block</code> 误报 11 个，全是数据库页文件：尾部固定长度、内容压缩过、熵刚好压线。这类后来进了尾部白名单。</p>
+<h2 id="一句判断">一句判断</h2>
+<p>三种判据里只有尾部密钥块是从密码学参数推出来的，不随实现风格变；熵和对齐是从「密文看起来像什么」推出来的，得跟类型识别绑着用。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8017.txt">RFC 8017: PKCS #1 v1.5 / OAEP 填充与 RSA 加密原语</a>：245 字节上限的来源</li>
+<li><a href="https://csrc.nist.gov/publications/detail/sp/800-38a/final">NIST SP 800-38A: Recommendation for Block Cipher Modes of Operation</a>：分组模式与流模式的长度行为差异</li>
+<li><a href="https://yara.readthedocs.io/en/stable/modules/math.html">YARA 文档：math 模块（entropy）</a>：扫描期直接算熵的实现方式</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/加密特征/">加密特征</a><a class="tag" href="/tags/熵/">熵</a><a class="tag" href="/tags/文件格式/">文件格式</a><a class="tag" href="/tags/误报治理/">误报治理</a><a class="tag" href="/tags/勒索软件/">勒索软件</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8B%92%E7%B4%A2%E8%BD%AF%E4%BB%B6%E7%9A%84%E5%8A%A0%E5%AF%86%E6%8C%87%E7%BA%B9%EF%BC%9A%E9%9D%9E%E5%AF%B9%E7%A7%B0%E6%96%87%E4%BB%B6%E5%A4%B4%E8%AF%86%E5%88%AB" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/pe-format-intro/">← PE 解析入门：头、节表、导入表里那三个我读错的字段</a><a class="next" href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报</a><time>2022-08</time></li><li><a href="/post/packer-entropy/">加壳的痕迹：节名、熵和一张只剩两行的导入表</a><time>2023-01</time></li><li><a href="/post/file-type-detect/">文件类型识别：magic 不够用的那几种情况</a><time>2023-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

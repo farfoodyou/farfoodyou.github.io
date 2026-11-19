@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>双链笔记的检索困境 - farfood</title>
+<meta name="description" content="链接、标签、全文各自只能回答一类问题；把三者当成同一个索引来设计，才会得到一套能编译成一条 SQL 的查询语法。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/search-vs-links/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "双链笔记的检索困境", "description": "链接、标签、全文各自只能回答一类问题；把三者当成同一个索引来设计，才会得到一套能编译成一条 SQL 的查询语法。", "datePublished": "2024-09-03T20:10:00+08:00", "dateModified": "2024-09-03T20:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/search-vs-links/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "全文检索, 双链, SQLite, 查询语言, 知识库"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="双链笔记的检索困境 - farfood">
+<meta property="og:description" content="链接、标签、全文各自只能回答一类问题；把三者当成同一个索引来设计，才会得到一套能编译成一条 SQL 的查询语法。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/search-vs-links/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="双链笔记的检索困境 - farfood">
+<meta name="twitter:description" content="链接、标签、全文各自只能回答一类问题；把三者当成同一个索引来设计，才会得到一套能编译成一条 SQL 的查询语法。">
+<meta property="article:published_time" content="2024-09-03T20:10:00+08:00">
+<meta name="keywords" content="全文检索, 双链, SQLite, 查询语言, 知识库">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">双链笔记的检索困境</h1>
+    <p class="meta"><time datetime="2024-09-03T20:10:00">2024-09-03</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/工程/">工程</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据先摆出来">判据先摆出来</a></li>
+<li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
+<li class="h2"><a href="#一条-dsl-编译成一条-sql">一条 DSL 编译成一条 SQL</a></li>
+<li class="h2"><a href="#什么时候选哪个">什么时候选哪个</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>我找一条自己写过的笔记，花了四分钟。</p>
+<p>我记得它讲过「工具调用的超时该设在哪一层」，也记得它引用过一篇讲沙箱的笔记，但不记得标题，记不清用的是「超时」还是「deadline」。全文搜「超时」出来 200 多条，翻链接邻域要一跳一跳点，标签里没有「超时」。三种入口都在，没有一种能表达「我同时知道两件事」。</p>
+<p>困境在于：链接、标签、全文是三套并行系统，各有查询框，而人回忆时给的是混合条件。</p>
+<h2 id="判据先摆出来">判据先摆出来</h2>
+<p>选方案前，我把查询按频率统计了两周（1.4 万篇笔记、3.6 万条链接、单机 SQLite，口径是我自己的日志）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>查询类型</th>
+<th>占比</th>
+<th>典型形式</th>
+<th>需要的索引能力</th>
+</tr></thead>
+<tbody>
+<tr><td>定位：我记得写过一种说法</td><td>46%</td><td>「超时该设在哪一层」</td><td>词项召回 + 排序</td></tr>
+<tr><td>关系：谁引用了它、它的邻域</td><td>21%</td><td>「沙箱那篇之后还有谁写」</td><td>图的 k 跳遍历</td></tr>
+<tr><td>枚举：按状态/类型列清单</td><td>19%</td><td>「所有 draft 状态的 agent 笔记」</td><td>属性精确过滤</td></tr>
+<tr><td>混合：上面两种以上</td><td>14%</td><td>「引用过 A 且正文提到 B」</td><td>组合与代价控制</td></tr>
+</tbody>
+</table></div>
+<p>14% 那一行决定了设计。前三类能力都能单独实现，麻烦在混合查询：若让三套系统各自返回候选再在应用层求交，先返回的那套必须给出足够大的候选集，否则交集为空；而「足够大」接近全量。这类查询得在索引层合成一次执行计划。</p>
+<h2 id="三个方案并排">三个方案并排</h2>
+<p>我把候选实现压到三种，索引都建在同一份 Markdown 源上，构建脚本负责增量更新：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>维度</th>
+<th>链接图</th>
+<th>标签/属性</th>
+<th>全文</th>
+</tr></thead>
+<tbody>
+<tr><td>索引结构</td><td>边表 <code>(src, dst)</code></td><td>属性倒排</td><td>倒排 + 三元组位置</td></tr>
+<tr><td>擅长的查询</td><td>k 跳邻域、反向引用</td><td>集合交并、精确枚举</td><td>词项召回、bm25 排序</td></tr>
+<tr><td>答不了的</td><td>同义、拼写变体</td><td>任何关系问题</td><td>「这两篇有关系吗」</td></tr>
+<tr><td>增量代价</td><td>重算出入边，几十行</td><td>重写属性项</td><td>重新分词，3 ms/千字</td></tr>
+<tr><td>索引体积（1.4 万篇）</td><td>1.2 MB</td><td>0.4 MB</td><td>38 MB</td></tr>
+<tr><td>延迟（本机中位）</td><td>0.3 ms（单跳）</td><td>0.8 ms（三项交）</td><td>12 ms（bm25 全库排序）</td></tr>
+<tr><td>失败模式</td><td>断链让邻域碎掉</td><td>标签语义漂移</td><td>中文分词切错，召回静默丢失</td></tr>
+</tbody>
+</table></div>
+<p>最容易被高估的是全文。1.4 万篇上 12 ms 的 bm25 看似可接受，但那是单词查询；混合查询里全文要出几千条候选再交给图过滤，计划一旦变成「先全文后过滤」，延迟就跟着候选数涨。先用标签压到 300 篇再排序，同一个查询 4 ms 就完。</p>
+<p>标签的问题在语义。<code>agent</code>、<code>Agent</code>、<code>智能体</code> 同时存在过；<code>draft</code> 和 <code>wip</code> 并存过半年。后来加了属性白名单，构建时见到白名单外的值直接报错，标签才稳定。新增标签要改一行配置，摩擦是有意留的。</p>
+<p>链接的问题最隐蔽：断链不报错。改标题、拆笔记、合并笔记都会让旧链接指向不存在的 slug。构建时把所有 <code>[[...]]</code> 解析一遍，解析不到就失败；第一次跑，3.6 万条链接里 1,900 条是断的。</p>
+<h2 id="一条-dsl-编译成一条-sql">一条 DSL 编译成一条 SQL</h2>
+<p>三种索引都在同一个 SQLite 库里，所以组合查询可以压成一条语句。前端只暴露一个小语法：</p>
+<pre data-lang="text"><code class="language-text">tag:agent &quot;工具调用&quot; link:cage-the-agent -tag:draft depth:2</code></pre>
+<p>语法很小：前缀限定词、引号短语、<code>-</code> 取反、<code>depth:</code> 控制跳数。解析成 AST 后按选择率重排：属性过滤、图过滤、最后全文排序。k 跳用递归 CTE，深度由 <code>depth:</code> 限定，不设上限会在环上打转：</p>
+<pre data-lang="sql"><code class="language-sql">WITH RECURSIVE hop(id, d) AS (
+  SELECT dst, 1 FROM links
+   WHERE src = (SELECT id FROM notes WHERE slug = &#x27;cage-the-agent&#x27;)
+  UNION
+  SELECT l.dst, h.d + 1 FROM links l JOIN hop h ON l.src = h.id
+   WHERE h.d &lt; 2
+)
+SELECT n.path, bm25(fts) AS rank
+  FROM fts JOIN notes n ON n.id = fts.rowid
+ WHERE fts MATCH ?            -- &quot;工具调用&quot;，中文走三元组
+   AND n.id IN (SELECT id FROM hop)
+   AND n.id NOT IN (SELECT note_id FROM note_tags JOIN tags USING(tag_id)
+                     WHERE tags.name = &#x27;draft&#x27;)
+ ORDER BY rank LIMIT 20;</code></pre>
+<p>两个细节：<code>UNION</code> 而不是 <code>UNION ALL</code>，<code>h.d &lt; 2</code> 只限深度，环上节点仍会被不同路径重复产出，去重靠 <code>UNION</code>；<code>bm25()</code> 返回负值，越小越相关，写成 <code>ORDER BY rank DESC</code> 得到的是最不相关的一批。中文没有空格，<code>unicode61</code> 会把整句当一个词，所以索引用 <code>trigram</code>，查询串不足三字符时退化到 <code>LIKE</code>，细节见 <a href="https://www.sqlite.org/optoverview.html">SQLite 查询优化器概述</a>。</p>
+<h2 id="什么时候选哪个">什么时候选哪个</h2>
+<p>如果 80% 的查询是「我记得写过一种说法」，全文是唯一入口，先把它做对（分词、排序、高亮），链接和标签只当筛子。</p>
+<p>库的结构比内容重要时（大半是「这篇引用哪几篇」的索引页），图就是主索引。</p>
+<p>如果查询主要是「按状态列清单」，标签加属性过滤就够，全文索引可以不做，省下 38 MB 和每次改动的分词开销。</p>
+<p>三个都留了，因为 14% 的混合查询撑着复杂度。DSL 的用途是让三种索引出现在同一个执行计划里；否则混合查询都得在应用层写一遍交集代码，那正是四分钟的来源。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.sqlite.org/fts5.html">SQLite FTS5 文档</a>：<code>bm25()</code> 的符号约定与 <code>trigram</code> 分词器</li>
+<li><a href="https://www.sqlite.org/lang_with.html">SQLite 递归 CTE</a>：<code>UNION</code> 去重与递归深度控制</li>
+<li><a href="https://www.w3.org/TR/sparql11-query/">SPARQL 1.1 Query Language</a>：属性路径那节对应 <code>depth:</code></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/全文检索/">全文检索</a><a class="tag" href="/tags/双链/">双链</a><a class="tag" href="/tags/sqlite/">SQLite</a><a class="tag" href="/tags/查询语言/">查询语言</a><a class="tag" href="/tags/知识库/">知识库</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8F%8C%E9%93%BE%E7%AC%94%E8%AE%B0%E7%9A%84%E6%A3%80%E7%B4%A2%E5%9B%B0%E5%A2%83" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/git-sync-conflict/">← 多端同步：Git 版本化与冲突合并</a><a class="next" href="/post/prompt-injection/">Prompt Injection：为什么过滤不管用 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/git-sync-conflict/">多端同步：Git 版本化与冲突合并</a><time>2024-09</time></li><li><a href="/post/sqlite-fts5/">FTS5 的中文检索：一个分词器选项撑起来的整套设计</a><time>2024-04</time></li><li><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a><time>2020-02</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

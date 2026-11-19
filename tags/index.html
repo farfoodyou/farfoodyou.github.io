@@ -26,104 +26,374 @@
 <meta name="twitter:description" content="记模型、记系统、记踩过的坑。">
 </head>
 <body class="">
-<div id="progress"></div>
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/" class="active">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/" class="active">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
-<h1 class="page-title">标签</h1>
-<ul class="taxonomy"><li><a href="/tags/开源模型/">开源模型</a><span class="count">26</span></li>
-<li><a href="/tags/moe/">MoE</a><span class="count">18</span></li>
-<li><a href="/tags/agent/">Agent</a><span class="count">17</span></li>
-<li><a href="/tags/推理模型/">推理模型</a><span class="count">10</span></li>
-<li><a href="/tags/稀疏注意力/">稀疏注意力</a><span class="count">9</span></li>
-<li><a href="/tags/deepseek/">DeepSeek</a><span class="count">8</span></li>
-<li><a href="/tags/编码/">编码</a><span class="count">8</span></li>
-<li><a href="/tags/长上下文/">长上下文</a><span class="count">8</span></li>
-<li><a href="/tags/推理优化/">推理优化</a><span class="count">7</span></li>
-<li><a href="/tags/anthropic/">Anthropic</a><span class="count">5</span></li>
-<li><a href="/tags/claude/">Claude</a><span class="count">5</span></li>
-<li><a href="/tags/glm/">GLM</a><span class="count">5</span></li>
-<li><a href="/tags/多模态/">多模态</a><span class="count">5</span></li>
-<li><a href="/tags/强化学习/">强化学习</a><span class="count">5</span></li>
-<li><a href="/tags/成本/">成本</a><span class="count">5</span></li>
-<li><a href="/tags/智谱/">智谱</a><span class="count">5</span></li>
-<li><a href="/tags/moonshot/">Moonshot</a><span class="count">4</span></li>
-<li><a href="/tags/openai/">OpenAI</a><span class="count">4</span></li>
-<li><a href="/tags/qwen/">Qwen</a><span class="count">4</span></li>
-<li><a href="/tags/架构/">架构</a><span class="count">4</span></li>
-<li><a href="/tags/系统/">系统</a><span class="count">4</span></li>
-<li><a href="/tags/部署/">部署</a><span class="count">4</span></li>
-<li><a href="/tags/量化/">量化</a><span class="count">4</span></li>
-<li><a href="/tags/kv缓存/">KV缓存</a><span class="count">3</span></li>
-<li><a href="/tags/评测/">评测</a><span class="count">3</span></li>
-<li><a href="/tags/gemini/">Gemini</a><span class="count">2</span></li>
-<li><a href="/tags/google/">Google</a><span class="count">2</span></li>
-<li><a href="/tags/llm/">LLM</a><span class="count">2</span></li>
-<li><a href="/tags/mtp/">MTP</a><span class="count">2</span></li>
-<li><a href="/tags/minimax/">MiniMax</a><span class="count">2</span></li>
-<li><a href="/tags/mistral/">Mistral</a><span class="count">2</span></li>
-<li><a href="/tags/vllm/">vLLM</a><span class="count">2</span></li>
-<li><a href="/tags/回顾/">回顾</a><span class="count">2</span></li>
-<li><a href="/tags/对比/">对比</a><span class="count">2</span></li>
-<li><a href="/tags/引擎/">引擎</a><span class="count">2</span></li>
-<li><a href="/tags/注意力/">注意力</a><span class="count">2</span></li>
-<li><a href="/tags/端侧推理/">端侧推理</a><span class="count">2</span></li>
-<li><a href="/tags/阿里/">阿里</a><span class="count">2</span></li>
-<li><a href="/tags/api/">API</a><span class="count">1</span></li>
-<li><a href="/tags/asic/">ASIC</a><span class="count">1</span></li>
-<li><a href="/tags/fp8/">FP8</a><span class="count">1</span></li>
-<li><a href="/tags/gpt-5/">GPT-5</a><span class="count">1</span></li>
-<li><a href="/tags/mla/">MLA</a><span class="count">1</span></li>
-<li><a href="/tags/mlx/">MLX</a><span class="count">1</span></li>
-<li><a href="/tags/microcontrollers/">Microcontrollers</a><span class="count">1</span></li>
-<li><a href="/tags/ninfer/">NInfer</a><span class="count">1</span></li>
-<li><a href="/tags/nodejs/">NodeJS</a><span class="count">1</span></li>
-<li><a href="/tags/sglang/">SGLang</a><span class="count">1</span></li>
-<li><a href="/tags/stepfun/">StepFun</a><span class="count">1</span></li>
-<li><a href="/tags/strata/">Strata</a><span class="count">1</span></li>
-<li><a href="/tags/arduino/">arduino</a><span class="count">1</span></li>
-<li><a href="/tags/git/">git</a><span class="count">1</span></li>
-<li><a href="/tags/hexo/">hexo</a><span class="count">1</span></li>
-<li><a href="/tags/knowledge/">knowledge</a><span class="count">1</span></li>
-<li><a href="/tags/llama-cpp/">llama.cpp</a><span class="count">1</span></li>
-<li><a href="/tags/markdown/">markdown</a><span class="count">1</span></li>
-<li><a href="/tags/md/">md</a><span class="count">1</span></li>
-<li><a href="/tags/mongodb/">mongoDB</a><span class="count">1</span></li>
-<li><a href="/tags/node-js/">node.js</a><span class="count">1</span></li>
-<li><a href="/tags/npm/">npm</a><span class="count">1</span></li>
-<li><a href="/tags/platformio/">platformio</a><span class="count">1</span></li>
-<li><a href="/tags/system/">system</a><span class="count">1</span></li>
-<li><a href="/tags/vue/">vue</a><span class="count">1</span></li>
-<li><a href="/tags/windows/">windows</a><span class="count">1</span></li>
-<li><a href="/tags/产品设计/">产品设计</a><span class="count">1</span></li>
-<li><a href="/tags/后训练/">后训练</a><span class="count">1</span></li>
-<li><a href="/tags/多智能体/">多智能体</a><span class="count">1</span></li>
-<li><a href="/tags/学习资料/">学习资料</a><span class="count">1</span></li>
-<li><a href="/tags/小米/">小米</a><span class="count">1</span></li>
-<li><a href="/tags/带宽/">带宽</a><span class="count">1</span></li>
-<li><a href="/tags/年表/">年表</a><span class="count">1</span></li>
-<li><a href="/tags/并行/">并行</a><span class="count">1</span></li>
-<li><a href="/tags/延迟/">延迟</a><span class="count">1</span></li>
-<li><a href="/tags/投机解码/">投机解码</a><span class="count">1</span></li>
-<li><a href="/tags/推理引擎/">推理引擎</a><span class="count">1</span></li>
-<li><a href="/tags/推理系统/">推理系统</a><span class="count">1</span></li>
-<li><a href="/tags/方法论/">方法论</a><span class="count">1</span></li>
-<li><a href="/tags/显存/">显存</a><span class="count">1</span></li>
-<li><a href="/tags/欧洲/">欧洲</a><span class="count">1</span></li>
-<li><a href="/tags/线性注意力/">线性注意力</a><span class="count">1</span></li>
-<li><a href="/tags/统计/">统计</a><span class="count">1</span></li>
-<li><a href="/tags/综述/">综述</a><span class="count">1</span></li>
-<li><a href="/tags/缓存/">缓存</a><span class="count">1</span></li>
-<li><a href="/tags/美团/">美团</a><span class="count">1</span></li>
-<li><a href="/tags/腾讯/">腾讯</a><span class="count">1</span></li>
-<li><a href="/tags/蒸馏/">蒸馏</a><span class="count">1</span></li>
-<li><a href="/tags/训练稳定性/">训练稳定性</a><span class="count">1</span></li>
-<li><a href="/tags/训练系统/">训练系统</a><span class="count">1</span></li>
-<li><a href="/tags/边缘计算/">边缘计算</a><span class="count">1</span></li></ul>
+<h1 class="page-title">标签</h1><p class="muted">359 个标签 · 651 次引用</p>
+<ul class="taxonomy cloud"><li class="t5"><a href="/tags/开源模型/">开源模型</a><span class="count">26</span></li>
+<li class="t5"><a href="/tags/agent/">Agent</a><span class="count">20</span></li>
+<li class="t5"><a href="/tags/moe/">MoE</a><span class="count">18</span></li>
+<li class="t5"><a href="/tags/幂等/">幂等</a><span class="count">13</span></li>
+<li class="t5"><a href="/tags/推理模型/">推理模型</a><span class="count">10</span></li>
+<li class="t5"><a href="/tags/稀疏注意力/">稀疏注意力</a><span class="count">9</span></li>
+<li class="t4"><a href="/tags/deepseek/">DeepSeek</a><span class="count">8</span></li>
+<li class="t4"><a href="/tags/编码/">编码</a><span class="count">8</span></li>
+<li class="t4"><a href="/tags/长上下文/">长上下文</a><span class="count">8</span></li>
+<li class="t4"><a href="/tags/成本/">成本</a><span class="count">7</span></li>
+<li class="t4"><a href="/tags/推理优化/">推理优化</a><span class="count">7</span></li>
+<li class="t4"><a href="/tags/检测引擎/">检测引擎</a><span class="count">7</span></li>
+<li class="t4"><a href="/tags/最终一致/">最终一致</a><span class="count">6</span></li>
+<li class="t4"><a href="/tags/沙箱/">沙箱</a><span class="count">6</span></li>
+<li class="t4"><a href="/tags/配置管理/">配置管理</a><span class="count">6</span></li>
+<li class="t4"><a href="/tags/anthropic/">Anthropic</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/claude/">Claude</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/glm/">GLM</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/pe格式/">PE格式</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/多模态/">多模态</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/容灾/">容灾</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/对账/">对账</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/强化学习/">强化学习</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/智谱/">智谱</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/灰度/">灰度</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/状态机/">状态机</a><span class="count">5</span></li>
+<li class="t4"><a href="/tags/量化/">量化</a><span class="count">5</span></li>
+<li class="t3"><a href="/tags/moonshot/">Moonshot</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/openai/">OpenAI</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/qwen/">Qwen</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/分片/">分片</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/架构/">架构</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/灰度发布/">灰度发布</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/特征工程/">特征工程</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/系统/">系统</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/部署/">部署</a><span class="count">4</span></li>
+<li class="t3"><a href="/tags/ddd/">DDD</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/kv缓存/">KV缓存</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/事故复盘/">事故复盘</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/技术债/">技术债</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/文件检测/">文件检测</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/显存/">显存</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/熔断/">熔断</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/索引/">索引</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/缓存/">缓存</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/规则引擎/">规则引擎</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/评测/">评测</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/误报治理/">误报治理</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/采样/">采样</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/降级/">降级</a><span class="count">3</span></li>
+<li class="t3"><a href="/tags/限界上下文/">限界上下文</a><span class="count">3</span></li>
+<li class="t2"><a href="/tags/gemini/">Gemini</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/google/">Google</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/json-schema/">JSON Schema</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/llm/">LLM</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/mtp/">MTP</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/minimax/">MiniMax</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/mistral/">Mistral</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/pdf/">PDF</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/vllm/">vLLM</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/一致性/">一致性</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/不变式/">不变式</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/事务边界/">事务边界</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/全文检索/">全文检索</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/压缩/">压缩</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/双读/">双读</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/可观测/">可观测</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/回归集/">回归集</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/回滚/">回滚</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/回顾/">回顾</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/对比/">对比</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/工具调用/">工具调用</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/幂等消费/">幂等消费</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/并发/">并发</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/并行/">并行</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/延迟/">延迟</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/延迟预算/">延迟预算</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/引擎/">引擎</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/数据驱动/">数据驱动</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/文件格式/">文件格式</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/注意力/">注意力</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/热点/">热点</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/熵/">熵</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/知识库/">知识库</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/端侧推理/">端侧推理</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/索引重建/">索引重建</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/补偿/">补偿</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/规则匹配/">规则匹配</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/重构/">重构</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/重试/">重试</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/阈值/">阈值</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/阿里/">阿里</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/限额/">限额</a><span class="count">2</span></li>
+<li class="t2"><a href="/tags/领域建模/">领域建模</a><span class="count">2</span></li>
+<li class="t1"><a href="/tags/api/">API</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/asic/">ASIC</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/c/">C++</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/cli-程序集/">CLI 程序集</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/cqrs/">CQRS</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/ech/">ECH</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/fp8/">FP8</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/fts5/">FTS5</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/gpt-5/">GPT-5</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/gqa/">GQA</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/git/">Git</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/go/">Go</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/il/">IL</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/indexeddb/">IndexedDB</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/json/">JSON</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/kv-cache/">KV cache</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/mla/">MLA</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/mlx/">MLX</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/markdown/">Markdown</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/microcontrollers/">Microcontrollers</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/ninfer/">NInfer</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/nodejs/">NodeJS</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/pwa/">PWA</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/sglang/">SGLang</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/slo/">SLO</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/sqlite/">SQLite</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/service-worker/">Service Worker</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/stepfun/">StepFun</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/strata/">Strata</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/tls13/">TLS13</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/yara/">YARA</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/arduino/">arduino</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/bm25/">bm25</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/fencing/">fencing</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/git/">git</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/hexo/">hexo</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/knowledge/">knowledge</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/llama-cpp/">llama.cpp</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/local-first/">local-first</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/markdown/">markdown</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/md/">md</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/mmap/">mmap</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/mongodb/">mongoDB</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/node-js/">node.js</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/npm/">npm</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/platformio/">platformio</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/prompt-injection/">prompt-injection</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/schema/">schema</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/seccomp/">seccomp</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/system/">system</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/vue/">vue</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/windows/">windows</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/一致性哈希/">一致性哈希</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/上下文/">上下文</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/上下文传播/">上下文传播</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/上下文映射/">上下文映射</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/上下文管理/">上下文管理</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/乐观锁/">乐观锁</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/事件风暴/">事件风暴</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/事务消息/">事务消息</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/交付节奏/">交付节奏</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/交叉验证/">交叉验证</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/产品设计/">产品设计</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/优先级/">优先级</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/优惠券/">优惠券</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/依赖方向/">依赖方向</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/依赖管理/">依赖管理</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/停止条件/">停止条件</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/健康检查/">健康检查</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/兜底链/">兜底链</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/兼容性/">兼容性</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/内存上限/">内存上限</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/内存加载/">内存加载</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/内容识别/">内容识别</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/冲正/">冲正</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/冲突合并/">冲突合并</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/分层抽象/">分层抽象</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/分布式/">分布式</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/分布式追踪/">分布式追踪</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/分布式锁/">分布式锁</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/分级筛选/">分级筛选</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/分词/">分词</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/列式存储/">列式存储</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/功能开关/">功能开关</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/加壳/">加壳</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/加密特征/">加密特征</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/动态沙箱/">动态沙箱</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/勒索软件/">勒索软件</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/包设计/">包设计</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/半消息/">半消息</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/单元测试/">单元测试</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/单向同步/">单向同步</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/压测/">压测</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/压缩包/">压缩包</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/原子扣减/">原子扣减</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/去重表/">去重表</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/参数校验/">参数校验</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/双链/">双链</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/反沙箱/">反沙箱</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/发布策略/">发布策略</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/发布系统/">发布系统</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/可用性/">可用性</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/可观测性/">可观测性</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/可解释性/">可解释性</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/合规/">合规</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/同步/">同步</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/后训练/">后训练</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/启动开销/">启动开销</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/告警/">告警</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/回归样本/">回归样本</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/回查/">回查</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/多智能体/">多智能体</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/契约/">契约</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/威胁模型/">威胁模型</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/学习资料/">学习资料</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/审计/">审计</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/审计日志/">审计日志</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/容器解析/">容器解析</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/容忍阈值/">容忍阈值</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/容量规划/">容量规划</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/对抗成本/">对抗成本</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/小米/">小米</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/差集/">差集</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/带宽/">带宽</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/年表/">年表</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/库存扣减/">库存扣减</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/异常安全/">异常安全</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/循环检测/">循环检测</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/微虚拟机/">微虚拟机</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/快照/">快照</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/性能调优/">性能调优</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/恶意文档/">恶意文档</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/恶意样本检测/">恶意样本检测</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/成本上限/">成本上限</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/成本核算/">成本核算</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/托管程序集/">托管程序集</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/扩容/">扩容</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/扫描性能/">扫描性能</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/批处理/">批处理</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/投放系统/">投放系统</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/投机解码/">投机解码</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/报告生成/">报告生成</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/指标/">指标</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/指标口径/">指标口径</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/指纹/">指纹</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/排队延迟/">排队延迟</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/接口设计/">接口设计</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/推理/">推理</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/推理引擎/">推理引擎</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/推理成本/">推理成本</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/推理系统/">推理系统</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/摘要/">摘要</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/故障演练/">故障演练</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/数据库设计/">数据库设计</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/数据模型/">数据模型</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/方法论/">方法论</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/无文件攻击/">无文件攻击</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/日志管道/">日志管道</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/时间检测/">时间检测</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/服务拆分/">服务拆分</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/本地优先/">本地优先</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/本地推理/">本地推理</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/权限最小化/">权限最小化</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/权限边界/">权限边界</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/架构测试/">架构测试</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/查询语言/">查询语言</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/校验/">校验</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/样本不平衡/">样本不平衡</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/样本偏差/">样本偏差</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/样本分析/">样本分析</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/样本分类/">样本分类</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/样本回流/">样本回流</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/检测分层/">检测分层</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/检测模型/">检测模型</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/检测流水线/">检测流水线</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/检测系统/">检测系统</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/检测质量/">检测质量</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/模块边界/">模块边界</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/模型推理/">模型推理</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/模型评估/">模型评估</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/模式匹配/">模式匹配</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/欧洲/">欧洲</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/正则回溯/">正则回溯</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/派生数据/">派生数据</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/流式解析/">流式解析</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/流水线/">流水线</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/流量指纹/">流量指纹</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/测试时计算/">测试时计算</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/测试覆盖率/">测试覆盖率</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/消息解耦/">消息解耦</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/混合检测/">混合检测</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/混沌工程/">混沌工程</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/渲染/">渲染</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/滑动窗口/">滑动窗口</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/漏报估计/">漏报估计</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/漏报归因/">漏报归因</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/版本号/">版本号</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/版本控制/">版本控制</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/特征哈希/">特征哈希</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/状态管理/">状态管理</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/白名单/">白名单</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/离线写入/">离线写入</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/租约/">租约</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/签名检测/">签名检测</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/类型识别/">类型识别</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/约束解码/">约束解码</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/级联失败/">级联失败</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/线性注意力/">线性注意力</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/组合测试/">组合测试</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/终态收敛/">终态收敛</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/结构化日志/">结构化日志</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/结构化输出/">结构化输出</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/统计/">统计</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/综述/">综述</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/缓存一致性/">缓存一致性</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/缓存策略/">缓存策略</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/美团/">美团</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/聚合根/">聚合根</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/腾讯/">腾讯</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/自动化/">自动化</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/蒸馏/">蒸馏</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/补偿任务/">补偿任务</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/表单/">表单</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/表驱动测试/">表驱动测试</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/裁剪/">裁剪</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/规则治理/">规则治理</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/解包/">解包</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/解压炸弹/">解压炸弹</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/解析成本/">解析成本</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/订单/">订单</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/训练稳定性/">训练稳定性</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/训练系统/">训练系统</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/设备指纹/">设备指纹</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/证据链/">证据链</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/误报/">误报</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/误报申诉/">误报申诉</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/负载均衡/">负载均衡</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/贫血模型/">贫血模型</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/资损防控/">资损防控</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/资源目录/">资源目录</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/资源限制/">资源限制</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/超卖/">超卖</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/超时/">超时</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/超时预算/">超时预算</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/跨机房/">跨机房</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/路由/">路由</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/边缘计算/">边缘计算</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/退款/">退款</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/部署单元/">部署单元</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/重建/">重建</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/错误码/">错误码</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/门禁/">门禁</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/阈值选择/">阈值选择</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/防腐层/">防腐层</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/降级读/">降级读</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/随机森林/">随机森林</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/隔离/">隔离</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/静态分析/">静态分析</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/静态检测/">静态检测</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/页面搭建/">页面搭建</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/预发环境/">预发环境</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/预扣/">预扣</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/预算/">预算</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/领域事件/">领域事件</a><span class="count">1</span></li>
+<li class="t1"><a href="/tags/领域模型/">领域模型</a><span class="count">1</span></li></ul>
 </main>
 <footer class="site-footer">
   <div class="wrap">
@@ -170,6 +440,98 @@
     else if (e.key === 't' && btn) { btn.click(); }
     else if (e.key === 'g') { location.href = '/'; }
   });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';

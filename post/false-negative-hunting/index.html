@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>漏报从哪来：用回归集找检测盲区 - farfood</title>
+<meta name="description" content="只存样本哈希的回归集只能告诉你「挂了」，换成家族级取样加能力矩阵审计，漏报才有归因，门禁也才卡得住。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/false-negative-hunting/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "漏报从哪来：用回归集找检测盲区", "description": "只存样本哈希的回归集只能告诉你「挂了」，换成家族级取样加能力矩阵审计，漏报才有归因，门禁也才卡得住。", "datePublished": "2024-02-06T21:00:00+08:00", "dateModified": "2024-02-06T21:00:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/false-negative-hunting/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "回归集, 漏报归因, 检测质量, 门禁"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="漏报从哪来：用回归集找检测盲区 - farfood">
+<meta property="og:description" content="只存样本哈希的回归集只能告诉你「挂了」，换成家族级取样加能力矩阵审计，漏报才有归因，门禁也才卡得住。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/false-negative-hunting/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="漏报从哪来：用回归集找检测盲区 - farfood">
+<meta name="twitter:description" content="只存样本哈希的回归集只能告诉你「挂了」，换成家族级取样加能力矩阵审计，漏报才有归因，门禁也才卡得住。">
+<meta property="article:published_time" content="2024-02-06T21:00:00+08:00">
+<meta name="keywords" content="回归集, 漏报归因, 检测质量, 门禁">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">漏报从哪来：用回归集找检测盲区</h1>
+    <p class="meta"><time datetime="2024-02-06T21:00:00">2024-02-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2371 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三种集合的分工">三种集合的分工</a></li>
+<li class="h2"><a href="#盲区归因的四类">盲区归因的四类</a></li>
+<li class="h2"><a href="#门禁写成可执行的">门禁写成可执行的</a></li>
+<li class="h2"><a href="#候选池从哪里来">候选池从哪里来</a></li>
+<li class="h2"><a href="#一个季度的账">一个季度的账</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>漏报不会自己报出来。误报有工单，漏报要等下游出事，才有人去翻日志。那一个季度攒了三个：家族 A 换了外壳，规则里基于旧入口点签名的条件全部失效；家族 B 出了托管版本，规则只写了原生特征；家族 C 的一批样本体积在 60MB 以上，在流水线的体积门就被挡掉，连解析都没进。</p>
+<p>三个对应的盲区类型不同：特征失效、格式覆盖缺失、前置门误杀。共同点是回归集里没有能暴露它们的样本，所以规则包上线时所有指标都是绿的。</p>
+<h2 id="三种集合的分工">三种集合的分工</h2>
+<p>判据是四条：一个失败能不能落到「哪个族、哪类能力」而不是「哪条哈希」；规则包发布前能不能回答「这次改动让哪些族掉了」；采集渠道变了，集合会不会整体失真；全量跑能不能进 CI（超过半小时的方案没人看结果）。这四条直接当表头用，横着看就是三个方案的差别：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>判据</th>
+<th>哈希回放集</th>
+<th>家族级取样</th>
+<th>能力矩阵</th>
+</tr></thead>
+<tbody>
+<tr><td>定位粒度</td><td>到单样本</td><td>到族</td><td>到能力格</td></tr>
+<tr><td>变更敏感性</td><td>只知道挂了</td><td>给出每族召回变化</td><td>给出空格在哪</td></tr>
+<tr><td>抗漂移</td><td>弱，只覆盖见过的</td><td>中，族内抽代表</td><td>强，按能力组织</td></tr>
+<tr><td>单次成本</td><td>4200 条约 11 分钟</td><td>310 条约 50 秒</td><td>每格 3 条，标注最贵</td></tr>
+<tr><td>主要维护成本</td><td>收集样本</td><td>族划分与代表挑选</td><td>能力定义与标注</td></tr>
+</tbody>
+</table></div>
+<p>三个不是替代关系，分工才成立。</p>
+<p>哈希回放集保留，但换了用途：存已确认的误报样本当硬负样本，加上法证复现用的原始样本。它的价值在于可精确定位，不在于覆盖。</p>
+<p>主回归集换成家族级：37 个族，每族 6 到 10 个代表，覆盖不同编译器、不同外壳、不同时间。判据是「这一族里任何一个代表掉分，整族记为回归」，这样一条规则改动造成的影响能按族读出来，散点读不出这些。</p>
+<p>能力矩阵每季度审计一次：把检测能力拆成 24 格（资源藏载荷、反射加载、脚本宿主、自解压、宏、字符串加密等），每格要求至少 3 个族有样本。矩阵的作用不是跑，是暴露空格。上面家族 B 的漏报，就是「反射加载」这一格在矩阵里空着。</p>
+<h2 id="盲区归因的四类">盲区归因的四类</h2>
+<p>同一个漏报，修的地方完全不同。流水线里必须留下能区分的记录，否则只能靠猜：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>归因</th>
+<th>日志特征</th>
+<th>复现方式</th>
+</tr></thead>
+<tbody>
+<tr><td>前置门挡</td><td>没有解析阶段记录，<code>skip_reason</code> 是体积或类型</td><td>关掉门单独跑</td></tr>
+<tr><td>解析失败当干净</td><td><code>parse=null</code> 但结论是 clean</td><td>换解析器版本对比</td></tr>
+<tr><td>特征口径漂移</td><td>解析器升级前后同一文件特征值不同</td><td>存特征快照按期对比</td></tr>
+<tr><td>族内变体</td><td>族内命中率双峰</td><td>按子变体分组统计</td></tr>
+</tbody>
+</table></div>
+<p>解析失败当干净最容易被忽略，代码里往往只是一行 <code>if not doc: return clean</code>。检测流水线里「拿不到结论」和「结论是干净」必须是两种状态，这跟延迟超时是同一个问题。前置门那一类也一样：它的毛病不在规则写宽了，而在门是静默的，只有 <code>skip_reason</code> 这样一个字段能把「没进来」和「进来被判干净」分开。</p>
+<p>特征漂移靠解析器版本号加特征快照。我们后来每次解析器升级都对 500 个样本存一份特征值，升级前后做差，差异超过阈值的字段进复核。这一条抓到过一次节熵计算改动，它让一批加壳样本的分数整体下移，规则没动，召回掉了两个点。</p>
+<h2 id="门禁写成可执行的">门禁写成可执行的</h2>
+<p>回归集只有变成门禁才有约束力。当时的配置大概是这样：</p>
+<pre data-lang="yaml"><code class="language-yaml">gate:
+  corpus: family-v3            # 37 族，每族至少 6 条
+  require:
+    - per_family_recall_delta &gt;= 0    # 任何一族掉一条就拦
+    - hard_negative_fp_rate &lt;= 0.002
+  allow: [family-17]           # 需要工单号与到期日
+  budget_seconds: 240</code></pre>
+<p>三条细节决定它能不能长期活着：</p>
+<ul>
+<li>例外必须有到期日，到期自动失效。没有到期日的白名单，半年后会变成一张「永远不掉分」的族清单。</li>
+<li>门禁只拦「族级召回下降」和「硬负样本误报上升」两类，其他指标只报不拦。拦得太多，大家会习惯性绕过。</li>
+<li>每周统计拦下次数和被绕过次数。绕过率高于两成，说明门槛或样本本身有问题，不是执行问题。</li>
+</ul>
+<h2 id="候选池从哪里来">候选池从哪里来</h2>
+<p>集合会腐化：族在演化，采集渠道在变，一年后相当一部分样本不再代表线上。只靠「出事之后把漏掉的那条加进去」，回归集会退化成一个补丁清单。我改成三条固定取样口：族内低分（每族按分数排序取尾部，族内命中率双峰时这一档产出最多）、被前置门拦掉（按 <code>skip_reason</code> 分层，体积门与类型门各抽一档）、解析失败（归因表里排第二的那一类）。</p>
+<p>每档每天抽几十条进候选池，人确认后才入族。标注预算是每天一个人两小时，超了就按族轮换，宁可慢也不扩。双跑比对也能产候选，但它要两套流水线同时跑，成本高，只在规则包大改时开一次。</p>
+<h2 id="一个季度的账">一个季度的账</h2>
+<p>家族级回归集 37 族 310 条，全量 50 秒，进每日构建；哈希回放集 4200 条，只在上线前跑，11 分钟；能力矩阵 24 格，当时空了 5 格，最久的一格空了七个月。上线后一个季度靠这套东西抓出 11 个盲区：6 个前置门、4 个解析失败当干净、1 个特征漂移。</p>
+<p>空了七个月的那几格加上六道前置门，说明漏报的大头不在规则表达力上：规则写得再细，样本进不了流水线，或者解析失败被当成干净，都不会产生告警。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://scikit-learn.org/stable/modules/model_evaluation.html">scikit-learn: Precision-Recall</a>：阈值、召回与 P-R 曲线的口径</li>
+<li><a href="https://scikit-learn.org/stable/modules/cross_validation.html">scikit-learn: Cross-validation 与分组切分</a>：按族切分，不按样本随机切</li>
+<li><a href="https://attack.mitre.org/">MITRE ATT&amp;CK</a>：能力矩阵的格子可以从攻击技术清单里借，不必自己发明</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/回归集/">回归集</a><a class="tag" href="/tags/漏报归因/">漏报归因</a><a class="tag" href="/tags/检测质量/">检测质量</a><a class="tag" href="/tags/门禁/">门禁</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%BC%8F%E6%8A%A5%E4%BB%8E%E5%93%AA%E6%9D%A5%EF%BC%9A%E7%94%A8%E5%9B%9E%E5%BD%92%E9%9B%86%E6%89%BE%E6%A3%80%E6%B5%8B%E7%9B%B2%E5%8C%BA" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/markdown-source-of-truth/">← 把 Markdown 当唯一真源：索引、版本与重建</a><a class="next" href="/post/pe-dotnet/">PE 资源节与 .NET：托管程序集的检测要点 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/false-positive-ops/">误报治理：把「关规则」换成动阈值之后</a><time>2023-09</time></li><li><a href="/post/static-scan-pipeline/">静态扫描流水线：从收到文件到给出判定</a><time>2022-07</time></li><li><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a><time>2022-07</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

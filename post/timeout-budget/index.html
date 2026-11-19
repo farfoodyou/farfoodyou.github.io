@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>超时预算：每跳都设一秒，链路最坏就是五秒 - farfood</title>
+<meta name="description" content="超时不是每跳的独立参数，是一条链路共享的预算。预算不下传时，上游先放弃、下游继续跑，重试再把负载乘上几倍。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/timeout-budget/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "超时预算：每跳都设一秒，链路最坏就是五秒", "description": "超时不是每跳的独立参数，是一条链路共享的预算。预算不下传时，上游先放弃、下游继续跑，重试再把负载乘上几倍。", "datePublished": "2020-07-29T22:10:00+08:00", "dateModified": "2020-07-29T22:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/timeout-budget/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "超时, 级联失败, 重试, 熔断, 上下文传播"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="超时预算：每跳都设一秒，链路最坏就是五秒 - farfood">
+<meta property="og:description" content="超时不是每跳的独立参数，是一条链路共享的预算。预算不下传时，上游先放弃、下游继续跑，重试再把负载乘上几倍。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/timeout-budget/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="超时预算：每跳都设一秒，链路最坏就是五秒 - farfood">
+<meta name="twitter:description" content="超时不是每跳的独立参数，是一条链路共享的预算。预算不下传时，上游先放弃、下游继续跑，重试再把负载乘上几倍。">
+<meta property="article:published_time" content="2020-07-29T22:10:00+08:00">
+<meta name="keywords" content="超时, 级联失败, 重试, 熔断, 上下文传播">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">超时预算：每跳都设一秒，链路最坏就是五秒</h1>
+    <p class="meta"><time datetime="2020-07-29T22:10:00">2020-07-29</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/后端/">后端</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#顺着一次请求数一遍">顺着一次请求数一遍</a></li>
+<li class="h2"><a href="#预算按剩余时间切">预算按剩余时间切</a></li>
+<li class="h2"><a href="#建连那一跳最容易吃掉预算">建连那一跳最容易吃掉预算</a></li>
+<li class="h2"><a href="#重试是乘法">重试是乘法</a></li>
+<li class="h2"><a href="#快速失败要快在正确的地方">快速失败要快在正确的地方</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>RFC 7231 给 504 的定义是「作为网关或代理的服务器，没能及时从上游服务器收到响应」。「及时」这个词容易被跳过：相对于什么及时？规范不写，它不在协议层，而在调用方给的预算里。</p>
+<p>线上那次故障就是这句「不写」的后果。网关对外超时 5 秒，内部每跳都配了「自家 1 秒」。峰值时链路变成：网关等 5 秒，订单等 1 秒后重试两次，库存也重试，限额组件被打满。平均响应 4.2 秒，CPU 不高，线程全卡在等。</p>
+<h2 id="顺着一次请求数一遍">顺着一次请求数一遍</h2>
+<p>订单详情四跳，每跳的超时都是各自团队按「下游 p99 加一点余量」定的。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>跳</th>
+<th>配置超时</th>
+<th>下游 p99</th>
+<th>重试</th>
+<th>单次请求最坏耗时</th>
+</tr></thead>
+<tbody>
+<tr><td>网关 → 订单</td><td>5000ms</td><td>120ms</td><td>0</td><td>5000ms</td></tr>
+<tr><td>订单 → 库存</td><td>1000ms</td><td>40ms</td><td>2</td><td>3000ms</td></tr>
+<tr><td>库存 → 限额 KV</td><td>1000ms</td><td>8ms</td><td>0</td><td>1000ms</td></tr>
+</tbody>
+</table></div>
+<p>单跳都合理，串起来不是：订单这一跳最坏 3000ms，库存内部那 1000ms 嵌在每次尝试里，相加没有意义，按各自的账还剩 1 秒。把链路顶过 5 秒的是重试引起的排队：失败尝试各占住连接 1000ms，池子饱和后新请求先排队，这段时间不在任何一跳的配置里。网关第 5 秒断开的是队列里的请求，订单那三次尝试到第 3 秒已经跑完。</p>
+<h2 id="预算按剩余时间切">预算按剩余时间切</h2>
+<p>改法是把超时从「每跳的配置项」变成整条链路的 deadline，每跳只拿剩余时间的一部分。越往下游能用的越少，上游还要留处理和回写时间。</p>
+<p>比例是逐跳折半加固定余量：本跳拿 1000ms，自己做 200ms，给下游 600ms，留 200ms。</p>
+<pre data-lang="go"><code class="language-go">type budget struct{ deadline time.Time }
+
+// frac: 给下游的比例；floor: 低于这个值就不再尝试
+func (b budget) slice(frac float64, floor time.Duration) (context.Context, context.CancelFunc, error) {
+    left := time.Until(b.deadline)
+    if left &lt; floor {
+        return nil, nil, errNoBudget // 剩余不够，快速失败
+    }
+    return context.WithTimeout(context.Background(), time.Duration(float64(left)*frac))
+}
+
+// 出站把剩余毫秒数塞进请求头；下游取 min(本地配置, 上游 deadline)
+func (b budget) header() map[string]string {
+    return map[string]string{&quot;x-deadline-ms&quot;: strconv.FormatInt(int64(time.Until(b.deadline)/time.Millisecond), 10)}
+}</code></pre>
+<p>传的是<strong>剩余毫秒</strong>，不是时间戳：两台机器时钟差几秒，deadline 就成了过去或未来。下游取 <code>min(本地配置, 上游 deadline)</code>，前者是上限保护，后者是真实约束。</p>
+<h2 id="建连那一跳最容易吃掉预算">建连那一跳最容易吃掉预算</h2>
+<p>上面的表没算建连和解析：1000ms 预算里解析可能占 20ms，同机房握手 1.5ms 到 40ms，故障期会跳一两个数量级。两条规范给了具体数字：</p>
+<ul>
+<li>RFC 6298 规定 TCP 初始 RTO 是 1 秒。一次 SYN 丢失就等满 1 秒，1000ms 预算当场用尽，一个字节都没发出去。</li>
+<li>RFC 8305 建议多地址切换的间隔是 250ms，第一个地址黑洞切到第二个要 250ms，两个都不通就是 500ms。</li>
+</ul>
+<p>所以建连超时要单独设，远小于预算：最终是 <code>min(300ms, 剩余预算/2)</code>。多数客户端库把建连和传输分成两个参数，只配一个时常被合并成总量（<code>CURLOPT_TIMEOUT_MS</code> 含建连），解析卡住时你以为的 300ms 就成了整个预算。</p>
+<h2 id="重试是乘法">重试是乘法</h2>
+<p>单层重试两次最坏把下游负载乘 3，三层是 27。真实数字没这么夸张：重试分散在时间上、部分会成功，压测里见的放大系数是 6 到 9 倍，足够把 40% 水位的依赖推到饱和。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>场景</th>
+<th>放大系数（实测）</th>
+<th>依赖侧水位</th>
+</tr></thead>
+<tbody>
+<tr><td>只在网关重试两次</td><td>2.7×</td><td>40% → 78%</td></tr>
+<tr><td>网关加订单各重试两次</td><td>5.4×</td><td>40% → 打满</td></tr>
+<tr><td>三层都重试</td><td>8–9×</td><td>打满并排队</td></tr>
+<tr><td>只在一层重试且预算不足就放弃</td><td>1.3×</td><td>40% → 52%</td></tr>
+</tbody>
+</table></div>
+<p>另两条约束：只在幂等操作上重试，写接口靠幂等键去重；重试耗时算同一份预算，第一次用掉 600ms，第二次只剩 400ms。规则是「每层最多重试一次，且只在剩余预算大于单次 p99 两倍时重试」，放大系数压到 1.3。</p>
+<h2 id="快速失败要快在正确的地方">快速失败要快在正确的地方</h2>
+<p>快速失败要提前做，位置有三处：</p>
+<ul>
+<li><strong>依赖已确认不健康</strong>。连续失败到阈值就熔断，别让请求去撞打满的下游。判据用「失败率 + 并发数」，只看失败率会在下游排队时失灵。</li>
+<li><strong>预算不够完成一次调用</strong>。<code>left &lt; floor</code> 直接返回错误，连接留给能成功的请求。</li>
+</ul>
+<p>容易漏的是 cancel 传播。<code>context.WithTimeout</code> 的 cancel 不调用，goroutine 和连接都不释放，网关早断开的请求一直占 worker。HTTP/1.1 没有取消语义，客户端只能关连接，服务端要能识别这种半死连接，别当正常请求跑完。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc6298">RFC 6298：计算 TCP 重传超时</a>：初始 RTO 1 秒的来源</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8305">RFC 8305：Happy Eyeballs v2</a>：250ms 切换间隔建议值的出处</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc7231#section-6.6.5">RFC 7231 §6.6.5：504 Gateway Timeout</a>：规范只约束语义，不约束时长</li>
+<li><a href="https://curl.se/libcurl/c/CURLOPT_TIMEOUT_MS.html">libcurl 的 CURLOPT_TIMEOUT_MS 说明</a>：总时长与 DNS 边界</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/超时/">超时</a><a class="tag" href="/tags/级联失败/">级联失败</a><a class="tag" href="/tags/重试/">重试</a><a class="tag" href="/tags/熔断/">熔断</a><a class="tag" href="/tags/上下文传播/">上下文传播</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E8%B6%85%E6%97%B6%E9%A2%84%E7%AE%97%EF%BC%9A%E6%AF%8F%E8%B7%B3%E9%83%BD%E8%AE%BE%E4%B8%80%E7%A7%92%EF%BC%8C%E9%93%BE%E8%B7%AF%E6%9C%80%E5%9D%8F%E5%B0%B1%E6%98%AF%E4%BA%94%E7%A7%92" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/event-storming-intro/">← 事件风暴入门：一场会能产出什么</a><a class="next" href="/post/consistent-hashing/">缓存扩容那天：取模哈希搬走了三分之二的 key →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/shard-health-score/">分片健康度怎么算：成功率、延迟、主动探测</a><time>2021-01</time></li><li><a href="/post/holiday-capacity/">节假日扩容：从求人扩容到自己扛住</a><time>2021-07</time></li><li><a href="/post/function-calling-orchestration/">工具调用编排：一次重复建单之后收紧的三处约束</a><time>2024-06</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

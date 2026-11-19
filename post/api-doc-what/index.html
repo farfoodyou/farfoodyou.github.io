@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>接口文档到底该写什么：一次重复扣款的复盘 - farfood</title>
+<meta name="description" content="文档里没写重试语义，也没写幂等键由哪几个字段构成，接入方超时重试时换了参数，同一笔支付扣了两次。事后补的是五类契约，并非字段说明。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/api-doc-what/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "接口文档到底该写什么：一次重复扣款的复盘", "description": "文档里没写重试语义，也没写幂等键由哪几个字段构成，接入方超时重试时换了参数，同一笔支付扣了两次。事后补的是五类契约，并非字段说明。", "datePublished": "2022-05-10T10:40:00+08:00", "dateModified": "2022-05-10T10:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/api-doc-what/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "接口设计, 幂等, 错误码, 契约"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="接口文档到底该写什么：一次重复扣款的复盘 - farfood">
+<meta property="og:description" content="文档里没写重试语义，也没写幂等键由哪几个字段构成，接入方超时重试时换了参数，同一笔支付扣了两次。事后补的是五类契约，并非字段说明。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/api-doc-what/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="接口文档到底该写什么：一次重复扣款的复盘 - farfood">
+<meta name="twitter:description" content="文档里没写重试语义，也没写幂等键由哪几个字段构成，接入方超时重试时换了参数，同一笔支付扣了两次。事后补的是五类契约，并非字段说明。">
+<meta property="article:published_time" content="2022-05-10T10:40:00+08:00">
+<meta name="keywords" content="接口设计, 幂等, 错误码, 契约">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">接口文档到底该写什么：一次重复扣款的复盘</h1>
+    <p class="meta"><time datetime="2022-05-10T10:40:00">2022-05-10</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2487 字 <a class="cat" href="/categories/工程/">工程</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#时间线">时间线</a></li>
+<li class="h2"><a href="#定位幂等逻辑没错键错了">定位：幂等逻辑没错，键错了</a></li>
+<li class="h2"><a href="#根因文档写了字段没写契约">根因：文档写了字段，没写契约</a></li>
+<li class="h2"><a href="#改了什么五节固定模板">改了什么：五节固定模板</a></li>
+<li class="h2"><a href="#时序要写失败分支">时序要写失败分支</a></li>
+<li class="h2"><a href="#校验文档也是一种接口">校验：文档也是一种接口</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>4 月 21 日 14:40，三方差集里冒出 37 笔单边账：订单服务有扣款成功的流水，渠道侧没有回执；同一订单号在本地有两条记录，金额相差 1 分。</p>
+<p>金额可以忽略，时间分布不行：37 笔全落在 14:26 到 14:34 这 8 分钟里，横跨 6 个商户号。数据错乱会散布，成簇只会因为同一批请求被重复提交。</p>
+<h2 id="时间线">时间线</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>时间</th>
+<th>发生了什么</th>
+<th>谁看到</th>
+</tr></thead>
+<tbody>
+<tr><td>14:05</td><td>文档 v1.7 发布，新增部分退款参数</td><td>我方</td></tr>
+<tr><td>14:19</td><td>接入方按新文档上线</td><td>接入方</td></tr>
+<tr><td>14:26</td><td>网关 3s 超时，read timeout 陡增</td><td>值班</td></tr>
+<tr><td>14:26–14:34</td><td>接入方重试，每笔最多 3 次</td><td>接入方</td></tr>
+<tr><td>15:52</td><td>查清重复的两条记录幂等键不同</td><td>我方</td></tr>
+</tbody>
+</table></div>
+<h2 id="定位幂等逻辑没错键错了">定位：幂等逻辑没错，键错了</h2>
+<p>第一反应是查幂等实现。去重键是 <code>(商户号, 订单号, 金额)</code>，唯一索引冲突时返回已有结果，跑了两年没出事。</p>
+<p>问题就在「金额」这一维。扣款金额按费率折算，用了 <code>math.Round</code>；接入方重试时又自己校了一次，把 <code>100.005</code> 传成 <code>100.01</code>，我这边折算后是 <code>100.00</code>。三元组有一位不同，索引不冲突，两次都成了合法新请求。</p>
+<p>对接入方来说，他们只是重试了同一个超时请求；对我来说，那是两笔不同业务。双方都没做错，错在文档没定义什么叫「同一个请求」。</p>
+<h2 id="根因文档写了字段没写契约">根因：文档写了字段，没写契约</h2>
+<p>v1.7 里 <code>amount</code> 那行写的是 decimal、单位元、必填、两位小数。这是真的，也没用：它没回答超时之后最要紧的三件事，重试时哪些字段必须字节级一致、服务端按什么判重、判重冲突该当失败还是当成功。</p>
+<p>错误码同样如此。原来的表只有 <code>SUCCESS</code>、<code>PARAM_ERROR</code>、<code>SYSTEM_ERROR</code> 三行，<code>SYSTEM_ERROR</code> 说明是「系统异常，请重试」，把「可以重试」和「必然失败」混成一句，接入方只能一律重试。那 8 分钟就是这么放大的。</p>
+<h2 id="改了什么五节固定模板">改了什么：五节固定模板</h2>
+<p>v1.7 之后我把接口文档的骨架固定成五节，缺一节就不允许发布。字段表保留，但它不再是主体。判断一份文档够不够用，标准很朴素：接入方在半夜被告警叫醒，能不能只靠这份文档决定重试还是放弃。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>小节</th>
+<th>必须回答的问题</th>
+<th>缺失后的典型后果</th>
+</tr></thead>
+<tbody>
+<tr><td>幂等契约</td><td>幂等键由哪些字段构成、窗口多长、冲突返回什么</td><td>重复扣款</td></tr>
+<tr><td>错误码</td><td>是否可重试、是否终态、怎么处置</td><td>无差别重试，放大故障</td></tr>
+<tr><td>示例</td><td>请求、成功响应、至少一个错误响应</td><td>靠猜字段大小写</td></tr>
+<tr><td>时序</td><td>正常、超时重试、异步通知三条路径</td><td>客户端状态机对不上</td></tr>
+<tr><td>字段语义</td><td>单位、精度、取值边界</td><td>精度折算踩坑</td></tr>
+</tbody>
+</table></div>
+<p>错误码以机器可读形式维护，构建时和代码常量表做双向集合比对，多一个少一个都让构建失败：</p>
+<pre data-lang="yaml"><code class="language-yaml"># docs/errors.yaml
+- {code: IDEMPOTENT_KEY_CONFLICT, http: 409, retryable: false, terminal: true,
+   meaning: 同键不同体，核对后换键重提}
+- {code: RATE_LIMITED, http: 429, retryable: true, retry_after: header,
+   meaning: 按 Retry-After 退避，期间不改请求体}
+- {code: CHANNEL_TIMEOUT, http: 504, retryable: true, terminal: false,
+   meaning: 渠道未回执，用原键重试，最多 3 次}</code></pre>
+<p>两个布尔字段把「能不能重试」从散文变成可判定的值，接入方能直接生成策略。</p>
+<p>幂等键的构成写进 OpenAPI 扩展字段，让生成器带进客户端代码：</p>
+<pre data-lang="yaml"><code class="language-yaml">parameters:
+  - name: X-Request-Id
+    in: header
+    required: true
+    description: 幂等键，重试必须复用，窗口 24h
+x-idempotency:
+  key: [X-Request-Id]
+  body_fields_must_match: [merchant_id, order_no, amount, currency]</code></pre>
+<p>改成调用方生成请求号、服务端只认这一个键之后，金额折算再抖也不会产生第二条流水。三元组唯一索引留着当兜底。</p>
+<h2 id="时序要写失败分支">时序要写失败分支</h2>
+<p>文档里最容易省掉的是超时重试。接入方写代码时脑子里只有正常路径，超时那一刻他需要一个明确指令：重试还是查询。</p>
+<pre data-lang="text"><code class="language-text">POST R1 —扣款→ 渠道; 超时; 返回 504 CHANNEL_TIMEOUT
+POST R1 —查原单→ 渠道; 命中; 返回 200 (原结果)</code></pre>
+<p>图的重点在第二条请求走「查询」而不是「新建」。没有它，接入方大概率会生成新请求号，我这边就多出一笔业务。这张图后来被两个接入方直接抄进了自己的重试逻辑里，比我写十段文字都有效。</p>
+<h2 id="校验文档也是一种接口">校验：文档也是一种接口</h2>
+<p>模板改完加了两条机械检查：</p>
+<ol>
+<li>文档构建时比对错误码集合与代码常量集合，双向差集为空；</li>
+<li>每个新接入方上线前，用他们生成的客户端跑一遍契约测试，覆盖超时重试与幂等冲突。</li>
+</ol>
+<p>第二条是实质教训：文档正确性不能靠作者自觉，得让它在别人手里跑起来。<a href="https://www.rfc-editor.org/rfc/rfc7231#section-4.2.2">RFC 7231</a> 把幂等方法定义为「多次请求的效果与一次相同」，把这句话落成字段和状态码是文档作者的事。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc7807">RFC 7807: Problem Details for HTTP APIs</a>：错误响应的结构化格式，<code>type</code>/<code>title</code>/<code>detail</code> 三个字段足够表达可判定信息</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc6585">RFC 6585: Additional HTTP Status Codes</a>：429 与 Retry-After 的定义</li>
+<li><a href="https://spec.openapis.org/oas/v3.0.3">OpenAPI Specification 3.0.3</a>：扩展字段与参数描述的写法约束</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/接口设计/">接口设计</a><a class="tag" href="/tags/幂等/">幂等</a><a class="tag" href="/tags/错误码/">错误码</a><a class="tag" href="/tags/契约/">契约</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3%E5%88%B0%E5%BA%95%E8%AF%A5%E5%86%99%E4%BB%80%E4%B9%88%EF%BC%9A%E4%B8%80%E6%AC%A1%E9%87%8D%E5%A4%8D%E6%89%A3%E6%AC%BE%E7%9A%84%E5%A4%8D%E7%9B%98" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/distributed-lock/">← 分布式锁的三种实现与它们的失效场景</a><a class="next" href="/post/payment-observability/">支付链路的可观测三件套：日志、指标、追踪 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/weekly-report-auto/">周报的账：65 分钟压到 9 分钟，大头还在校对</a><time>2024-05</time></li><li><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a><time>2020-03</time></li><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

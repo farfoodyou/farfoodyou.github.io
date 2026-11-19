@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>微服务的反向操作：什么时候该合 - farfood</title>
+<meta name="description" content="上下文边界决定规则归谁管，部署边界决定故障半径。把两条线当一条用，就会拆出一对必须同版发布的同步服务。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/when-to-merge/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "微服务的反向操作：什么时候该合", "description": "上下文边界决定规则归谁管，部署边界决定故障半径。把两条线当一条用，就会拆出一对必须同版发布的同步服务。", "datePublished": "2022-03-08T20:40:00+08:00", "dateModified": "2022-03-08T20:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/when-to-merge/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "服务拆分, 限界上下文, 部署单元, 依赖管理"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="微服务的反向操作：什么时候该合 - farfood">
+<meta property="og:description" content="上下文边界决定规则归谁管，部署边界决定故障半径。把两条线当一条用，就会拆出一对必须同版发布的同步服务。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/when-to-merge/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="微服务的反向操作：什么时候该合 - farfood">
+<meta name="twitter:description" content="上下文边界决定规则归谁管，部署边界决定故障半径。把两条线当一条用，就会拆出一对必须同版发布的同步服务。">
+<meta property="article:published_time" content="2022-03-08T20:40:00+08:00">
+<meta name="keywords" content="服务拆分, 限界上下文, 部署单元, 依赖管理">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">微服务的反向操作：什么时候该合</h1>
+    <p class="meta"><time datetime="2022-03-08T20:40:00">2022-03-08</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/架构/">架构</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#顺着一次请求走一遍">顺着一次请求走一遍</a></li>
+<li class="h2"><a href="#拆错的典型形态">拆错的典型形态</a></li>
+<li class="h2"><a href="#判据">判据</a></li>
+<li class="h2"><a href="#合并不是揉成一坨">合并不是揉成一坨</a></li>
+<li class="h2"><a href="#边界">边界</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p><code>Confirm(ctx, *ConfirmReq)</code> 在三个仓库里各有一份几乎相同的实现，参数一共 21 个字段，其中 8 个字段只在最下游那个服务里被读过一次，上游两个服务把它们原样搬运了两年。加一个字段的代价是三个 PR、两次兼容发布、一个客户端升级窗口。</p>
+<p>这套结构当初按业务能力切，切得没错。问题在后面：切完没人再看调用链上的实际数据流，「服务」既当上下文边界，也被默认成部署边界。两件事在纸面上重合，运行时不重合。</p>
+<h2 id="顺着一次请求走一遍">顺着一次请求走一遍</h2>
+<p>一次确认请求的真实路径：网关 → 订单服务 → 计价服务 → 优惠服务。三跳全是同步 HTTP，每跳把同一个 DTO 序列化一遍。</p>
+<p>一跳的开销拆开看（口径：内网单机往返，p99，经验值）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>环节</th>
+<th>开销</th>
+<th>随什么增长</th>
+</tr></thead>
+<tbody>
+<tr><td>编解码两次（约 1.2KB JSON）</td><td>0.3–0.6ms</td><td>字段数线性</td></tr>
+<tr><td>连接池排队</td><td>0–3ms</td><td>下游延迟，超时后指数放大</td></tr>
+<tr><td>超时预算切分</td><td>无耗时，但占预算</td><td>每多一跳，末跳可用预算少一截</td></tr>
+<tr><td>契约校验</td><td>从编译期挪到运行期</td><td>字段数，且只能靠测试兜</td></tr>
+<tr><td>一致性</td><td>本地事务变分布式</td><td>是否跨聚合改数据</td></tr>
+<tr><td>观测</td><td>每跳一处埋点</td><td>服务和调用对的数量</td></tr>
+</tbody>
+</table></div>
+<p>前两行是性能账，后四行是结构账。后者不进压测报告，只在改需求时出现。</p>
+<p>让我决定动手的是结构账的最后一项：一次字段变更的影响面等于「服务数 × 兼容窗口」。三个服务、两个月兼容期，这个字段从提出到能删旧逻辑要跨两个月，期间两个版本的数据同时在流。</p>
+<h2 id="拆错的典型形态">拆错的典型形态</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>形态</th>
+<th>怎么长出来的</th>
+<th>代价</th>
+</tr></thead>
+<tbody>
+<tr><td>共享库表</td><td>拆的时候不想拆数据，两个服务读同一张表</td><td>一个服务改字段，另一个静默读到脏语义</td></tr>
+<tr><td>同步调用链超过三跳</td><td>每次「这块逻辑独立出去」加一跳</td><td>超时预算被切碎，末跳只剩几十毫秒</td></tr>
+<tr><td>必须同版发布的服务对</td><td>两个服务的接口改动总是成对出现</td><td>发布次数翻倍，回滚要两个一起回</td></tr>
+<tr><td>只有一方的写操作</td><td>读多写少的那一半被拆出去当服务</td><td>为极低 QPS 的写路径付一整套运维成本</td></tr>
+<tr><td>按表切的边界</td><td>从库表反推服务</td><td>一个业务动作要跨三个服务拼数据</td></tr>
+</tbody>
+</table></div>
+<p>第三行是我当时最想解决的。判断方法：翻半年发布记录，看两个服务的版本号是否总在同一天动。如果超过一半的变更是成对的，那它们是一个部署单元。</p>
+<h2 id="判据">判据</h2>
+<p>把「规则归谁管」和「进程怎么部署」分开问，各自有判据。</p>
+<p><strong>上下文该不该合</strong>，看不变式：一个必须在同一事务里成立的约束，落在两个进程里就只能靠补偿和对账。补偿不是不能做，但它要求状态机、幂等键、对账兜底一整套，成本比一个本地事务高一个量级。</p>
+<p><strong>部署单元该不该合</strong>，看四条：</p>
+<ol>
+<li>同步调用比。A 的每次请求都同步调 B 一次，比值接近 1，合起来能省掉一跳。</li>
+<li>发布耦合度。超过一半的变更是成对的。</li>
+<li>扩缩容特征。CPU 密集和 IO 密集的峰值不在同一时间，硬绑在一起会让两边的资源都按峰值买。</li>
+<li>故障隔离要求。一条慢查询能不能拖垮另一边，这是拆分的正当理由，比「架构清晰」实在。</li>
+</ol>
+<p>按这四条算，订单、计价、优惠的前三条都指向「该合」，第四条指向「不该合」：计价有一次批量重算的慢路径会打满连接池。最后落在一个部署单元加进程内资源隔离上。</p>
+<h2 id="合并不是揉成一坨">合并不是揉成一坨</h2>
+<p>代码层面保留上下文边界，部署层面合成一个进程，靠两样东西维持纪律：目录结构和编译期检查。</p>
+<pre data-lang="text"><code class="language-text">payment/
+  order/          # 上下文：订单
+    internal/     # 只允许 order 包内引用
+  pricing/        # 上下文：计价
+  coupon/         # 上下文：优惠
+  cmd/api/        # 唯一的部署入口</code></pre>
+<p><code>internal</code> 挡住跨包引用，跨上下文的交互只能走各自的公开接口，这些接口定义在 <code>order/api</code> 这类包里，实现方在自己的包内。再补一个依赖检查，把「不该出现的依赖」变成 CI 失败：</p>
+<pre data-lang="go"><code class="language-go">out, _ := exec.Command(&quot;go&quot;, &quot;list&quot;, &quot;-deps&quot;, &quot;./order/...&quot;).Output()
+for _, dep := range strings.Fields(string(out)) {
+    if strings.Contains(dep, &quot;/coupon/storage&quot;) {
+        t.Fatalf(&quot;order 不应依赖 coupon 的存储层: %s&quot;, dep)
+    }
+}</code></pre>
+<p>这段检查很笨，但它比评审可靠。半年内拦下三次「为取一个字段顺手 import 对方 DAO」。</p>
+<p>合并后的量级（口径：当时的线上峰值与半年发布记录）：进程数从 9 个降到 3 个，确认请求 p99 从 90ms 降到 12ms 上下，一次字段变更的周期从 9 天降到 2 天。代价也要说清楚：部署粒度变粗，任何一个上下文的 bug 都要求整体回滚；一次 GC 停顿会影响三个上下文，所以计价那条慢路径被挪到了独立 worker 池，且带并发上限。</p>
+<h2 id="边界">边界</h2>
+<ul>
+<li>别再按「以后可能独立部署」预留接口，那种预留通常没人用，只留下一层 DTO 转换。</li>
+<li>如果一个上下文确实要独立扩容（比如反欺诈模型调用），把它拆成同一个仓库里的另一个部署单元，别拆回两个仓库。仓库边界是最贵的那道墙。</li>
+<li>优惠后来又被单独拆出去：它有了自己的发布节奏和独立外部依赖，符合判据，不算反复。</li>
+</ul>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://martinfowler.com/bliki/BoundedContext.html">Martin Fowler: Bounded Context</a></li>
+<li><a href="https://microservices.io/patterns/decomposition/decompose-by-subdomain.html">microservices.io: Decompose by subdomain</a></li>
+<li><a href="https://microservices.io/patterns/decomposition/decompose-by-business-capability.html">microservices.io: Decompose by business capability</a></li>
+<li><a href="https://12factor.net/processes">The Twelve-Factor App: Processes</a>：无状态进程模型与部署单元的关系</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/服务拆分/">服务拆分</a><a class="tag" href="/tags/限界上下文/">限界上下文</a><a class="tag" href="/tags/部署单元/">部署单元</a><a class="tag" href="/tags/依赖管理/">依赖管理</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%8F%8D%E5%90%91%E6%93%8D%E4%BD%9C%EF%BC%9A%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E8%AF%A5%E5%90%88" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/payment-observability/">← 支付链路的可观测三件套：日志、指标、追踪</a><a class="next" href="/post/exposure-slot-config/">把曝光位做成可配置：一次活动投放的事故与改造 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/event-storming-intro/">事件风暴入门：一场会能产出什么</a><time>2020-08</time></li><li><a href="/post/bounded-context-ownership/">限界上下文：按「谁的规则谁负责」切，而不是按表切</a><time>2020-10</time></li><li><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：一次调度配置下发改造</a><time>2020-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

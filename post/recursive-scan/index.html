@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>压缩包递归扫描：五重预算和三个方案的取舍 - farfood</title>
+<meta name="description" content="一份包套包的样本把检测进程吃到 6GB。按「最坏情况有界」筛下来，静态上限、全局配额、隔离执行解决的不是同一个问题。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/recursive-scan/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "压缩包递归扫描：五重预算和三个方案的取舍", "description": "一份包套包的样本把检测进程吃到 6GB。按「最坏情况有界」筛下来，静态上限、全局配额、隔离执行解决的不是同一个问题。", "datePublished": "2023-10-17T21:30:00+08:00", "dateModified": "2023-10-17T21:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/recursive-scan/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "压缩包, 解压炸弹, 资源限制, 检测引擎"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="压缩包递归扫描：五重预算和三个方案的取舍 - farfood">
+<meta property="og:description" content="一份包套包的样本把检测进程吃到 6GB。按「最坏情况有界」筛下来，静态上限、全局配额、隔离执行解决的不是同一个问题。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/recursive-scan/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="压缩包递归扫描：五重预算和三个方案的取舍 - farfood">
+<meta name="twitter:description" content="一份包套包的样本把检测进程吃到 6GB。按「最坏情况有界」筛下来，静态上限、全局配额、隔离执行解决的不是同一个问题。">
+<meta property="article:published_time" content="2023-10-17T21:30:00+08:00">
+<meta name="keywords" content="压缩包, 解压炸弹, 资源限制, 检测引擎">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">压缩包递归扫描：五重预算和三个方案的取舍</h1>
+    <p class="meta"><time datetime="2023-10-17T21:30:00">2023-10-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先定判据">先定判据</a></li>
+<li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
+<li class="h2"><a href="#a-漏在两处">A 漏在两处</a></li>
+<li class="h2"><a href="#预算记在哪个点上">预算记在哪个点上</a></li>
+<li class="h2"><a href="#预算取什么数">预算取什么数</a></li>
+<li class="h2"><a href="#选择条件">选择条件</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>一份 38MB 的压缩包，外层只有七个条目。第一个条目是另一个压缩包，再进一层，第四层的条目声明解压后 2GB，内容全是零字节。引擎按层递归，每层都检查「单文件不超过 50MB」，但那个检查用的是条目声明的 uncompressed size，而声明可以撒谎：膨胀发生在解压过程中，进程写到 2.4GB 时被内核杀掉，监控上是一条垂直的内存曲线。</p>
+<p>事后翻代码，每一层都有上限，五个上限互相独立，加起来什么也没限住：预算写在层里，攻击是跨层累加的。</p>
+<h2 id="先定判据">先定判据</h2>
+<p>评估递归扫描方案，我用四条：</p>
+<ul>
+<li><strong>最坏情况有界</strong>。给一份任意构造的输入，能给出耗时、内存、字节数的上界，且上界是输入大小的函数，允许带常数，不允许「取决于内容」。</li>
+<li><strong>预算全局还是分层</strong>。分层预算的漏洞就是上面那例：每层 50MB × 4 层等于 200MB，但峰值内存取决于同时存在的解压流，不是顺序释放的。</li>
+<li><strong>停止原因可解释</strong>。超预算时要能说清停在哪一层、哪个条目、哪条预算。只记一句「解压失败」，复核的人无从下手。</li>
+<li><strong>实现成本</strong>。流式要动解析器，隔离要动部署，静态上限只要加几个 if，差一个数量级。</li>
+</ul>
+<h2 id="三个方案并排">三个方案并排</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>判据</th>
+<th>A 静态上限</th>
+<th>B 流式 + 全局配额</th>
+<th>C 隔离执行</th>
+</tr></thead>
+<tbody>
+<tr><td>最坏耗时</td><td>无界（条目数 × 单条目耗时）</td><td>有界，墙钟封顶</td><td>有界，超时即杀</td></tr>
+<tr><td>峰值内存</td><td>与解压总量同阶</td><td>可压到一个缓冲区块</td><td>由配额硬限</td></tr>
+<tr><td>停止原因</td><td>能说清哪条上限触发</td><td>能说清剩余配额</td><td>只知道被杀，要另外记</td></tr>
+<tr><td>抗构造</td><td>弱，可按层拆分绕过</td><td>中，配额共享后无法拆分</td><td>强，与输入无关</td></tr>
+<tr><td>实现成本</td><td>几行判断</td><td>边解边扫</td><td>独立执行单元和调度</td></tr>
+<tr><td>误杀正常样本</td><td>少</td><td>少</td><td>偏多（超时偏紧时）</td></tr>
+</tbody>
+</table></div>
+<p>三者不是替代关系。A 是底线，B 解决预算不能按层重置，C 解决解析器本身的漏洞。现在是 A + B 常态运行，C 只对高分层和深嵌套样本启用。</p>
+<h2 id="a-漏在两处">A 漏在两处</h2>
+<p>静态上限的典型写法是递归函数带 depth 参数，每个条目检查大小、每个包检查层数。两处漏：条目声明的解压大小来自中央目录，可以写 0 而实际给出 2GB 的流，必须边解边数；每层新建一份预算，父子不共享，十个包各套三层就在各自的限额内翻了三十倍。</p>
+<p>第二条改起来只要把预算对象从递归参数挪到上下文里：</p>
+<pre data-lang="python"><code class="language-python">class Budget:
+    def __init__(self, total=200 * 1024 * 1024, wall=20.0):
+        self.left = total                        # 每份样本一份
+        self.deadline = time.monotonic() + wall   # 建对象时算
+        self.reason = None
+    def take(self, n):
+        if time.monotonic() &gt; self.deadline:
+            self.reason = &#x27;wall-clock&#x27;; raise StopScan
+        if n &gt; self.left:
+            self.reason = &#x27;byte-quota&#x27;; raise StopScan
+        self.left -= n
+
+def descend(blob, depth, budget):
+    if depth &gt; 4:
+        budget.reason = &#x27;too-deep&#x27;; raise StopScan
+    with open_entry(blob) as (stream, _meta):
+        for chunk in stream:        # 每块 64KB，按实际写出计量
+            budget.take(len(chunk)); scan(chunk)</code></pre>
+<p><code>left</code> 和 <code>deadline</code> 挂在同一个实例上：无论嵌套多深、分支多少，总量是一个数，墙钟从这份样本开始算。条目计数同理，顺手挡掉「几万个零字节条目填满中央目录」的做法。</p>
+<h2 id="预算记在哪个点上">预算记在哪个点上</h2>
+<p>上限写在哪一侧，效果完全不同。中央目录里的条目数、uncompressed size、压缩比都由发送方填；可信的只有解压器写出的字节数。五个预算都记在解压器一侧：每块先扣账，再交给扫描器。</p>
+<pre data-lang="text"><code class="language-text">层数      ← 每进一层 +1
+条目数    ← 每 open 成员 +1
+字节总量  ← 每个 chunk 实长累加
+压缩比    ← 写出总量 / 读入压缩字节
+墙钟      ← 起点的 monotonic 差值</code></pre>
+<p>记账点错位的后果可复现：按声明记，声明 1MB、实际给出 3GB 的包消耗为零；按输入侧记，压缩比一万比一的包读几百 KB 就「用完」，正常样本被误杀。</p>
+<h2 id="预算取什么数">预算取什么数</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>预算</th>
+<th>取值</th>
+<th>依据</th>
+</tr></thead>
+<tbody>
+<tr><td>递归层数</td><td>4</td><td>正常文档的嵌套很少超过 3 层（内嵌对象、邮件带附件、包套文档）</td></tr>
+<tr><td>解压总量</td><td>200MB</td><td>99.6% 的正常样本在 60MB 以内，留三倍余量</td></tr>
+<tr><td>单次墙钟</td><td>20s</td><td>正常样本 P99 是 4.1s</td></tr>
+<tr><td>条目总数</td><td>10000</td><td>正常样本 P99 约 900 条</td></tr>
+<tr><td>压缩比</td><td>100:1</td><td>超了只读头部，不展开</td></tr>
+</tbody>
+</table></div>
+<p>这些数是一周正常样本的分布定出来的，换一批流量或业务要重跑。</p>
+<p>另有一条不进预算的规则：每层单独出结论，别用内层类型覆盖外层。压缩包本身不是威胁，威胁在里面的条目，两者要能分开追溯。</p>
+<h2 id="选择条件">选择条件</h2>
+<p>只处理单层、样本量小、解析器自研且代码简单，A 够用。有多层嵌套、要处理外部任意文件，B 是必需项，只有共享预算能把最坏情况压成输入的线性函数。解析器是第三方实现、有历史漏洞的格式，C 才必须，重点转为隔离爆炸半径。</p>
+<p>超过 20MB 或层数达到 3 层的样本转给隔离执行单元，用 rlimit 限住内存和 CPU，超时直接杀，杀完把停止原因写回样本记录。这批样本的延迟从 200ms 涨到 1.5s，占总量不到 4%。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://docs.python.org/3/library/zipfile.html">Python zipfile 文档</a>：成员迭代与解包器的错误语义</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8878">RFC 8878: Zstandard 压缩格式</a>：内容大小字段可省略，同样不能当预算依据</li>
+<li><a href="https://pubs.opengroup.org/onlinepubs/9699919799/functions/getrlimit.html">POSIX getrlimit：进程资源上限</a>：RLIMIT_AS 与 RLIMIT_CPU</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/压缩包/">压缩包</a><a class="tag" href="/tags/解压炸弹/">解压炸弹</a><a class="tag" href="/tags/资源限制/">资源限制</a><a class="tag" href="/tags/检测引擎/">检测引擎</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8E%8B%E7%BC%A9%E5%8C%85%E9%80%92%E5%BD%92%E6%89%AB%E6%8F%8F%EF%BC%9A%E4%BA%94%E9%87%8D%E9%A2%84%E7%AE%97%E5%92%8C%E4%B8%89%E4%B8%AA%E6%96%B9%E6%A1%88%E7%9A%84%E5%8F%96%E8%88%8D" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/sample-triage/">← 样本分级：118 万份文件该怎么花算力</a><a class="next" href="/post/false-positive-ops/">误报治理：把「关规则」换成动阈值之后 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/file-type-detect/">文件类型识别：magic 不够用的那几种情况</a><time>2023-01</time></li><li><a href="/post/yara-perf/">规则匹配引擎的性能：原子与字符串的选择</a><time>2023-03</time></li><li><a href="/post/threat-intel-rules/">十万条规则怎么不炸：一次规则包下发的复盘</a><time>2023-06</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>检测延迟：从收到文件到给出结论的每一毫秒 - farfood</title>
+<meta name="description" content="p99 从 3.4 秒涨到 11 秒那次发布，暴露的是四段耗时串行相加、解析跑两遍、单条规则没有时间预算。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/detection-latency/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "检测延迟：从收到文件到给出结论的每一毫秒", "description": "p99 从 3.4 秒涨到 11 秒那次发布，暴露的是四段耗时串行相加、解析跑两遍、单条规则没有时间预算。", "datePublished": "2023-12-12T21:10:00+08:00", "dateModified": "2023-12-12T21:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/detection-latency/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "检测引擎, 延迟预算, 流水线, 并行"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="检测延迟：从收到文件到给出结论的每一毫秒 - farfood">
+<meta property="og:description" content="p99 从 3.4 秒涨到 11 秒那次发布，暴露的是四段耗时串行相加、解析跑两遍、单条规则没有时间预算。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/detection-latency/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="检测延迟：从收到文件到给出结论的每一毫秒 - farfood">
+<meta name="twitter:description" content="p99 从 3.4 秒涨到 11 秒那次发布，暴露的是四段耗时串行相加、解析跑两遍、单条规则没有时间预算。">
+<meta property="article:published_time" content="2023-12-12T21:10:00+08:00">
+<meta name="keywords" content="检测引擎, 延迟预算, 流水线, 并行">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">检测延迟：从收到文件到给出结论的每一毫秒</h1>
+    <p class="meta"><time datetime="2023-12-12T21:10:00">2023-12-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2211 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#四段各占多少">四段各占多少</a></li>
+<li class="h2"><a href="#三个可以当场改掉的东西">三个可以当场改掉的东西</a></li>
+<li class="h2"><a href="#改成按预算跑">改成按预算跑</a></li>
+<li class="h2"><a href="#改完之后的数字">改完之后的数字</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>接口契约写的是「95% 的文件 5 秒内出结论」，这个数当年是拿旧链路压测结果往后取整定的，之后没再复核。规则包换一次版本、加了二十几条针对脚本类文档的规则，从提交到出结论的 p99 就从 3.4 秒涨到 11.2 秒，积压 4200 个，第一个争起来的问题成了「5 秒还是 6 秒算违约」。</p>
+<p>延迟难定位，因为它不是一次调用的耗时。一份文件要经过取件、解析、静态规则、模型评分四段，四段共享同一个 worker 池。任何一段变慢，用户看到的都是整体慢；p50 几乎不动，因为只有一小部分文件踩到慢路径。</p>
+<p>延迟预算只能按段算，按整条链算会得到「平均两百毫秒」这种没用的结论。下面这笔账全部取 p99，口径是那天抽的 200 个样本在单机上重放。</p>
+<h2 id="四段各占多少">四段各占多少</h2>
+<p>单位毫秒：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>阶段</th>
+<th>改动前 p50</th>
+<th>改动前 p99</th>
+<th>改动后 p99</th>
+<th>主要成本</th>
+</tr></thead>
+<tbody>
+<tr><td>取件与校验</td><td>35</td><td>900</td><td>780</td><td>拉全量字节，大文件几十到几百 MB</td></tr>
+<tr><td>解析</td><td>120</td><td>2100</td><td>950</td><td>压缩包递归、PE 节表、文档对象树</td></tr>
+<tr><td>静态规则</td><td>30</td><td>6200</td><td>700</td><td>字符串匹配加两条回溯正则</td></tr>
+<tr><td>模型评分</td><td>9</td><td>45</td><td>45</td><td>特征已由解析产出，只做一次前向</td></tr>
+</tbody>
+</table></div>
+<p>p50 四段加起来不到 200ms，p99 加起来 9.2 秒，其余是排队。长尾不由「平均慢」构成，由少数样本在其中一两段上炸开构成。规则包只是把已有的坑挖深了：那两条正则的写法在旧规则里也有，只是之前没有样本同时满足「大段无换行文本」和「触发前缀」两个条件。排队那段也不均匀，大文件和小文件混在一个池子里，一个 300MB 的样本能把 worker 占住十几秒，后面几百个小文件一起等。</p>
+<h2 id="三个可以当场改掉的东西">三个可以当场改掉的东西</h2>
+<p><strong>串行相加。</strong> 规则族按顺序跑，模型必须等全部特征，整条链路的时延是四段之和。实际上两者没有依赖，用的都是同一棵解析树。</p>
+<p><strong>解析跑两遍。</strong> 类型识别阶段解析一次拿结构，特征提取阶段为了扁平特征向量又解析一次。两次代码在不同模块，各自只解析自己需要的部分。PE 解析一次二十毫秒上下，压缩包递归更贵，重复一遍等于把这段成本乘二。</p>
+<p><strong>单条规则没有时间预算。</strong> 规则引擎按族顺序执行，一族跑完才检查总预算，一条病态规则能把整族拖住。回溯型正则的 CPU 时间由输入决定，扩实例只会让更多 worker 卡在同一个样本上。</p>
+<h2 id="改成按预算跑">改成按预算跑</h2>
+<p>把「总超时」拆成「每段预算 + 并行 + 结果分级」：</p>
+<pre data-lang="python"><code class="language-python">BUDGET = {&#x27;parse&#x27;: 1200, &#x27;rules&#x27;: 900, &#x27;model&#x27;: 400}   # ms，p99 目标 5s 留余量
+
+def analyze(blob, t0):
+    hit = cache.get(sha256(blob))          # 几毫秒，命中直接短路
+    if hit:
+        return hit
+    doc = parse(blob, deadline=t0 + BUDGET[&#x27;parse&#x27;])
+    if doc is None:
+        return Verdict.partial(&#x27;parse_timeout&#x27;)   # 超时不等于干净
+    feats = extract(doc)
+    done = run_parallel({
+        &#x27;rules&#x27;: lambda: run_rules(doc, feats, deadline=t0 + BUDGET[&#x27;rules&#x27;]),
+        &#x27;model&#x27;: lambda: run_model(feats, deadline=t0 + BUDGET[&#x27;model&#x27;]),
+    })
+    return merge(done, required=(&#x27;rules&#x27;,))</code></pre>
+<p>超时的段返回「未完成」，不能返回「无命中」；检测系统里最贵的错误是把超时当干净，它会让漏报在指标上显示为一切正常。短路顺序也要定死：哈希命中排第一，最便宜也最确定；类型门排第二，明显不是目标的格式不进后面的解析；规则命中的高危样本不再跑模型。</p>
+<p>并行不是免费的。同一台机器上并行把求和换成取最大值，总 CPU 时间没变，高峰期 p99 会转由排队决定。所以还要拆池：大文件走单独的低并发队列，否则一个 300MB 的压缩包会在队头堵住几百个小文件。</p>
+<h2 id="改完之后的数字">改完之后的数字</h2>
+<ul>
+<li>p50：780ms 降到 610ms，主要来自去掉的那一遍解析。</li>
+<li>p99：11.2 秒降到 2.6 秒，规则段从 6.2 秒降到 700ms。</li>
+<li>超时样本占 0.4%，标记 partial 后进异步补算队列。</li>
+<li>队列积压：峰值 4200 降到按分钟计的几十个。</li>
+</ul>
+<p>单规则预算上线后多了一个指标：每条规则的超时次数。一周内被截断超过 300 次的规则进复核，要么改写成原子字符串匹配，要么下线。它比总延迟更早发现问题，因为直接指向哪条规则在吃 CPU。</p>
+<p>没解决的部分：模型段预算 400ms，但特征提取仍在解析阶段同步完成，特征维度一涨，parse 段跟着涨。正确形态是按需算特征，当时没做，因为特征定义散在三个模块里，改动面比延迟收益大。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1952.html">RFC 1952: GZIP file format specification</a>：递归解压的成本上限从哪来</li>
+<li><a href="https://docs.kernel.org/admin-guide/cgroup-v2.html">Control Group v2</a>：并行执行的 CPU 配额与 throttling 口径</li>
+<li><a href="https://docs.kernel.org/filesystems/proc.html">proc(5) 文件系统说明</a>：IO 与调度等待的读数口径</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/检测引擎/">检测引擎</a><a class="tag" href="/tags/延迟预算/">延迟预算</a><a class="tag" href="/tags/流水线/">流水线</a><a class="tag" href="/tags/并行/">并行</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%A3%80%E6%B5%8B%E5%BB%B6%E8%BF%9F%EF%BC%9A%E4%BB%8E%E6%94%B6%E5%88%B0%E6%96%87%E4%BB%B6%E5%88%B0%E7%BB%99%E5%87%BA%E7%BB%93%E8%AE%BA%E7%9A%84%E6%AF%8F%E4%B8%80%E6%AF%AB%E7%A7%92" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/pe-dotnet/">← PE 资源节与 .NET：托管程序集的检测要点</a><a class="next" href="/post/sample-triage/">样本分级：118 万份文件该怎么花算力 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/file-type-detect/">文件类型识别：magic 不够用的那几种情况</a><time>2023-01</time></li><li><a href="/post/yara-perf/">规则匹配引擎的性能：原子与字符串的选择</a><time>2023-03</time></li><li><a href="/post/threat-intel-rules/">十万条规则怎么不炸：一次规则包下发的复盘</a><time>2023-06</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

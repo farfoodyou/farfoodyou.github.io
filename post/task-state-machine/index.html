@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>任务清单的三种存法：把一个方括号字符当状态源 - farfood</title>
+<meta name="description" content="扫文件、文件加旁路索引、索引当源，三种存法在编辑性、可重建性、写路径上各有硬伤；判据先摆出来再选。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/task-state-machine/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "任务清单的三种存法：把一个方括号字符当状态源", "description": "扫文件、文件加旁路索引、索引当源，三种存法在编辑性、可重建性、写路径上各有硬伤；判据先摆出来再选。", "datePublished": "2024-05-14T20:30:00+08:00", "dateModified": "2024-05-14T20:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/task-state-machine/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "状态机, 索引, Markdown, 单向同步"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="任务清单的三种存法：把一个方括号字符当状态源 - farfood">
+<meta property="og:description" content="扫文件、文件加旁路索引、索引当源，三种存法在编辑性、可重建性、写路径上各有硬伤；判据先摆出来再选。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/task-state-machine/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="任务清单的三种存法：把一个方括号字符当状态源 - farfood">
+<meta name="twitter:description" content="扫文件、文件加旁路索引、索引当源，三种存法在编辑性、可重建性、写路径上各有硬伤；判据先摆出来再选。">
+<meta property="article:published_time" content="2024-05-14T20:30:00+08:00">
+<meta name="keywords" content="状态机, 索引, Markdown, 单向同步">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">任务清单的三种存法：把一个方括号字符当状态源</h1>
+    <p class="meta"><time datetime="2024-05-14T20:30:00">2024-05-14</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2484 字 <a class="cat" href="/categories/架构/">架构</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据">判据</a></li>
+<li class="h2"><a href="#三种存法并排">三种存法并排</a></li>
+<li class="h2"><a href="#单向的合同">单向的合同</a></li>
+<li class="h2"><a href="#数字和边界">数字和边界</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>任务清单我改过三次存法，每次都因为上一种在某个维度上撞了墙。现在定下来的形态很土：一行 Markdown 文本，状态就是那个方括号里的一个字符。</p>
+<pre data-lang="text"><code class="language-text">- [ ] 对账差异落地 #alpha !p1 2024-05-06 open
+- [x] 分片路由回滚验证 #beta !p2 2024-05-02 done@05-09</code></pre>
+<p>3,400 行这样的文本，散在 40 多个项目目录里。围绕它有三种存法，我先列判据，再摆对照表。</p>
+<h2 id="判据">判据</h2>
+<ol>
+<li><strong>能不能直接改</strong>：我在地铁上用手机改一个状态，需要装什么、走哪条链路。</li>
+<li><strong>索引能不能丢</strong>：中午误删了索引文件，晚上能不能查东西。</li>
+<li><strong>能问出什么</strong>：上周哪些 P1 任务跨项目阻塞了超过两天。</li>
+<li><strong>写路径有几条</strong>：一个状态变更要经过几处代码。</li>
+<li><strong>冲突面</strong>：两个进程同时改同一行会发生什么。</li>
+<li><strong>版本库里的样子</strong>：diff 是不是人读得懂的。</li>
+</ol>
+<h2 id="三种存法并排">三种存法并排</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>判据</th>
+<th>扫文件（无索引）</th>
+<th>文件为源 + 旁路索引</th>
+<th>索引为源</th>
+</tr></thead>
+<tbody>
+<tr><td>直接改</td><td>改完即生效</td><td>改完即生效，查询有秒级滞后</td><td>必须先有写入 API</td></tr>
+<tr><td>索引可丢</td><td>没有索引</td><td>删掉重跑，20 秒</td><td>删掉等于库没了</td></tr>
+<tr><td>查询能力</td><td>单轮正则，跨文件聚合靠脚本</td><td>任意 SQL，能 join 项目表</td><td>最强，但全部绑在一个文件里</td></tr>
+<tr><td>写路径</td><td>1 条</td><td>2 条（改文件、刷索引）</td><td>1 条</td></tr>
+<tr><td>冲突面</td><td>文本合并，冲突可见</td><td>文本合并 + 回写覆盖风险</td><td>行级锁，无文本冲突</td></tr>
+<tr><td>版本库</td><td>好</td><td>好</td><td>查不到历史</td></tr>
+</tbody>
+</table></div>
+<p><strong>扫文件</strong>的死角在组合查询。3,400 行全量解析一次 620ms，单次查询勉强能忍；一旦要「上周所有跨项目阻塞超过两天的 P1」这种带时间窗和聚合的问题，脚本里就出现三层嵌套循环，加一个维度就要改代码。它的好处是零同步：不存在第二份状态，也没有失效一说。</p>
+<p><strong>索引为源</strong>最舒服的其实是写路径：一次 UPDATE，事务给你全部保证。我试过两个月，最后被两件事劝退。第一，索引文件丢过一次（换机器时漏拷贝），重建不出来，因为源就在里面。第二，手机上看不了、grep 不了、代码评审里也看不到，任务从此离开了它出生的地方。状态数据一旦离开文本，就必须有人给它做客户端，那个成本比索引贵得多。</p>
+<p><strong>文件为源 + 旁路索引</strong>留下的是双份状态，代价明确：写入要走两条路径，索引可能滞后，回写可能覆盖别人的编辑。前两条可以接受（滞后 1 秒以内），第三条必须用工程手段压住。</p>
+<h2 id="单向的合同">单向的合同</h2>
+<p>选 B 之后，把规则写死成三句：</p>
+<ul>
+<li>状态的唯一载体是方括号里的字符，<code>[ ]</code> 未开始、<code>[~]</code> 进行中、<code>[!]</code> 阻塞、<code>[x]</code> 完成、<code>[-]</code> 放弃；</li>
+<li>索引只做解析，永远不从索引反向生成整行文本；</li>
+<li>回写是最小字节替换，只动方括号里那一个字符，外加行尾的 <code>done@MM-DD</code> 标记。</li>
+</ul>
+<p>最小替换的理由是行号漂移。整行重写会顺带格式化，空格、标签顺序、注释都可能被改，diff 里出现一整块变更，评审时看不出到底动了哪里。只改一个字节，diff 就是一行一个字符。</p>
+<pre data-lang="python"><code class="language-python">TRANSITIONS = {
+    &#x27; &#x27;: {&#x27;~&#x27;, &#x27;-&#x27;},      # 未开始 → 进行中 / 放弃
+    &#x27;~&#x27;: {&#x27;!&#x27;, &#x27;x&#x27;, &#x27;-&#x27;},  # 进行中 → 阻塞 / 完成 / 放弃
+    &#x27;!&#x27;: {&#x27;~&#x27;, &#x27;-&#x27;},      # 阻塞只能回到进行中
+    &#x27;x&#x27;: {&#x27;~&#x27;},           # 完成可以重开，但必须写回进行中
+    &#x27;-&#x27;: set(),           # 放弃是终态
+}
+
+def patch_state(text: str, line_no: int, old: str, new: str, src_hash: str) -&gt; str:
+    lines = text.splitlines(keepends=True)
+    line = lines[line_no - 1]
+    if not set(TRANSITIONS[old]) &gt;= {new}:
+        raise IllegalTransition(f&#x27;{old} -&gt; {new}&#x27;)
+    i = line.index(&#x27;[&#x27;) + 1
+    lines[line_no - 1] = line[:i] + new + line[i + 1:]
+    return &#x27;&#x27;.join(lines)</code></pre>
+<p><code>src_hash</code> 在示例里没用上，实际调用前要先比一次：文件哈希与索引里记的对不上，就放弃回写、重新解析后再决定。这条把「覆盖别人刚写的三行」压成「偶尔一次重试」。</p>
+<h2 id="数字和边界">数字和边界</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>量</th>
+<th>值</th>
+<th>口径</th>
+</tr></thead>
+<tbody>
+<tr><td>任务行</td><td>3,400 行 / 40 个项目</td><td>当时快照</td></tr>
+<tr><td>全量解析</td><td>620ms</td><td>单线程，Python，含 front matter</td></tr>
+<tr><td>单次索引查询</td><td>3ms 以内</td><td>带项目与优先级过滤</td></tr>
+<tr><td>状态变更</td><td>47 次/天</td><td>两周平均</td></tr>
+<tr><td>回写冲突</td><td>约 0.3%</td><td>靠哈希比对拦下后重试，重试成功</td></tr>
+</tbody>
+</table></div>
+<p>非法转移在索引层只报警、不阻断。原因是人在文本里手改，会写出 <code>[!]</code> 直接跳到 <code>[x]</code> 这种序列；如果解析器拒收，那一行就从索引里消失，用户看到的是「任务不见了」，比状态机不严谨严重得多。报警进周报，一周大概 2 到 3 条，基本都是我自己图快。</p>
+<p><code>- [ ]</code> 这套勾选框不在 CommonMark 里，规范只管到列表项。所以解析器是我自己写的，只用标准子集里的列表、缩进和行内代码，写出来 200 行左右，比引一个方言解析器便宜。重建索引就是重跑这个解析器，20 秒，随时可以删。</p>
+<p>状态机在查询侧的价值是能回答「从阻塞到完成平均多久」。这条数字逼我把 <code>!</code> 和 <code>~</code> 分开，原来一个「进行中」把阻塞时间混进去了，统计出来永远是乐观的。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://spec.commonmark.org/0.30/">CommonMark 规范 0.30</a>：列表项与行内代码的边界，解析器的判据都在这里</li>
+<li><a href="https://www.omg.org/spec/UML/2.5.1/">UML 2.5.1 规范</a>：状态机语义的原始定义，终态与转移约束</li>
+<li><a href="https://git-scm.com/docs/git-hash-object">git hash-object</a>：按内容取哈希，回写前比对用</li>
+<li><a href="https://www.sqlite.org/wal.html">SQLite 的 WAL 模式</a>：索引写入与查询并存时的读一致性</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/状态机/">状态机</a><a class="tag" href="/tags/索引/">索引</a><a class="tag" href="/tags/markdown/">Markdown</a><a class="tag" href="/tags/单向同步/">单向同步</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E4%BB%BB%E5%8A%A1%E6%B8%85%E5%8D%95%E7%9A%84%E4%B8%89%E7%A7%8D%E5%AD%98%E6%B3%95%EF%BC%9A%E6%8A%8A%E4%B8%80%E4%B8%AA%E6%96%B9%E6%8B%AC%E5%8F%B7%E5%AD%97%E7%AC%A6%E5%BD%93%E7%8A%B6%E6%80%81%E6%BA%90" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/weekly-report-auto/">← 周报的账：65 分钟压到 9 分钟，大头还在校对</a><a class="next" href="/post/sqlite-fts5/">FTS5 的中文检索：一个分词器选项撑起来的整套设计 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/markdown-source-of-truth/">把 Markdown 当唯一真源：索引、版本与重建</a><time>2024-03</time></li><li><a href="/post/json-as-database/">拿 JSON 字段当表用，是怎么把配置平台拖死的</a><time>2020-01</time></li><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

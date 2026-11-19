@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>握手之后还剩什么：加密流量检测的可见性边界 - farfood</title>
+<meta name="description" content="TLS 1.3 把证书和大部分握手都加密之后，明文里剩下的字段少得可怜；把这些字段的解析细节走一遍，能看清哪些检测还站得住、哪些只是安慰。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/encrypted-traffic/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "握手之后还剩什么：加密流量检测的可见性边界", "description": "TLS 1.3 把证书和大部分握手都加密之后，明文里剩下的字段少得可怜；把这些字段的解析细节走一遍，能看清哪些检测还站得住、哪些只是安慰。", "datePublished": "2023-07-11T20:15:00+08:00", "dateModified": "2023-07-11T20:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/encrypted-traffic/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "TLS13, ECH, 流量指纹, 合规"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="握手之后还剩什么：加密流量检测的可见性边界 - farfood">
+<meta property="og:description" content="TLS 1.3 把证书和大部分握手都加密之后，明文里剩下的字段少得可怜；把这些字段的解析细节走一遍，能看清哪些检测还站得住、哪些只是安慰。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/encrypted-traffic/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="握手之后还剩什么：加密流量检测的可见性边界 - farfood">
+<meta name="twitter:description" content="TLS 1.3 把证书和大部分握手都加密之后，明文里剩下的字段少得可怜；把这些字段的解析细节走一遍，能看清哪些检测还站得住、哪些只是安慰。">
+<meta property="article:published_time" content="2023-07-11T20:15:00+08:00">
+<meta name="keywords" content="TLS13, ECH, 流量指纹, 合规">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">握手之后还剩什么：加密流量检测的可见性边界</h1>
+    <p class="meta"><time datetime="2023-07-11T20:15:00">2023-07-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#第一条记录还是明文的">第一条记录还是明文的</a></li>
+<li class="h2"><a href="#扩展列表里塞了不少噪声">扩展列表里塞了不少噪声</a></li>
+<li class="h2"><a href="#ech-把最后一块明文也拿走了">ECH 把最后一块明文也拿走了</a></li>
+<li class="h2"><a href="#记录层给的是长度与时间">记录层给的是长度与时间</a></li>
+<li class="h2"><a href="#解析代码">解析代码</a></li>
+<li class="h2"><a href="#能看到什么取决于协议版本与部署">能看到什么，取决于协议版本与部署</a></li>
+<li class="h2"><a href="#不做解密这件事要写进文案">不做解密这件事要写进文案</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>TLS 1.3 的 ClientHello 里，<code>legacy_version</code> 仍然必须填 <code>0x0303</code>。带 legacy 前缀是因为中间设备太多，改版本号会把链路搞坏；版本协商由 <code>supported_versions</code> 承担。检测能用的东西，大多长在这类没人打算藏的地方。</p>
+<h2 id="第一条记录还是明文的">第一条记录还是明文的</h2>
+<p>TCP 建连后客户端发的第一条记录是握手记录，内容是 ClientHello。记录层头 5 字节：内容类型 <code>0x16</code>、legacy 版本、两字节长度。ClientHello 明文躺在里面，SNI、ALPN、密码套件列表、扩展集合与顺序，旁观者都能读。</p>
+<p>1.3 相对 1.2 的改动是：Certificate、CertificateVerify、Finished 全进了加密范围，会话票据也加密后发。中间设备再也拿不到证书域名；前向保密用临时 (EC)DHE，会话密钥不上线，抓包也解不开。</p>
+<h2 id="扩展列表里塞了不少噪声">扩展列表里塞了不少噪声</h2>
+<p><code>extensions</code> 是一串 (type, length, data)。要拿它做指纹，得先处理三件噪声。</p>
+<p>一是 GREASE。规范要求客户端在密码套件、扩展类型、支持组里随机插入保留值，形式是 <code>0x?a?a</code>：两个字节的低四位都是 0xA，从 <code>0x0A0A</code> 到 <code>0xFAFA</code> 共 16 个值，服务端遇到必须忽略。这些值每次连接随机，照原始字节算哈希，同一客户端每次都不同。</p>
+<p>二是 padding 扩展（type 21），长度随机，扩展顺序也可能变，目的就是让长度分布变平。三是 session_id 与 key_share 的长度随实现变化，解析按长度跳。</p>
+<p>剔掉 GREASE、忽略 padding 与顺序之后，同一批客户端 24 小时内的独立指纹数从 1.1 万降到 900 上下。降下来的基本是噪声，剩下的是实现差异：曲线集合、签名算法顺序、是否带 <code>pre_shared_key</code>、ALPN 列表。</p>
+<h2 id="ech-把最后一块明文也拿走了">ECH 把最后一块明文也拿走了</h2>
+<p>Encrypted Client Hello 的思路是发两个 ClientHello：外层用公开的、无意义的名字填 SNI，真实内容加密后塞进一个扩展里。公钥通过 DNS 下发，客户端拿到才能构造。旁观者看到的是外层名字和一段密文。</p>
+<p>容易说反的是：ECH 之后握手的形状还在，外层 ClientHello 的长度、扩展集合、分片方式都能读，只有 SNI 与内层扩展不可读。基于「扩展集合 + 长度序列」的指纹还能用，基于域名的检测彻底失效。</p>
+<h2 id="记录层给的是长度与时间">记录层给的是长度与时间</h2>
+<p>应用数据记录上限 2^14 字节，加 5 字节头；1.3 允许插零长度记录和填充，把长度分布抹平。抓下来看，200 万条应用数据记录里六成落在 1400 到 1460 字节，跟 MTU 对得上。</p>
+<p>上下行字节比、首字节时延、连接速率、连接持续性，这些不解密也能算，代价是误报率高，需要基线。</p>
+<h2 id="解析代码">解析代码</h2>
+<p>下面这段取扩展类型与长度、剔掉 GREASE，作为指纹输入：</p>
+<pre data-lang="python"><code class="language-python">def ext_list(body):
+    # body: 去掉 4 字节握手头之后的 ClientHello
+    p = 2 + 32                    # legacy_version + random
+    p += 1 + body[p]              # session_id
+    p += 2 + int.from_bytes(body[p:p + 2], &#x27;big&#x27;)
+    p += 1 + body[p]              # compression_methods
+    end = p + 2 + int.from_bytes(body[p:p + 2], &#x27;big&#x27;)
+    p += 2
+    out = []
+    while p + 4 &lt;= end:
+        t = int.from_bytes(body[p:p + 2], &#x27;big&#x27;)
+        n = int.from_bytes(body[p + 2:p + 4], &#x27;big&#x27;)
+        if (t &amp; 0x0f0f) != 0x0a0a:   # GREASE
+            out.append((t, n))
+        p += 4 + n
+    return out</code></pre>
+<p>指纹是 <code>hash(&quot;,&quot;.join(f&quot;{t}:{n}&quot; for t, n in out))</code> 这一类东西，哈希函数不重要，字段取舍才重要：算进长度会引入 padding 噪声，不算又会把两个实现混成一个。</p>
+<h2 id="能看到什么取决于协议版本与部署">能看到什么，取决于协议版本与部署</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>字段</th>
+<th>TLS 1.2</th>
+<th>TLS 1.3</th>
+<th>部署 ECH 之后</th>
+</tr></thead>
+<tbody>
+<tr><td>SNI</td><td>明文</td><td>明文</td><td>只有外层公开名</td></tr>
+<tr><td>证书域名</td><td>明文</td><td>加密</td><td>加密</td></tr>
+<tr><td>扩展集合与顺序</td><td>明文</td><td>明文</td><td>外层可见，内层不可见</td></tr>
+<tr><td>应用数据长度序列</td><td>可见</td><td>可见，可被 padding 抹平</td><td>同左</td></tr>
+<tr><td>连接时序与会话复用</td><td>可见</td><td>可见</td><td>可见</td></tr>
+</tbody>
+</table></div>
+<p>会话复用在 1.3 里对应 <code>pre_shared_key</code>，复用率能区分「浏览器回访」和「脚本每次全握手」，比包长稳定。</p>
+<h2 id="不做解密这件事要写进文案">不做解密这件事要写进文案</h2>
+<p>产品介绍里写「加密流量检测」，容易被读成「解密后检测」，两条路都不通。</p>
+<p>被动侧：会话密钥由临时密钥交换导出，不落盘、不过网，抓包程序拿不到就解不开；端点侧导出密钥日志是另一回事，不属于网络设备。</p>
+<p>主动侧：中间人解密要求终端信任一张自签 CA，受管终端可以做，公共网络里没有权限也不合法。我们后来把描述统一成「握手特征与行为特征分析」，把「不解密」写进技术说明；客户的安全评审第一轮必问，含糊更贵。</p>
+<p>能做的边界也该写清：识别客户端实现与工具链的相似性、识别扫描与爆破的连接形态、匹配已知恶意基础设施的地址；不能读加密载荷，也不能从 ECH 里还原域名。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8446">RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8701">RFC 8701: Applying GREASE to TLS Extensibility</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc6066">RFC 6066: TLS Extensions（server_name 的定义）</a></li>
+<li><a href="https://datatracker.ietf.org/doc/draft-ietf-tls-esni/">Encrypted Client Hello 的 TLS 扩展草案</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/tls13/">TLS13</a><a class="tag" href="/tags/ech/">ECH</a><a class="tag" href="/tags/流量指纹/">流量指纹</a><a class="tag" href="/tags/合规/">合规</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8F%A1%E6%89%8B%E4%B9%8B%E5%90%8E%E8%BF%98%E5%89%A9%E4%BB%80%E4%B9%88%EF%BC%9A%E5%8A%A0%E5%AF%86%E6%B5%81%E9%87%8F%E6%A3%80%E6%B5%8B%E7%9A%84%E5%8F%AF%E8%A7%81%E6%80%A7%E8%BE%B9%E7%95%8C" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/evidence-chain/">← 给人看的证据链：检测结论怎么才解释得清</a><a class="next" href="/post/threat-intel-rules/">十万条规则怎么不炸：一次规则包下发的复盘 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/static-scan-pipeline/">静态扫描流水线：从收到文件到给出判定</a><time>2022-07</time></li><li><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a><time>2022-07</time></li><li><a href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报</a><time>2022-08</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>检测率 +3% 背后：C# 与 PDF 支持 - farfood</title>
+<meta name="description" content="两种新格式的取舍是解析深度：只做浅解析、长尾样本转沙箱，才守得住 250ms 预算与可复核的证据。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/csharp-pdf-support/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "检测率 +3% 背后：C# 与 PDF 支持", "description": "两种新格式的取舍是解析深度：只做浅解析、长尾样本转沙箱，才守得住 250ms 预算与可复核的证据。", "datePublished": "2022-12-13T20:15:00+08:00", "dateModified": "2022-12-13T20:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/csharp-pdf-support/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "文件检测, PDF, CLI 程序集, 解析成本, 回归样本"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="检测率 +3% 背后：C# 与 PDF 支持 - farfood">
+<meta property="og:description" content="两种新格式的取舍是解析深度：只做浅解析、长尾样本转沙箱，才守得住 250ms 预算与可复核的证据。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/csharp-pdf-support/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="检测率 +3% 背后：C# 与 PDF 支持 - farfood">
+<meta name="twitter:description" content="两种新格式的取舍是解析深度：只做浅解析、长尾样本转沙箱，才守得住 250ms 预算与可复核的证据。">
+<meta property="article:published_time" content="2022-12-13T20:15:00+08:00">
+<meta name="keywords" content="文件检测, PDF, CLI 程序集, 解析成本, 回归样本">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">检测率 +3% 背后：C# 与 PDF 支持</h1>
+    <p class="meta"><time datetime="2022-12-13T20:15:00">2022-12-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2412 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三档深度代价差两个数量级">三档深度，代价差两个数量级</a></li>
+<li class="h2"><a href="#程序集入口在第-15-个数据目录项">程序集：入口在第 15 个数据目录项</a></li>
+<li class="h2"><a href="#pdf从最后一个-trailer-往回走">PDF：从最后一个 trailer 往回走</a></li>
+<li class="h2"><a href="#75ms-是怎么分的">75ms 是怎么分的</a></li>
+<li class="h2"><a href="#回归样本">回归样本</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>给检测引擎加这两种格式，起因是一批压不下去的漏报：Office 文档里藏着托管程序集，带脚本的 PDF 被当成普通文档放过，老引擎对两者都只做字符串匹配。</p>
+<p>决定方案的是两件互相拉扯的事：想看到结构就得解析，解析要花时间，而在线链路每样本只有 250ms。预算先把「能解析到多深」定死，讨论才有意义。</p>
+<h2 id="三档深度代价差两个数量级">三档深度，代价差两个数量级</h2>
+<p>浅的一档只做类型识别、哈希黑名单和关键字盲扫，成本几乎为零；中间一档是浅解析，程序集读到元数据表与字符串流，PDF 读到对象树与字典键，只解压被引用的流；深的一档要逐方法反编译 IL、解释执行文档里的脚本。</p>
+<p>盲扫的问题在证据：「PDF 里出现 <code>/JS</code>」这类字符串规则在正常文档里满地都是，也给不出「这段脚本挂在哪个对象上」。深解析要秒级，必须异步，「上传即出结论」的产品形态就没了。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>深度</th>
+<th>能看到什么</th>
+<th>单样本成本</th>
+<th>证据形态</th>
+</tr></thead>
+<tbody>
+<tr><td>盲扫</td><td>只有字符串里出现的特征</td><td>不到 1ms</td><td>一个偏移</td></tr>
+<tr><td>浅解析</td><td>结构关系：挂在哪个对象、被谁引用</td><td>p95 40ms / 25ms</td><td>对象编号 + 结构路径</td></tr>
+<tr><td>深解析</td><td>行为与解密后的载荷</td><td>秒级</td><td>环境差异下的行为日志</td></tr>
+</tbody>
+</table></div>
+<p>选浅解析做主路径，深解析只对打分高的样本异步触发。两条路径对同一份文件都要能出结论，对不上就记差异。</p>
+<h2 id="程序集入口在第-15-个数据目录项">程序集：入口在第 15 个数据目录项</h2>
+<p>两种格式的结构差异大到不能共用代码，只能共用抽象：对象加引用关系。</p>
+<p>程序集的入口在 PE 可选头的第 15 个数据目录项（下标 14，CLR 运行时头），指向一段 <code>IMAGE_COR20_HEADER</code>，里面给出元数据根 RVA；元数据根以 <code>0x424A5342</code> 开头，后面是流表：<code>#~</code> 放表数据，<code>#Strings</code> 放名字，<code>#US</code> 放用户字符串（UTF-16），<code>#Blob</code> 放签名。载荷判断基本都落在 <code>#US</code> 与 <code>MethodDef</code> 上。</p>
+<pre data-lang="c"><code class="language-c">IMAGE_DATA_DIRECTORY *dd = &amp;opt-&gt;DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
+if (!dd-&gt;VirtualAddress || dd-&gt;Size &lt; sizeof(IMAGE_COR20_HEADER)) return;
+IMAGE_COR20_HEADER *cor = rva_to_ptr(img, dd-&gt;VirtualAddress);
+if (read_u32(rva_to_ptr(img, cor-&gt;MetaData.VirtualAddress)) == 0x424A5342u)
+    parse_metadata(cor-&gt;MetaData.VirtualAddress, cor-&gt;MetaData.Size);  /* BSJB */</code></pre>
+<h2 id="pdf从最后一个-trailer-往回走">PDF：从最后一个 trailer 往回走</h2>
+<p>PDF 是另一套：一串间接对象加一张交叉引用表，<code>trailer</code> 里的 <code>/Prev</code> 指向上一个版本，形成一条链。必须从最后一个 <code>trailer</code> 沿 <code>/Prev</code> 走到底，因为增量更新可以只追加一个对象就把 <code>/OpenAction</code> 改成一段脚本，而前几版的对象树看着干干净净。只看文件开头的对象，天然看不见后来追加的东西，这是同类漏报里最常见的一种。</p>
+<p>压缩也不同。PDF 的流普遍是 <code>/FlateDecode</code>，即 zlib 包着 deflate；程序集不压缩，但字符串常被混淆器加密，浅解析拿到的是高熵 <code>#US</code> 条目加一个在静态构造函数里跑的解密循环。这组合本身就有信号价值，正常的库不会有几百条高熵用户字符串。</p>
+<h2 id="75ms-是怎么分的">75ms 是怎么分的</h2>
+<p>解析器占在线预算的三成，即 75ms，超预算的口径也按这个数：单样本解析超过 75ms 计一次，在季度样本里占 0.7%。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项</th>
+<th>数值</th>
+<th>口径</th>
+</tr></thead>
+<tbody>
+<tr><td>PDF 解析 p50 / p95</td><td>8 ms / 40 ms</td><td>单核，含解压，不含沙箱</td></tr>
+<tr><td>程序集解析 p50 / p95</td><td>5 ms / 25 ms</td><td>只读元数据与字符串流</td></tr>
+<tr><td>超预算样本占比</td><td>0.7%</td><td>单样本解析 &gt; 75 ms，在线预算用完</td></tr>
+<tr><td>上限</td><td>解压 64 MB 或 200:1 压缩比即中止；5 万个对象、4 层嵌套</td><td>防炸弹与对象图爆炸</td></tr>
+</tbody>
+</table></div>
+<p>长尾是同一类：对象数上万的表单文档，或嵌套 <code>ObjStm</code> 的对象流。对它们放弃完整解析，只取前 N 个对象并标记「解析不完整」，转异步。上限写在代码里比写在文档里重要：没有上限的解析器迟早把引擎变成拒绝服务的入口。</p>
+<p>解析器本身也是攻击面：独立进程、CPU 与内存上限、超时、长度字段先查溢出再运算。</p>
+<h2 id="回归样本">回归样本</h2>
+<p>两种格式加完，检测率从 61.2% 到 64.4%（口径：季度样本全量回放，按文件数），+3.2 个百分点，折合约 7700 个。拆开看：PDF 相关 4900 个，主要来自「脚本挂在哪个对象上」；托管程序集 2800 个，主要来自「高熵字符串 + 解密循环」。</p>
+<p>代价在误报侧。上线前攒了两批良性语料：12 万份 PDF（模板、表单、扫描件、带脚本的文档）和 4 万份正常程序集。门槛是新增误报率低于 0.01%（按文件数，24 小时回放）。</p>
+<p>光有语料不够，管用的是差分：新旧引擎跑同一批语料，verdict 不同的按分数分桶，每桶抽 200 个人工看。有条把「文档带附件」判成恶意的规则就是这里抽出来的：它在良性语料里只命中 30 个样本，统计上看不见，线上每天的量却不小。改法是不允许单条结构特征给结论，必须同时满足结构条件与引用关系。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://ecma-international.org/publications-and-standards/standards/ecma-335/">ECMA-335：CLI 元数据表与头结构</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8118">RFC 8118：PDF 媒体类型与文件结构</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1950">RFC 1950：ZLIB 压缩数据格式（<code>/FlateDecode</code> 的底层）</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1951">RFC 1951：DEFLATE 压缩数据格式</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/文件检测/">文件检测</a><a class="tag" href="/tags/pdf/">PDF</a><a class="tag" href="/tags/cli-程序集/">CLI 程序集</a><a class="tag" href="/tags/解析成本/">解析成本</a><a class="tag" href="/tags/回归样本/">回归样本</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%A3%80%E6%B5%8B%E7%8E%87+%2B3%25+%E8%83%8C%E5%90%8E%EF%BC%9AC%23+%E4%B8%8E+PDF+%E6%94%AF%E6%8C%81" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/malicious-pdf/">← 恶意 PDF 的结构与检测：一段增量更新让两条链路同时漏判</a><a class="next" href="/post/sandbox-escape-ml/">沙箱逃逸检测：从日志特征到随机森林 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/static-scan-pipeline/">静态扫描流水线：从收到文件到给出判定</a><time>2022-07</time></li><li><a href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段</a><time>2022-09</time></li><li><a href="/post/malicious-pdf/">恶意 PDF 的结构与检测：一段增量更新让两条链路同时漏判</a><time>2022-12</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

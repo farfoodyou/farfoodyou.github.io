@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>切分里漏出去的那部分：标签泄漏与家族级切分 - farfood</title>
+<meta name="description" content="随机五折给到 0.99 AUC，换成按时间加家族切分后掉到 0.94，掉下去的那 0.05 才是线上能拿到的部分。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/label-leakage/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "切分里漏出去的那部分：标签泄漏与家族级切分", "description": "随机五折给到 0.99 AUC，换成按时间加家族切分后掉到 0.94，掉下去的那 0.05 才是线上能拿到的部分。", "datePublished": "2023-04-11T21:05:00+08:00", "dateModified": "2023-04-11T21:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/label-leakage/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "特征工程, 交叉验证, 样本偏差, 检测模型"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="切分里漏出去的那部分：标签泄漏与家族级切分 - farfood">
+<meta property="og:description" content="随机五折给到 0.99 AUC，换成按时间加家族切分后掉到 0.94，掉下去的那 0.05 才是线上能拿到的部分。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/label-leakage/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="切分里漏出去的那部分：标签泄漏与家族级切分 - farfood">
+<meta name="twitter:description" content="随机五折给到 0.99 AUC，换成按时间加家族切分后掉到 0.94，掉下去的那 0.05 才是线上能拿到的部分。">
+<meta property="article:published_time" content="2023-04-11T21:05:00+08:00">
+<meta name="keywords" content="特征工程, 交叉验证, 样本偏差, 检测模型">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">切分里漏出去的那部分：标签泄漏与家族级切分</h1>
+    <p class="meta"><time datetime="2023-04-11T21:05:00">2023-04-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2449 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#数据流从哪一步开始漏">数据流从哪一步开始漏</a></li>
+<li class="h2"><a href="#把切分改成两层约束">把切分改成两层约束</a></li>
+<li class="h2"><a href="#三种切分方式的落差">三种切分方式的落差</a></li>
+<li class="h2"><a href="#线上分布漂移怎么盯">线上分布漂移怎么盯</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>分组交叉验证的文档里有一句不起眼的注释：同一个分组不会同时出现在两个折里。这句话在多数教程里被当作可选参数提一下，在我这里它决定了整个离线评估还有没有意义。</p>
+<p>文件检测的样本库有个绕不开的性质：恶意样本是成族出现的。一个家族的几百个变体共享同一个打包器、同一段加载器、同一批回连域名，甚至编译时间戳只差几分钟。随机切分把同一族的变体分到训练集和验证集，模型学到的是「这个家族的指纹长这样」，而不是「这类行为可疑」。离线指标很好看，上线当周就掉回去。</p>
+<h2 id="数据流从哪一步开始漏">数据流从哪一步开始漏</h2>
+<p>样本入库存四类信息：文件本身的静态特征、沙箱跑出来的行为序列、首次出现时间、外部给的家族标签。特征由三个作业分别产出，再按样本标识 join 成一张宽表。</p>
+<p>泄漏点沿着这条链分布，每一处都很自然，自然到看不出来：</p>
+<ul>
+<li><strong>join 键太粗</strong>。用「同源簇」做邻居统计特征时，簇是按样本相似度聚出来的，一个簇里往往就是同一家族的变体。验证集样本的簇统计里含了训练集样本的标签，这是最隐蔽的一类，特征本身长得像正常的上下文统计。</li>
+<li><strong>时间字段进特征</strong>。首次出现时间被当成数值特征喂进去，训练集里它的分布和标签强相关（老家族已经打标，新家族还没有），线上推理时这个字段要么拿不到，要么含义不同。</li>
+<li><strong>聚合窗口跨过切分点</strong>。类别编码、均值填充这类统计量在切分之前用全量数据算了一遍。<a href="https://scikit-learn.org/stable/modules/feature_selection.html">特征选择的文档</a>把这件事讲得很直白：在切分之外做选择或拟合，评估结果会系统性偏乐观。编码比选择更容易漏，因为它藏在一个 <code>fit_transform</code> 里。</li>
+<li><strong>近似重复样本</strong>。同一份样本改几个字节重新提交，哈希不同，特征几乎一样。按行随机切分，训练和验证各拿一半。</li>
+</ul>
+<p>四个点叠加的效果是：验证集不再是「没见过的样本」，而是「见过的家族的新变体」。</p>
+<h2 id="把切分改成两层约束">把切分改成两层约束</h2>
+<p>顺序是先时间、后家族。时间切分决定训练能看到什么，家族切分决定验证能考什么。</p>
+<pre data-lang="python"><code class="language-python">def walk_forward(rows, k=5):
+    # 先按时间切成 k 段连续窗口
+    rows = sorted(rows, key=lambda r: r[&quot;first_seen&quot;])
+    size = len(rows) // k
+    slices = [rows[i * size:(i + 1) * size] for i in range(k)]
+    for i in range(1, k):
+        test = slices[i]
+        test_fams = {r[&quot;family&quot;] for r in test}
+        # 早窗口里的同族样本整族摘掉，整族只落在一侧
+        train = [r for s in slices[:i] for r in s if r[&quot;family&quot;] not in test_fams]
+        yield train, test
+
+for train, test in walk_forward(rows):
+    assert max(r[&quot;first_seen&quot;] for r in train) &lt; min(r[&quot;first_seen&quot;] for r in test)
+    assert not {r[&quot;family&quot;] for r in train} &amp; {r[&quot;family&quot;] for r in test}</code></pre>
+<p>两个 <code>assert</code> 是整段代码里最有用的部分：一个管时间，一个管家族。它把「有没有漏」从人的判断变成机器的判断，后面任何人改切分逻辑，只要越界就当场失败。</p>
+<p>代价得说清：折数从 5 降到 4，第一段没有更早的训练集；跨窗口的老家族会被整族摘出训练集，样本利用率掉一截。换来的是评估口径站得住。</p>
+<p>剩下的配套约束是时间比较要用 <code>datetime</code>，不用月份字符串；家族标签缺失的样本归不进任何族，单独抽出、不参与训练，因为线上这类样本的行为和已标注的不一样。</p>
+<h2 id="三种切分方式的落差">三种切分方式的落差</h2>
+<p>样本池是 12 个月、240 万份、3800 个家族，阳性率 3.5%，指标口径都是同一份特征集、同一个模型参数。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>切分方式</th>
+<th>离线 AUC</th>
+<th>验证集与线上的家族重合度</th>
+<th>上线首周 precision（复核队列前 1%）</th>
+</tr></thead>
+<tbody>
+<tr><td>随机五折</td><td>0.99</td><td>87%</td><td>0.41</td></tr>
+<tr><td>按时间切成前后段</td><td>0.96</td><td>34%</td><td>0.62</td></tr>
+<tr><td>时间约束 + 家族级切分</td><td>0.94</td><td>8%</td><td>0.71</td></tr>
+</tbody>
+</table></div>
+<p>那 0.05 的落差不是模型变差了，是评估变诚实了。重合度这一列是我后来才加的，它比 AUC 更能解释线上表现：重合度越高，离线数字越不可信。</p>
+<h2 id="线上分布漂移怎么盯">线上分布漂移怎么盯</h2>
+<p>家族级切分解决了训练期的问题，解决不了上线后的问题。新家族占比是逐月变化的，我拉了半年的数据，从 6% 涨到 21%，而训练集里新家族只占 9%。模型对「训练时没见过的东西」天然保守，分数会整体压低，阈值不变就会漏。</p>
+<p>现在有三条监控，都很便宜：</p>
+<ul>
+<li>每周算一次验证集和最近一周线上样本的单特征分布，用分位数的相对偏移做阈值，超过 0.3 就人工看一眼；</li>
+<li>单独统计「分数落在阈值附近正负 10% 区间」的样本比例，这个比例突然变大意味着分布移动了；</li>
+<li>把上周线上被判为正的样本回流入下一轮训练，但只回流有复核结论的，且回流样本一律进训练集、不进验证集。</li>
+</ul>
+<p>第三条最容易做错。回流样本的标签来自复核，复核队列本身是被模型排序过的，于是训练集逐渐偏向模型已经会判的那部分。我现在的做法是回流时按家族分层抽样，每个家族最多回 200 份，压住这个正反馈。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://scikit-learn.org/stable/modules/cross_validation.html">交叉验证与分组切分</a>：分组迭代器的语义</li>
+<li><a href="https://scikit-learn.org/stable/common_pitfalls.html">常见陷阱：数据泄漏一节</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GroupKFold.html"><code>GroupKFold</code> 的接口说明</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/特征工程/">特征工程</a><a class="tag" href="/tags/交叉验证/">交叉验证</a><a class="tag" href="/tags/样本偏差/">样本偏差</a><a class="tag" href="/tags/检测模型/">检测模型</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%88%87%E5%88%86%E9%87%8C%E6%BC%8F%E5%87%BA%E5%8E%BB%E7%9A%84%E9%82%A3%E9%83%A8%E5%88%86%EF%BC%9A%E6%A0%87%E7%AD%BE%E6%B3%84%E6%BC%8F%E4%B8%8E%E5%AE%B6%E6%97%8F%E7%BA%A7%E5%88%87%E5%88%86" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/model-offline-online/">← 离线 AUC 好，线上不一定有用</a><a class="next" href="/post/yara-perf/">规则匹配引擎的性能：原子与字符串的选择 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段</a><time>2022-09</time></li><li><a href="/post/import-list-features/">导入函数列表当特征：四条判据和三种做法</a><time>2022-10</time></li><li><a href="/post/sandbox-escape-ml/">沙箱逃逸检测：从日志特征到随机森林</a><time>2022-11</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

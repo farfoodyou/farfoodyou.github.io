@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分布式锁的三种实现与它们的失效场景 - farfood</title>
+<meta name="description" content="锁的语义由超时决定，不由加锁命令决定。顺着 SET NX PX 到 etcd 的 Lease、再到数据库行锁，三种实现给出的保证差得很远。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/distributed-lock/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "分布式锁的三种实现与它们的失效场景", "description": "锁的语义由超时决定，不由加锁命令决定。顺着 SET NX PX 到 etcd 的 Lease、再到数据库行锁，三种实现给出的保证差得很远。", "datePublished": "2022-06-14T21:05:00+08:00", "dateModified": "2022-06-14T21:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/distributed-lock/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "分布式锁, 一致性, 租约, fencing"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="分布式锁的三种实现与它们的失效场景 - farfood">
+<meta property="og:description" content="锁的语义由超时决定，不由加锁命令决定。顺着 SET NX PX 到 etcd 的 Lease、再到数据库行锁，三种实现给出的保证差得很远。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/distributed-lock/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分布式锁的三种实现与它们的失效场景 - farfood">
+<meta name="twitter:description" content="锁的语义由超时决定，不由加锁命令决定。顺着 SET NX PX 到 etcd 的 Lease、再到数据库行锁，三种实现给出的保证差得很远。">
+<meta property="article:published_time" content="2022-06-14T21:05:00+08:00">
+<meta name="keywords" content="分布式锁, 一致性, 租约, fencing">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">分布式锁的三种实现与它们的失效场景</h1>
+    <p class="meta"><time datetime="2022-06-14T21:05:00">2022-06-14</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2485 字 <a class="cat" href="/categories/数据/">数据</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#锁的语义由-ttl-决定">锁的语义由 TTL 决定</a></li>
+<li class="h2"><a href="#解锁为什么必须比对-value">解锁为什么必须比对 value</a></li>
+<li class="h2"><a href="#续期把-ttl-变成一个赌注">续期把 TTL 变成一个赌注</a></li>
+<li class="h2"><a href="#主从切换之后有两个持锁者">主从切换之后有两个持锁者</a></li>
+<li class="h2"><a href="#fencing-token把判断权交给被保护的数据">fencing token：把判断权交给被保护的数据</a></li>
+<li class="h2"><a href="#三种实现并排">三种实现并排</a></li>
+<li class="h2"><a href="#选择条件">选择条件</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<pre data-lang="text"><code class="language-text">SET lock:settle:20220614 &lt;owner&gt; NX PX 30000</code></pre>
+<p>三个成分：<code>NX</code> 决定互斥，value 决定所有权，<code>PX 30000</code> 决定这行键最多活 30 秒。前两个是设计，第三个是让步。跨进程没有可靠的死亡判定，只能靠过期。</p>
+<h2 id="锁的语义由-ttl-决定">锁的语义由 TTL 决定</h2>
+<p>单机锁靠内存里一个标志位，线程活着一把，退出一把，运行时替你保证。跨进程之后那个运行时不存在了，别人观察不到你死活，只能观察一个带过期时间的键。</p>
+<p>于是分布式锁的语义该这么读：在 TTL 之内，我认为没有人同时持有它。这句限定词要当契约读。按这个读法，失效只剩两类：持锁时间超过 TTL，或者 TTL 内的互斥被破坏。前者是用法问题，后者是存储问题。</p>
+<h2 id="解锁为什么必须比对-value">解锁为什么必须比对 value</h2>
+<p>常见的错误写法是加锁用 <code>SET NX PX</code>，解锁直接 <code>DEL</code>。设 A 持锁、TTL 到期、B 拿到锁，A 的业务此时才结束，一条 <code>DEL</code> 删掉的是 B 的锁，随后 C 也能进来。这个 bug 低负载时不出现，GC 抖动或慢查询时准时出现。</p>
+<p>正确写法是 value 放调用方生成的随机串，解锁时用 Lua 脚本原子地比对再删，不能拆成 <code>GET</code> 加 <code>DEL</code> 两次往返。一条 <code>SET</code> 带 <code>NX</code> 和 <code>PX</code> 同理：早年 <code>SETNX</code> 加 <code>EXPIRE</code> 是两步，中间崩溃会留下永不过期的锁。</p>
+<h2 id="续期把-ttl-变成一个赌注">续期把 TTL 变成一个赌注</h2>
+<p>业务耗时不可预知，30 秒大概率不够，于是加看门狗：每 10 秒把 TTL 续回 30 秒。它解决了「活得比 TTL 久」，也带出新问题：续期成功的瞬间，凭什么还是你？</p>
+<p>进程被 <code>SIGSTOP</code>、宿主机暂停、虚拟化层卡顿，这几种情况下客户端根本没机会跑续期代码，恢复后却仍以为锁在自己手里。所以续期要满足两条：心跳与业务线程分离；续期失败时业务主动放弃，别把日志里那行 warn 当没看见。</p>
+<p>经验值：TTL 取 P99.9 耗时的 3 倍，续期间隔取 TTL 的 1/3，低于这个比例长尾就会变成双写。</p>
+<h2 id="主从切换之后有两个持锁者">主从切换之后有两个持锁者</h2>
+<p>单节点的 <code>SET NX PX</code> 有个客户端解决不了的漏洞：写主库成功，主库没同步给从库就崩了，从库提升为主，锁凭空消失，同一个键重新加锁会成功，而原持锁者的业务还在跑。两个写入者，谁都没做错。</p>
+<p>多数派方案（N 个独立节点，写成功超过 N/2 才算加锁成功，且总耗时小于 TTL 才有效）把窗口压得很小，压不到零。它假设节点时钟走得差不多、网络延迟远小于 TTL、进程暂停吃不掉有效期，在跑满 CPU 的容器里这些假设不总成立。</p>
+<h2 id="fencing-token把判断权交给被保护的数据">fencing token：把判断权交给被保护的数据</h2>
+<p>上面几种失效指向同一件事：锁服务没法替下游数据做判断，只能发号。每次加锁成功给一个单调递增的序号，持锁者带序号写数据，存储拒绝更小的序号。</p>
+<pre data-lang="go"><code class="language-go">sess, _ := concurrency.NewSession(cli, concurrency.WithTTL(10))
+mu := concurrency.NewMutex(sess, &quot;/lock/settle/20220614&quot;)
+mu.Lock(ctx); defer mu.Unlock(ctx)
+
+resp, _ := cli.Get(ctx, mu.Key())   // header.revision 全局单调递增
+fence := resp.Header.Revision
+// 条件不满足时影响 0 行
+db.Exec(&quot;UPDATE balance SET amt=amt-? WHERE id=? AND fence&lt;?&quot;, amt, id, fence)</code></pre>
+<p>关键在 <code>AND fence &lt; ?</code>。A 拿着 revision 41 卡住，锁过期，B 拿到 42 写入；A 恢复后带 41 来写，条件不成立，影响 0 行。锁的语义从「保证不并发」退化成「保证不覆盖」，这个退化可接受，因为它可验证。</p>
+<p>etcd 的 revision 天然单调，事务比较 <code>create_revision == 0</code> 保证互斥，Lease 提供过期，三件事凑齐就能发号。这也是它比 Redis 更适合「锁 + 序号」的原因：序号来自存储本身，不需要在客户端另造。</p>
+<h2 id="三种实现并排">三种实现并排</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>判据</th>
+<th>Redis <code>SET NX PX</code></th>
+<th>etcd Lease</th>
+<th>数据库行锁</th>
+</tr></thead>
+<tbody>
+<tr><td>互斥</td><td>单键原子写</td><td>Raft 多数派 + 事务比较</td><td>唯一约束或行锁</td></tr>
+<tr><td>失效检测</td><td>TTL</td><td>Lease 到期</td><td>事务结束</td></tr>
+<tr><td>续期</td><td>客户端心跳</td><td>keepalive 续租</td><td>不能，锁随事务</td></tr>
+<tr><td>单调序号</td><td>要自己造</td><td>revision 天然单调</td><td>自增序列可造</td></tr>
+<tr><td>典型失效</td><td>主从切换后双持</td><td>租约过期 + 暂停</td><td>长事务耗尽连接池</td></tr>
+</tbody>
+</table></div>
+<p>数据库那边行锁没有 TTL，事务结束才释放，不存在「锁过期人还在写」，代价是执锁期间占着连接；advisory lock 比自建锁表干净。</p>
+<h2 id="选择条件">选择条件</h2>
+<p>按顺序问三个问题：被保护的数据能不能校验写序号，能就用 fencing，锁只需大致互斥；临界区有没有外部调用，有就别用数据库行锁，事务会拖到超时；能否接受加锁从亚毫秒变几毫秒，能就用 etcd 换单调序号，不能就留在 Redis 自己补。</p>
+<p>落地的是第二种：结算按商户号加 etcd 锁，写库带 revision。它没让锁永不过期，只是让过期之后的写入可被拒绝。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://redis.io/docs/reference/patterns/distributed-locks/">Redis: Distributed Locks</a>：多数派加锁与它列出的假设</li>
+<li><a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html">How to do distributed locking</a>：fencing token 的论证</li>
+<li><a href="https://pkg.go.dev/go.etcd.io/etcd/client/v3/concurrency">etcd clientv3 concurrency</a>：<code>Mutex</code> 实现</li>
+<li><a href="https://www.postgresql.org/docs/14/explicit-locking.html#ADVISORY-LOCKS">PostgreSQL 14: Advisory Locks</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/分布式锁/">分布式锁</a><a class="tag" href="/tags/一致性/">一致性</a><a class="tag" href="/tags/租约/">租约</a><a class="tag" href="/tags/fencing/">fencing</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%E4%B8%89%E7%A7%8D%E5%AE%9E%E7%8E%B0%E4%B8%8E%E5%AE%83%E4%BB%AC%E7%9A%84%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/static-scan-pipeline/">← 静态扫描流水线：从收到文件到给出判定</a><a class="next" href="/post/api-doc-what/">接口文档到底该写什么：一次重复扣款的复盘 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/local-first-layers/">索引被当成了源：一次知识库重建事故</a><time>2024-04</time></li><li><a href="/post/consistent-hashing/">缓存扩容那天：取模哈希搬走了三分之二的 key</a><time>2020-07</time></li><li><a href="/post/shard-failover-payment/">分片挂了还能付款：跳单容灾怎么设计</a><time>2021-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

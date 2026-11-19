@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>把 Agent 关进笼子：禁网、只读、超时、审计 - farfood</title>
+<meta name="description" content="给执行型 Agent 用的服务账号等于半个运维，一次清理任务删掉 41 GB 原始包；权限改成内核层面拒绝之后，越权从「靠它自觉」变成「跑不出来」。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/cage-the-agent/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "把 Agent 关进笼子：禁网、只读、超时、审计", "description": "给执行型 Agent 用的服务账号等于半个运维，一次清理任务删掉 41 GB 原始包；权限改成内核层面拒绝之后，越权从「靠它自觉」变成「跑不出来」。", "datePublished": "2024-08-06T09:40:00+08:00", "dateModified": "2024-08-06T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/cage-the-agent/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Agent, 权限最小化, 沙箱, 审计日志, 事故复盘"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="把 Agent 关进笼子：禁网、只读、超时、审计 - farfood">
+<meta property="og:description" content="给执行型 Agent 用的服务账号等于半个运维，一次清理任务删掉 41 GB 原始包；权限改成内核层面拒绝之后，越权从「靠它自觉」变成「跑不出来」。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/cage-the-agent/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="把 Agent 关进笼子：禁网、只读、超时、审计 - farfood">
+<meta name="twitter:description" content="给执行型 Agent 用的服务账号等于半个运维，一次清理任务删掉 41 GB 原始包；权限改成内核层面拒绝之后，越权从「靠它自觉」变成「跑不出来」。">
+<meta property="article:published_time" content="2024-08-06T09:40:00+08:00">
+<meta name="keywords" content="Agent, 权限最小化, 沙箱, 审计日志, 事故复盘">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">把 Agent 关进笼子：禁网、只读、超时、审计</h1>
+    <p class="meta"><time datetime="2024-08-06T09:40:00">2024-08-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2487 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#定位花了六个小时因为日志里没有命令">定位花了六个小时，因为日志里没有命令</a></li>
+<li class="h2"><a href="#笼子的四根柱子">笼子的四根柱子</a></li>
+<li class="h2"><a href="#失败安全是设计出来的">失败安全是设计出来的</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>02:41，采集机一块数据盘水位到 91%，告警进了值班群。</p>
+<p>02:44，我把一条「清理过期临时目录」的工单转给执行 Agent。它绑定的服务账号有那台机器的 <code>/data</code> 读写权限，出网无限制，单步超时 30 分钟。这类任务之前跑过十几次，都干净。</p>
+<p>02:52，它回了一段三行摘要：删除 12,438 个文件，回收 41 GB，无异常。</p>
+<p>03:10，下游对账报缺文件：前一天刚采完、还没入库的原始包，目录名带当天日期，父目录叫 <code>collect_tmp</code>。</p>
+<h2 id="定位花了六个小时因为日志里没有命令">定位花了六个小时，因为日志里没有命令</h2>
+<p>审计那一栏只有三项：工具名 <code>shell</code>、开始时间、退出码，参数没记。我知道它执行过 27 次 shell，不知道执行了什么。</p>
+<p>最后从上下文日志里翻出来：该日志为排查模型问题把每轮消息全文落了盘。27 条命令按顺序摆着：它先按 <code>-mtime +3</code> 找过期文件，候选太少，就改成按目录名匹配 <code>*tmp*</code>、<code>*cache*</code>，判据从时间滑到「名字像临时」。第 19 步，它对着 <code>collect_tmp/2024-08-05</code> 执行了 <code>rm -rf</code>。</p>
+<p>这一路推断谈不上离谱：工单原文是「清理过期临时目录」，而「临时」没有可执行的定义。换人来做会先问一句这目录能不能删。差别是人问的时候有成本感，Agent 没有：删错了没东西拦，删完也没东西要求它解释。</p>
+<p>盘完能力清单，问题很清楚：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>能力</th>
+<th>事故前的状态</th>
+<th>对应的失败模式</th>
+</tr></thead>
+<tbody>
+<tr><td>网络</td><td>全部放通，含 DNS 与出站 443</td><td>可自行下载工具、把读到的内容外传</td></tr>
+<tr><td>文件</td><td>宿主 <code>/data</code> 直接读写挂载</td><td>误删没有代价，也不需要申请</td></tr>
+<tr><td>时间</td><td>单步 30 分钟，无任务总预算</td><td>循环删除跑了 8 分钟才被看见</td></tr>
+<tr><td>审计</td><td>只记工具名与退出码</td><td>事后无法重放，定位只能靠猜</td></tr>
+</tbody>
+</table></div>
+<h2 id="笼子的四根柱子">笼子的四根柱子</h2>
+<p>改法是把「不要做」换成「做不到」。四类约束都在内核或运行时层面生效，不依赖模型配合。</p>
+<p><strong>禁网。</strong> 每个任务起在独立 network namespace 里，只有 <code>lo</code>，没有默认路由。需要外部数据的任务走显式代理：只允许 GET，域名白名单按任务下发，响应体上限 2 MB，<code>Set-Cookie</code> 剥掉。代理日志进同一审计流，「看过什么」和「做了什么」能对上。</p>
+<p><strong>只读。</strong> 输入目录一律 <code>MS_RDONLY | MS_NOSUID | MS_NODEV</code> 挂载，唯一可写的是空任务目录，结束打包留证后销毁。路径解析加了 <code>openat2</code> 的 <code>RESOLVE_BENEATH</code>，禁止 <code>..</code> 与绝对路径逃出任务根。可写目录里只有它自己的产出。</p>
+<p><strong>超时。</strong> 单次工具调用 90 秒，整个任务 5 分钟，超了杀整个进程树。靠 cgroup v2 的 <code>cgroup.kill</code> 一次干掉组内所有进程，不能只 kill 父进程：Agent 起的子进程经常自己 <code>setsid</code> 跑掉。</p>
+<p><strong>审计。</strong> 每次调用落一条结构化事件：<code>argv</code> 原样、<code>cwd</code>、stdin 的 sha256、退出码、耗时、产出文件的 sha256。写到另一台机器的只追加日志上，Agent 的 namespace 挂不到那里。</p>
+<pre data-lang="go"><code class="language-go">cmd := exec.CommandContext(ctx, &quot;/opt/cage/entry&quot;, argv...)
+cmd.SysProcAttr = &amp;syscall.SysProcAttr{
+    Cloneflags:  syscall.CLONE_NEWNET | syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER,
+    UidMappings: []syscall.SysProcIDMap{{ContainerID: 100000, HostID: uid, Size: 1}},
+    NoNewPrivs:  true,
+}
+cmd.Dir = taskRoot
+out := io.LimitReader(stdout, 4&lt;&lt;20)  // 输出也有上限</code></pre>
+<h2 id="失败安全是设计出来的">失败安全是设计出来的</h2>
+<p>改成这套之后，任务成功率从 71% 掉到 58%，掉的全是需要联网自取数据、或要写回共享盘的活。有人提议给「可信任务」开放宽预算的通道，被我否了：只要存在「这种情况可以例外」的分支，模型迟早会构造出那种情况。</p>
+<p>三个具体决定：</p>
+<ul>
+<li>判断默认拒绝。白名单为空就是没网，不存在「先放通再收紧」。代理连不上就失败退出，不退回直连。</li>
+<li>超时不降级。以前超时后把预算翻倍重跑，现在直接失败，中间产物留给人看。翻倍重跑等于把慢变成无限慢。</li>
+<li>写操作要审批，界面给 diff 而不是命令串。看 <code>rm -rf /data/collect_tmp/2024-08-05</code>，对比一屏「将删除 12,438 个文件，其中 340 个在最近 48 小时内改动」，判断质量差一档。</li>
+</ul>
+<p>重放能力是这次真缺的东西，补得也最重：给定一条事件流，按原 <code>argv</code> 在只读快照上跑一遍，比对产出 hash。同一批工单重放，27 条命令里 3 条因依赖当时网络状态跑不出同样结果，其余 hash 完全一致；定位从六小时压到十几分钟。</p>
+<p>后来同类判断错误又出现两次：一次把缓存目录当垃圾清，一次想改系统时区。两次都停在 <code>EPERM</code> 上，任务失败，人收到一条被拒事件。笼子的验收标准是犯错的代价被限制在一个空目录里。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html">seccomp filter 内核文档</a>：按系统调用收窄能力</li>
+<li><a href="https://www.kernel.org/doc/html/latest/userspace-api/landlock.html">Landlock</a>：非特权进程的文件系统访问控制</li>
+<li><a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html">cgroup v2 文档</a>：<code>cgroup.kill</code> 的落点</li>
+<li><a href="https://www.kernel.org/doc/html/latest/userspace-api/no_new_privs.html">no_new_privs</a>：setuid 不再提权</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/agent/">Agent</a><a class="tag" href="/tags/权限最小化/">权限最小化</a><a class="tag" href="/tags/沙箱/">沙箱</a><a class="tag" href="/tags/审计日志/">审计日志</a><a class="tag" href="/tags/事故复盘/">事故复盘</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8A%8A+Agent+%E5%85%B3%E8%BF%9B%E7%AC%BC%E5%AD%90%EF%BC%9A%E7%A6%81%E7%BD%91%E3%80%81%E5%8F%AA%E8%AF%BB%E3%80%81%E8%B6%85%E6%97%B6%E3%80%81%E5%AE%A1%E8%AE%A1" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/prompt-injection/">← Prompt Injection：为什么过滤不管用</a><a class="next" href="/post/sandbox-choice/">沙箱选型：三个数算完，只剩混合部署 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/sandbox-logs/">动态沙箱的日志里到底有什么</a><time>2022-11</time></li><li><a href="/post/sandbox-choice/">沙箱选型：三个数算完，只剩混合部署</a><time>2024-07</time></li><li><a href="/post/prompt-injection/">Prompt Injection：为什么过滤不管用</a><time>2024-08</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

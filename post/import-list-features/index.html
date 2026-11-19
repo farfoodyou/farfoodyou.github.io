@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>导入函数列表当特征：四条判据和三种做法 - farfood</title>
+<meta name="description" content="单 API 哈希、API 对哈希、DLL 桶统计的失效模式不同；四条判据的作用是提前判断哪种会先崩。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/import-list-features/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "导入函数列表当特征：四条判据和三种做法", "description": "单 API 哈希、API 对哈希、DLL 桶统计的失效模式不同；四条判据的作用是提前判断哪种会先崩。", "datePublished": "2022-10-27T22:15:00+08:00", "dateModified": "2022-10-27T22:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/import-list-features/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "特征工程, PE格式, 特征哈希, 样本分类"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="导入函数列表当特征：四条判据和三种做法 - farfood">
+<meta property="og:description" content="单 API 哈希、API 对哈希、DLL 桶统计的失效模式不同；四条判据的作用是提前判断哪种会先崩。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/import-list-features/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="导入函数列表当特征：四条判据和三种做法 - farfood">
+<meta name="twitter:description" content="单 API 哈希、API 对哈希、DLL 桶统计的失效模式不同；四条判据的作用是提前判断哪种会先崩。">
+<meta property="article:published_time" content="2022-10-27T22:15:00+08:00">
+<meta name="keywords" content="特征工程, PE格式, 特征哈希, 样本分类">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">导入函数列表当特征：四条判据和三种做法</h1>
+    <p class="meta"><time datetime="2022-10-27T22:15:00">2022-10-27</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2370 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三种-token-单位的代价">三种 token 单位的代价</a></li>
+<li class="h2"><a href="#四条判据">四条判据</a></li>
+<li class="h2"><a href="#稳定哈希">稳定哈希</a></li>
+<li class="h2"><a href="#冲突账">冲突账</a></li>
+<li class="h2"><a href="#缺失值不该是零">缺失值不该是零</a></li>
+<li class="h2"><a href="#上线前先量两个数">上线前先量两个数</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>一个 PE 文件的导入表通常在 30 到 200 个函数名之间，大半是运行时库的样板。拿它当分类特征要先承认两件事：分布极度倾斜，长尾里多数 API 在语料里出现不到 5 次；内容可以被故意削薄，加壳和动态解析能把导入表缩到十几项。</p>
+<p>这两件事决定了特征编码的形状，比选分类器重要。</p>
+<h2 id="三种-token-单位的代价">三种 token 单位的代价</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>做法</th>
+<th>token 单位</th>
+<th>维度</th>
+<th>每样本非零位</th>
+<th>主要失效模式</th>
+</tr></thead>
+<tbody>
+<tr><td>A 单 API 哈希</td><td>单个 API 名</td><td>固定 2^14</td><td>80–150</td><td>导入表缩到十几项时向量几乎全零</td></tr>
+<tr><td>B API 对哈希</td><td><code>(dll, api_i, api_j)</code></td><td>固定 2^14</td><td>300–600</td><td>长尾 pair 只出现一次，小样本上全是噪声</td></tr>
+<tr><td>C DLL 桶统计</td><td>每个 DLL 取 k 个</td><td>DLL 数 × k，约 200 × 3</td><td>20–60</td><td>DLL 相同、函数集完全不同的样本被压成同一点</td></tr>
+</tbody>
+</table></div>
+<p>B 的 token 是三元组，按 API 名排序后拼接，避免 <code>(a, b)</code> 和 <code>(b, a)</code> 变成两个维度。C 按 DLL 聚合，每个 DLL 取出现次数最多的 k 个 API 或只留计数，向量短、可解释，适合粗筛。</p>
+<p>三类失效里有两类能提前看见：会不会被削到十几项，看加壳比例；pair 够不够重复，看同族样本条数。判据就是拿这两件事对表里最后一列。</p>
+<h2 id="四条判据">四条判据</h2>
+<p><strong>维度有界</strong>。维度不能跟着词表长。线上的特征维度一旦随新出现的 DLL 变化，模型就得重训，历史向量也没法比较。</p>
+<p><strong>缺失可预期</strong>。样本没有导入表、只有序数导入、只导入两个解析函数，这些都得有明确定义的表示。把缺失当成零向量是最省事也最糟的处理，它让「什么都没导入」和「导入了一堆但都在低权重位置」长得一样。</p>
+<p><strong>能表达组合</strong>。单个 API 的区分度接近于零，<code>VirtualAlloc</code> 和 <code>CreateRemoteThread</code> 同时出现才有意义。词袋把这件事丢掉了，所以得往组合上想办法。公开实现里这条路叫特征哈希（hashing trick），把任意多的组合映射到固定维度上，代价是碰撞。</p>
+<p><strong>可复现</strong>。训练和线上必须是同一个向量，哈希输出得稳定，不能用带进程随机种子的内置实现。四条里只有这一条会在半夜出问题，下面先讲它。</p>
+<h2 id="稳定哈希">稳定哈希</h2>
+<pre data-lang="python"><code class="language-python">import hashlib
+
+DIM = 1 &lt;&lt; 14
+
+def bucket(token):
+    h = hashlib.blake2b(token.encode(), digest_size=8).digest()
+    v = int.from_bytes(h, &#x27;little&#x27;)
+    return v &amp; (DIM - 1), 1.0 if v &gt;&gt; 63 else -1.0
+
+def vector(imports):
+    vec = [0.0] * DIM
+    for tok in imports:              # 已小写、去掉 .dll 后缀
+        i, sign = bucket(tok)
+        vec[i] += sign               # 符号位抵消一部分碰撞偏置
+    return vec</code></pre>
+<p>用 <code>blake2b</code> 而不是内置 <code>hash()</code> 是踩过坑的：<code>hash()</code> 对字符串按进程随机加盐，训练进程和线上进程算出来的桶号完全不同，特征全部错位，两边都不报错，只是准确率莫名其妙掉下来。离线评估看不出这个 bug，因为评估和训练在同一个进程里。</p>
+<p>符号位是第二个细节。两个 token 撞进同一个桶又都加正数，这个维度的值会系统性偏大，模型学到的是碰撞强度。给每个 token 一个 ±1 的符号，碰撞在期望上互相抵消，代价是单维不再可解释。</p>
+<h2 id="冲突账">冲突账</h2>
+<p>设语料里不同 token 有 3 万个，维度 16384。桶占用率按 <code>1 - exp(-n/M)</code> 算是 84%，每桶平均 1.83 个 token；碰撞对约 <code>n² / (2M)</code>，即 2.7 万对，占全部 token 对（约 4.5 亿）的 0.006%。</p>
+<p>这个量级下 A 方案是够用的，碰撞带来的噪声远小于样本本身的标签噪声。把维度提到 2^18，占用率降到 11%，但向量变长、稀疏索引开销上升，批量打分时是实打实的成本。两个数都是估算，真实影响看验证集上的过拟合。</p>
+<p>B 的问题不在碰撞，在覆盖率。3 万 token 两两组合有 9 亿种可能，实际出现的 pair 大多只出现一次。样本量低于 5000 时，能重复出现的 pair 太少，模型学到的是「这条样本见过」。</p>
+<h2 id="缺失值不该是零">缺失值不该是零</h2>
+<p><strong>序数导入</strong>。<code>imp.name</code> 为空、只有 <code>imp.ordinal</code> 的情况，用 <code>ord17/kernel32</code> 这样的 token 保留。合法程序为了跨版本兼容很少做纯序数导入，所以这个 token 本身就是信号。丢掉它等于把「这份导入表不正常」这条信息删了。</p>
+<p><strong>延迟加载</strong>。延迟加载导入在数据目录第 13 项（<code>IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT</code>），不少解析代码只读第 1 项。两类合进同一个集合，另记一个「延迟加载占比」的标量。</p>
+<p><strong>完全没有导入表</strong>。不要用零向量顶上，给一个显式的 missing 标记，让这批样本走独立分支，别和正常样本混在同一个特征空间里。</p>
+<h2 id="上线前先量两个数">上线前先量两个数</h2>
+<p>第一个是桶占用率，超过 90% 就该加维度或换 token 单位，训练集上直接算。第二个是 pair 重复次数的中位数，低于 3 说明没有统计意义，B 会退化成记忆样本。</p>
+<p>样本量给的是粗边界：不到 5000 用 A，5000 到 20 万用 B，只想区分「下载器 / 释放器 / 常规程序」用 C 或 C 粗筛加 A 细排。两条门禁写进训练脚本，不必每次开会决定。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://scikit-learn.org/stable/modules/feature_extraction.html#feature-hashing">scikit-learn: Feature hashing</a>：hashing trick 的写法与碰撞说明</li>
+<li><a href="https://docs.python.org/3/library/hashlib.html">Python hashlib：blake2b 的 digest_size 与参数</a></li>
+<li><a href="https://pefile.readthedocs.io/en/latest/">pefile 文档</a>：<code>DIRECTORY_ENTRY_IMPORT</code> 与 <code>DIRECTORY_ENTRY_DELAY_IMPORT</code> 的结构</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/特征工程/">特征工程</a><a class="tag" href="/tags/pe格式/">PE格式</a><a class="tag" href="/tags/特征哈希/">特征哈希</a><a class="tag" href="/tags/样本分类/">样本分类</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%AF%BC%E5%85%A5%E5%87%BD%E6%95%B0%E5%88%97%E8%A1%A8%E5%BD%93%E7%89%B9%E5%BE%81%EF%BC%9A%E5%9B%9B%E6%9D%A1%E5%88%A4%E6%8D%AE%E5%92%8C%E4%B8%89%E7%A7%8D%E5%81%9A%E6%B3%95" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/sandbox-logs/">← 动态沙箱的日志里到底有什么</a><a class="next" href="/post/nonresident-code/">非常驻代码：节表里那块只有虚拟大小的内存 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段</a><time>2022-09</time></li><li><a href="/post/nonresident-code/">非常驻代码：节表里那块只有虚拟大小的内存</a><time>2022-10</time></li><li><a href="/post/sandbox-escape-ml/">沙箱逃逸检测：从日志特征到随机森林</a><time>2022-11</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

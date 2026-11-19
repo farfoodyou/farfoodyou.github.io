@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>规则、模型、再一层规则：一晚漏检换来的编排顺序 - farfood</title>
+<meta name="description" content="后置规则按标签字符串精确匹配模型输出，模型改了标签命名，整族样本被判成干净。兜底方向设错，比没有兜底更难发现。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/rule-model-hybrid/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "规则、模型、再一层规则：一晚漏检换来的编排顺序", "description": "后置规则按标签字符串精确匹配模型输出，模型改了标签命名，整族样本被判成干净。兜底方向设错，比没有兜底更难发现。", "datePublished": "2023-09-05T21:10:00+08:00", "dateModified": "2023-09-05T21:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/rule-model-hybrid/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "检测引擎, 混合检测, 灰度发布, 事故复盘"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="规则、模型、再一层规则：一晚漏检换来的编排顺序 - farfood">
+<meta property="og:description" content="后置规则按标签字符串精确匹配模型输出，模型改了标签命名，整族样本被判成干净。兜底方向设错，比没有兜底更难发现。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/rule-model-hybrid/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="规则、模型、再一层规则：一晚漏检换来的编排顺序 - farfood">
+<meta name="twitter:description" content="后置规则按标签字符串精确匹配模型输出，模型改了标签命名，整族样本被判成干净。兜底方向设错，比没有兜底更难发现。">
+<meta property="article:published_time" content="2023-09-05T21:10:00+08:00">
+<meta name="keywords" content="检测引擎, 混合检测, 灰度发布, 事故复盘">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">规则、模型、再一层规则：一晚漏检换来的编排顺序</h1>
+    <p class="meta"><time datetime="2023-09-05T21:10:00">2023-09-05</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2495 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#那一晚的时间线">那一晚的时间线</a></li>
+<li class="h2"><a href="#从-score-到-verdict">从 score 到 verdict</a></li>
+<li class="h2"><a href="#顺序也有讲究">顺序也有讲究</a></li>
+<li class="h2"><a href="#改了什么">改了什么</a></li>
+<li class="h2"><a href="#兜底该由谁做">兜底该由谁做</a></li>
+<li class="h2"><a href="#一个还没解决的边界">一个还没解决的边界</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>七月的一个周五，凌晨两点，值班的人在看板上来回切时间窗。一个家族的检出量从傍晚开始一路下滑，到零点只剩原来的七成，跟灰度比例对得上。而所有单点指标都是绿的：前置规则的命中率在正常区间，模型打分的分布没有偏移，队列没积压，错误率没动。</p>
+<p>问题出在终点。同一批文件，模型给了 0.93，标签也对，最后写进结果的 verdict 是 clean。从哪一步开始掉头的，日志里没有一行是「错」的。</p>
+<p>链路上有三段：前置规则做快筛和黑白名单，模型打分并给出家族标签，后置规则拿到分数和标签做策略裁决——抑制、升级、附加处置。前两段各自工作正常，第三段按标签字符串精确匹配。那天模型换了标签命名法，后置规则一条都没匹配上，落进了「无匹配则放行」的默认分支。</p>
+<h2 id="那一晚的时间线">那一晚的时间线</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>时刻</th>
+<th>发生了什么</th>
+</tr></thead>
+<tbody>
+<tr><td>20:10</td><td>模型新版本开始在 30% 的机器上灰度，标签从家族名改成「家族名+变种序号」</td></tr>
+<tr><td>22:40</td><td>值班发现该家族的检出量掉了三成，先怀疑上游没送样本</td></tr>
+<tr><td>23:05</td><td>抽单机日志，score 与标签都在，verdict 是 clean，开始怀疑后置策略</td></tr>
+<tr><td>23:30</td><td>打印后置规则的匹配轨迹，命中数为 0，确认标签不匹配</td></tr>
+<tr><td>00:20</td><td>回滚模型版本，检出在 12 分钟内回到基线</td></tr>
+<tr><td>01:10</td><td>起补扫任务，把 20:10 之后入库的文件重跑一遍</td></tr>
+</tbody>
+</table></div>
+<p>中间那一个多小时花在排除「样本没进来」和「模型没跑」上，两件事都有监控，排除得快。耗时间的是最后一段没有监控，没人记录「这条规则今天一次都没命中」。规则空转是静默的。</p>
+<h2 id="从-score-到-verdict">从 score 到 verdict</h2>
+<p>后置策略的原始写法是这样，每条策略一个条件，条件全部满足就执行动作，都不满足就走默认分支：</p>
+<pre data-lang="go"><code class="language-go">type Policy struct {
+    MatchTag  string   // 精确匹配模型输出的标签
+    MinScore  float64
+    Action    Action   // Suppress / Escalate / Tag
+}
+
+func (e *Engine) Post(r Result) Verdict {
+    for _, p := range e.policies {
+        if p.MatchTag == r.Tag &amp;&amp; r.Score &gt;= p.MinScore {
+            return e.act(p.Action, r)
+        }
+    }
+    return Verdict{Label: &quot;clean&quot;, Reason: &quot;no-policy-match&quot;} // 默认放行
+}</code></pre>
+<p><code>MatchTag</code> 是字符串相等。模型侧把 <code>family-x</code> 改成 <code>family-x.3</code>，这个等号就永远不成立，1400 多条策略集体失声。这套编排本身没有错，错在两端之间没有契约：模型输出的标签集合是一份隐式协议，规则侧按字符串硬编码依赖它，而两边的发布节奏完全独立。</p>
+<h2 id="顺序也有讲究">顺序也有讲究</h2>
+<p>同一个模型和同一批规则，编排顺序不同，失效模式差很多：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>编排</th>
+<th>优点</th>
+<th>失效表现</th>
+</tr></thead>
+<tbody>
+<tr><td>规则门禁 → 模型</td><td>挡掉大部分明显样本，省算力</td><td>规则一旦过宽，模型看不到那批样本，漏检无痕迹</td></tr>
+<tr><td>模型 → 规则裁决</td><td>模型是主判据，规则只调节</td><td>规则依赖模型输出格式，格式变则规则静默失效（这次就是）</td></tr>
+<tr><td>规则快筛 → 模型 → 规则兜底</td><td>快筛省成本，兜底能纠正模型的明显错判</td><td>兜底层的默认方向决定事故性质：放行则漏检，升级则积压</td></tr>
+</tbody>
+</table></div>
+<p>我们原来用的第三种，只做了一半：兜底层存在，方向反了。默认放行隐含「没匹配上就不需要处置」，这个假设在标签体系变更那天就失效了。</p>
+<h2 id="改了什么">改了什么</h2>
+<p><strong>默认分支反转。</strong> 后置规则匹配不到任何策略时，不再给 clean，而是进复核队列并带上 <code>unmatched-tag</code> 的原因码。代价立刻显出来：升级率从 0.4% 涨到 1.1%，人工队列每天多四十来单。这笔成本我认，它把静默失效换成了可见的积压，而积压能报警。</p>
+<p><strong>补契约测试。</strong> 模型侧声明会输出哪些标签，规则侧声明依赖哪些标签，构建时取交集，差集非空就失败。另外在 CI 里放 2000 份固定样本，断言全链路 verdict 与基线一致，改标签或改阈值都会撞墙。</p>
+<p><strong>拆分发布节奏。</strong> 规则按天甚至按小时发，模型按周发，两者不再进同一个变更窗口。绑在一起发布，等于让最贵的那次变更加上最高频的风险。</p>
+<p><strong>给空转加观测。</strong> 每条策略上报命中次数，连续 24 小时为 0 的策略进巡检清单，这次能提前十小时暴露。</p>
+<h2 id="兜底该由谁做">兜底该由谁做</h2>
+<p>规则擅长确定性判据：结构越界、签名命中、字段自相矛盾，这类判断没有概率，错了能指到字节。模型擅长模糊相似：同一个家族改了壳、换了编译选项，规则写不完，模型能认。兜底该落在「确定性能不能认出来」那一层，不该落在分数上。</p>
+<p>模型不该做兜底。它一旦成了最后一道，任何输出格式变化都会直接变成线上判定结果，而这类变化在离线评估里看不出来：评估集用的是旧标签，新旧标签名的映射没人维护。</p>
+<h2 id="一个还没解决的边界">一个还没解决的边界</h2>
+<p>前置规则过宽导致的漏检，至今没有好的自动发现手段。规则挡住样本之后模型不会跑，下游也没有分数，能看见的只有「这条规则命中量突然涨了十倍」。现在靠周级抽样回放：从被前置规则拦掉的样本里随机抽 0.5%，绕过前置送模型比结论。抽得少，只能发现粗粒度分歧，对「规则写宽了」够用。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://owasp.org/www-project-modsecurity-core-rule-set/">OWASP Core Rule Set 项目文档</a>：规则集的发布与兼容性维护方式</li>
+<li><a href="https://scikit-learn.org/stable/modules/outlier_detection.html">scikit-learn: 异常检测与 novelty 检测</a>：分数到阈值这一段的基本口径</li>
+<li><a href="https://martinfowler.com/bliki/CanaryRelease.html">Martin Fowler: CanaryRelease</a>：灰度窗口与回滚条件的划分</li>
+<li><a href="https://sre.google/sre-book/postmortem-culture/">Google SRE Book: Postmortem Culture</a>：复盘里「时间线 + 根因 + 改动」的写法来源</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/检测引擎/">检测引擎</a><a class="tag" href="/tags/混合检测/">混合检测</a><a class="tag" href="/tags/灰度发布/">灰度发布</a><a class="tag" href="/tags/事故复盘/">事故复盘</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E8%A7%84%E5%88%99%E3%80%81%E6%A8%A1%E5%9E%8B%E3%80%81%E5%86%8D%E4%B8%80%E5%B1%82%E8%A7%84%E5%88%99%EF%BC%9A%E4%B8%80%E6%99%9A%E6%BC%8F%E6%A3%80%E6%8D%A2%E6%9D%A5%E7%9A%84%E7%BC%96%E6%8E%92%E9%A1%BA%E5%BA%8F" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/false-positive-ops/">← 误报治理：把「关规则」换成动阈值之后</a><a class="next" href="/post/detection-observability/">四个数：检测系统的账怎么算 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/threat-intel-rules/">十万条规则怎么不炸：一次规则包下发的复盘</a><time>2023-06</time></li><li><a href="/post/sandbox-logs/">动态沙箱的日志里到底有什么</a><time>2022-11</time></li><li><a href="/post/file-type-detect/">文件类型识别：magic 不够用的那几种情况</a><time>2023-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

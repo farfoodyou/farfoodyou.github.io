@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>结构化输出为什么难：一份 oneOf 与四层失败 - farfood</title>
+<meta name="description" content="schema 能表达的东西和解码器能保证的东西不是同一个集合。解析失败按语法、结构、语义分开算，兜底手段也各不相同。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/structured-output/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "结构化输出为什么难：一份 oneOf 与四层失败", "description": "schema 能表达的东西和解码器能保证的东西不是同一个集合。解析失败按语法、结构、语义分开算，兜底手段也各不相同。", "datePublished": "2024-06-25T09:15:00+08:00", "dateModified": "2024-06-25T09:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/structured-output/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "结构化输出, JSON Schema, 约束解码, 降级"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="结构化输出为什么难：一份 oneOf 与四层失败 - farfood">
+<meta property="og:description" content="schema 能表达的东西和解码器能保证的东西不是同一个集合。解析失败按语法、结构、语义分开算，兜底手段也各不相同。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/structured-output/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="结构化输出为什么难：一份 oneOf 与四层失败 - farfood">
+<meta name="twitter:description" content="schema 能表达的东西和解码器能保证的东西不是同一个集合。解析失败按语法、结构、语义分开算，兜底手段也各不相同。">
+<meta property="article:published_time" content="2024-06-25T09:15:00+08:00">
+<meta name="keywords" content="结构化输出, JSON Schema, 约束解码, 降级">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">结构化输出为什么难：一份 oneOf 与四层失败</h1>
+    <p class="meta"><time datetime="2024-06-25T09:15:00">2024-06-25</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一条-json-是怎么被打出来的">一条 JSON 是怎么被打出来的</a></li>
+<li class="h2"><a href="#掩码管得住语法管不住语义">掩码管得住语法，管不住语义</a></li>
+<li class="h2"><a href="#数据流上的四个断点">数据流上的四个断点</a></li>
+<li class="h2"><a href="#把-schema-改成可编译的形状">把 schema 改成可编译的形状</a></li>
+<li class="h2"><a href="#失败之后按层兜底">失败之后按层兜底</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>JSON Schema 讲 <code>oneOf</code> 只用一句话：实例恰好匹配其中一个分支。交给约束解码器时，这句话变成一个做不到的要求。我的知识库项目就栽在这上面：抽取器要输出「一条记录」加「可选的更新意图」，我顺手写成两个分支的 <code>oneOf</code>，四十天四万多次调用，失败率 3.1%，失败样本里三分之二是两个分支的字段同时出现。</p>
+<h2 id="一条-json-是怎么被打出来的">一条 JSON 是怎么被打出来的</h2>
+<p>生成是一个 token 一个 token 来的：先算词表上的概率分布，按约束把不该出现的 token 概率置零（掩码），再采样。掩码来自把 schema 编译成的前缀自动机：给定已生成的字符，判断每个候选 token 接上去是否还可能成为合法实例。</p>
+<p>JSON 的语法层适合这套东西：括号配对、冒号、逗号、转义序列都能写成有限状态机，逐字符判断没有歧义。所以括号闭合这种保证，约束解码给得很稳。</p>
+<p>问题在语法之上那一层：schema 描述的是数据形状，其中相当一部分没法用「当前前缀」判断。</p>
+<h2 id="掩码管得住语法管不住语义">掩码管得住语法，管不住语义</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>约束</th>
+<th>能否在 token 级保证</th>
+<th>原因</th>
+</tr></thead>
+<tbody>
+<tr><td>括号、引号、逗号配对</td><td>可以</td><td>纯文法的状态机</td></tr>
+<tr><td>必填字段、禁止额外字段</td><td>部分可以</td><td>键序自由时状态机分支爆炸</td></tr>
+<tr><td>整数与字符串</td><td>可以</td><td>引号的有无已经区分</td></tr>
+<tr><td>枚举</td><td>可以</td><td>候选集可预编译进前缀树</td></tr>
+<tr><td>数值范围</td><td>实际做不到</td><td>字符级任意，<code>2000</code> 合法而 <code>20001</code> 非法</td></tr>
+<tr><td>正则 pattern</td><td>取决于复杂度</td><td>回溯型正则无法增量判定</td></tr>
+<tr><td>oneOf / anyOf</td><td>做不到</td><td>需要整段闭合后才知道匹配哪支</td></tr>
+<tr><td>uniqueItems</td><td>做不到</td><td>要跨数组比较已生成元素</td></tr>
+</tbody>
+</table></div>
+<p>数值范围那条最容易被低估。<code>{&quot;maximum&quot;: 20000}</code> 放进去，<code>2</code>、<code>20</code>、<code>2000</code>、<code>20001</code> 每一步都合法，最后一位才知道越界；要提前拦住得把数字当自动机跑余量判断，多数实现放弃，留到事后校验。</p>
+<p><code>oneOf</code> 是另一类。模型吐出第一个键时，两个分支都可能匹配，于是两支的字段混着长出来。等花括号闭合，两支都不满足了。解码器能给的最多是「每个键在其中一个分支出现过」。</p>
+<h2 id="数据流上的四个断点">数据流上的四个断点</h2>
+<p>按断点分层统计，42k 次调用里 3.1% 失败：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>层</th>
+<th>占比</th>
+<th>典型样本</th>
+<th>能否靠解码消除</th>
+</tr></thead>
+<tbody>
+<tr><td>语法</td><td>0.4%</td><td>输出被 max_tokens 截断，右括号缺失</td><td>不能，预算问题</td></tr>
+<tr><td>结构</td><td>2.1%</td><td><code>&quot;quota&quot;: &quot;20000&quot;</code>、缺必填键、两支混出</td><td>部分能</td></tr>
+<tr><td>语义</td><td>0.4%</td><td>枚举外的新值、引用不存在的记录、<code>2024-02-31</code></td><td>不能</td></tr>
+<tr><td>运行态</td><td>0.2%</td><td>掩码与 prefix 缓存错位，吐出非法 token</td><td>能，但要自己修</td></tr>
+</tbody>
+</table></div>
+<p>最后一行踩过一次：前缀缓存复用了未加掩码的 logits，命中时偶尔在最后一位绕过约束。约两千分之一，排查花了半天，日志里看不出规律。</p>
+<h2 id="把-schema-改成可编译的形状">把 schema 改成可编译的形状</h2>
+<p>把 <code>oneOf</code> 换成一个判别字段，结构立刻从「两选一」变成「一条路」：</p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;additionalProperties&quot;: false,
+  &quot;required&quot;: [&quot;action&quot;, &quot;id&quot;],
+  &quot;properties&quot;: {
+    &quot;action&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;create&quot;, &quot;update&quot;]},
+    &quot;id&quot;:     {&quot;type&quot;: &quot;string&quot;, &quot;pattern&quot;: &quot;^kb_[0-9a-f]{16}$&quot;},
+    &quot;fields&quot;: {
+      &quot;type&quot;: &quot;object&quot;,
+      &quot;additionalProperties&quot;: false,
+      &quot;properties&quot;: {
+        &quot;title&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;maxLength&quot;: 200},
+        &quot;tags&quot;:  {&quot;type&quot;: &quot;array&quot;, &quot;maxItems&quot;: 8,
+                  &quot;items&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;maxLength&quot;: 24}}
+      }
+    }
+  }
+}</code></pre>
+<p><code>action</code> 先出，后面的键就唯一了。<code>maxItems</code>、<code>maxLength</code> 是解码器能数清的约束，比 <code>maximum</code> 可靠。<code>pattern</code> 只是提示，仍归服务端校验。</p>
+<p>还有个坑在字符层：模型偶尔输出全角引号或兼容区变体，肉眼一样、码位不同，键名匹配不上。所有字符串比较前统一做 NFC 归一化。</p>
+<h2 id="失败之后按层兜底">失败之后按层兜底</h2>
+<p>语法层最便宜的是本地修复：补右括号、去尾逗号、换单引号，最多试一次。修不好就重试，温度 0，带上原始输出。</p>
+<p>结构层回填错误路径再请求一次，比如「<code>quota</code> 需要 integer，收到 string」。这类第二轮成功率约七成，值得花。</p>
+<p>语义层不重试。枚举外的新值、引用不存在的记录，重试只会换一种编法。直接转成「拒绝并说明原因」，由上层决定要不要人工介入。</p>
+<p>彻底不行才降级格式：先试行分隔 JSON，再不行退到 CSV，最后退到纯文本加人工确认。降级不是失败，是把结构保证换成「人能读」。</p>
+<p>整套东西里唯一不能省的是服务端校验：解码器保证了什么，校验器都要再算一遍。把校验放在生成端，等于让被考核的人自己出题。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://json-schema.org/draft/2020-12/json-schema-core.html">JSON Schema Core：oneOf、anyOf 与 $ref 的匹配语义</a></li>
+<li><a href="https://json-schema.org/draft/2020-12/json-schema-validation.html">JSON Schema Validation：数值范围、pattern、uniqueItems</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8259.html">RFC 8259：JSON 文法，以及重复键的处理留给实现</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc4180.html">RFC 4180：CSV 的格式约定，降级时的最低结构化格式</a></li>
+<li><a href="https://www.unicode.org/reports/tr15/">Unicode TR15：NFC 归一化与兼容字符</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/结构化输出/">结构化输出</a><a class="tag" href="/tags/json-schema/">JSON Schema</a><a class="tag" href="/tags/约束解码/">约束解码</a><a class="tag" href="/tags/降级/">降级</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E7%BB%93%E6%9E%84%E5%8C%96%E8%BE%93%E5%87%BA%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9A%BE%EF%BC%9A%E4%B8%80%E4%BB%BD+oneOf+%E4%B8%8E%E5%9B%9B%E5%B1%82%E5%A4%B1%E8%B4%A5" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/token-budget/">← 上下文预算：三种裁剪方案放在同一张账单上</a><a class="next" href="/post/function-calling-orchestration/">工具调用编排：一次重复建单之后收紧的三处约束 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/config-form-not-json/">配置单为什么难填：把「写 JSON」换成「点菜单」</a><time>2020-03</time></li><li><a href="/post/holiday-capacity/">节假日扩容：从求人扩容到自己扛住</a><time>2021-07</time></li><li><a href="/post/local-llm-agent/">本地跑模型做 Agent：一次显存打满的复盘</a><time>2024-12</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

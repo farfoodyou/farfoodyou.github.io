@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>沙箱选型：三个数算完，只剩混合部署 - farfood</title>
+<meta name="description" content="峰值 8 QPS、单任务 40 秒，算下来并发 320、内存 36GB。容器一台够，微虚拟机要两台，差价换的是逃逸面。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/sandbox-choice/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "沙箱选型：三个数算完，只剩混合部署", "description": "峰值 8 QPS、单任务 40 秒，算下来并发 320、内存 36GB。容器一台够，微虚拟机要两台，差价换的是逃逸面。", "datePublished": "2024-07-23T20:30:00+08:00", "dateModified": "2024-07-23T20:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/sandbox-choice/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "沙箱, 隔离, 微虚拟机, 启动开销"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="沙箱选型：三个数算完，只剩混合部署 - farfood">
+<meta property="og:description" content="峰值 8 QPS、单任务 40 秒，算下来并发 320、内存 36GB。容器一台够，微虚拟机要两台，差价换的是逃逸面。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/sandbox-choice/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="沙箱选型：三个数算完，只剩混合部署 - farfood">
+<meta name="twitter:description" content="峰值 8 QPS、单任务 40 秒，算下来并发 320、内存 36GB。容器一台够，微虚拟机要两台，差价换的是逃逸面。">
+<meta property="article:published_time" content="2024-07-23T20:30:00+08:00">
+<meta name="keywords" content="沙箱, 隔离, 微虚拟机, 启动开销">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">沙箱选型：三个数算完，只剩混合部署</h1>
+    <p class="meta"><time datetime="2024-07-23T20:30:00">2024-07-23</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2432 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先把要算的数定下来">先把要算的数定下来</a></li>
+<li class="h2"><a href="#启动开销的账">启动开销的账</a></li>
+<li class="h2"><a href="#内存与密度的账">内存与密度的账</a></li>
+<li class="h2"><a href="#兼容性的账">兼容性的账</a></li>
+<li class="h2"><a href="#算完的选择">算完的选择</a></li>
+<li class="h2"><a href="#改动哪个数会推翻结论">改动哪个数会推翻结论</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>文件检测引擎要执行不可信样本里的脚本，平均 40 秒一个，峰值 8 QPS。这个量级听起来不大，但它决定了沙箱长什么样：并发数、每实例内存、启动开销三样一乘，选型空间就只剩两三个点。我把三种隔离方案按同一套账算了遍，算完发现决定台数的是内存密度，隔离强度反而没怎么参与。</p>
+<h2 id="先把要算的数定下来">先把要算的数定下来</h2>
+<ul>
+<li>峰值 8 QPS，单任务平均 40 秒，按 Little 定律并发 = 8 × 40 = 320。</li>
+<li>宿主机 32GB 内存，留 4GB 给系统和页缓存，可用 28GB。</li>
+<li>每实例内存上限：容器 30MB，用户态内核 90MB，微虚拟机 96MB 客户机加 18MB 运行时。</li>
+<li>冷启动：容器约 120ms，用户态内核约 350ms，微虚拟机 125ms，快照恢复 8ms。</li>
+<li>池化命中率按 0.9 估算（预热池够大时能到，下面有算式）。</li>
+</ul>
+<p>这些数是我在一台 8 核 32G 的宿主机上量的量级，不是厂商数字。同一方案换个镜像、换个文件系统，冷启动能差 2 倍，所以下面所有结论都只在「同机对比」的意义上成立。</p>
+<h2 id="启动开销的账">启动开销的账</h2>
+<p>池化之后，用户看到的启动延迟是加权平均：</p>
+<pre data-lang="text"><code class="language-text">E[start] = h × 8ms + (1 - h) × cold
+h = 0.9, cold = 125ms  →  0.9×8 + 0.1×125  = 19.7ms
+h = 0.5, cold = 125ms  →  0.5×8 + 0.5×125  = 66.5ms
+h = 0,   cold = 125ms  →  125ms</code></pre>
+<p>命中率从 0.9 掉到 0.5，平均启动从 20ms 涨到 67ms。补池的算力也要算：每秒要补 8 × (1 - 0.9) = 0.8 个实例，每个冷启动占 0.125 秒 CPU，等于 0.1 核。命中率 0.5 时是 0.5 核，够跑一个小服务了。</p>
+<p>池子不能无限大。预热实例本身占内存，闲置超过 5 分钟就销毁，否则池子会按历史峰值涨上去，把密度优势抵消掉。</p>
+<h2 id="内存与密度的账">内存与密度的账</h2>
+<p>320 并发乘以每实例内存，得到每台机器能塞多少：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>方案</th>
+<th>每实例</th>
+<th>320 并发占用</th>
+<th>28GB 可用</th>
+<th>需要台数</th>
+</tr></thead>
+<tbody>
+<tr><td>容器（共享内核）</td><td>30MB</td><td>9.6GB</td><td>够</td><td>1</td></tr>
+<tr><td>用户态内核</td><td>90MB</td><td>28.8GB</td><td>差一点</td><td>2</td></tr>
+<tr><td>微虚拟机</td><td>114MB</td><td>36.5GB</td><td>不够</td><td>2</td></tr>
+</tbody>
+</table></div>
+<p>微虚拟机那 114MB 里，96MB 是客户机内存，18MB 是 VMM 自身的开销（设备模拟、内存映射表、vCPU 线程栈）。客户机内存不能压得太小，内核启动和脚本解释器要占掉一部分，96MB 是我试到能稳定跑的下限。</p>
+<p>用户态内核卡在 28.8 对 28 这条线上，四舍五入等于要两台。这种「差 0.1GB 就翻倍」的位置最难受：调到 85MB 能塞进一台，但一旦有样本内存涨上去就 OOM，所以还是按两台算。</p>
+<h2 id="兼容性的账">兼容性的账</h2>
+<p>隔离强度不能只看「能不能逃逸」，要看暴露了多少接口给不可信代码。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>方案</th>
+<th>不可信代码能碰到的面</th>
+<th>逃逸所需的漏洞</th>
+<th>实际踩到的兼容问题</th>
+</tr></thead>
+<tbody>
+<tr><td>容器</td><td>宿主内核全部 syscall，受 <a href="https://docs.kernel.org/userspace-api/seccomp_filter.html">seccomp</a> 过滤</td><td>内核提权漏洞，或配置放开了特权</td><td>几乎没有，代价是过滤规则写宽了等于没隔离</td></tr>
+<tr><td>用户态内核</td><td>用户态实现的一层 syscall，宿主只暴露少量</td><td>该层实现的漏洞加宿主接口</td><td>io_uring、perf_event 部分缺失，静态链接的程序偶尔起不来</td></tr>
+<tr><td>微虚拟机</td><td>独立内核，虚拟设备面</td><td>VMM 设备模拟或 KVM ioctl</td><td>需要 /dev/kvm，宿主不支持嵌套虚拟化时跑不起来</td></tr>
+</tbody>
+</table></div>
+<p>文件检测这个场景里，样本脚本会做的事情很杂：解压、起子进程、读大量文件、偶尔尝试 ptrace 自己。容器方案下这些都能跑，但 seccomp 一旦放宽到能 ptrace，逃逸面就回来了。用户态内核对 ptrace 的支持是打折扣的，我测的两个样本直接崩在 syscall 上。</p>
+<h2 id="算完的选择">算完的选择</h2>
+<p>不可信样本走微虚拟机，可信的内部批处理走容器。用户态内核这一档没选，原因不在隔离，在文件 IO：它的文件系统请求要经一层代理转发，扫描类任务全是随机小读，代理成了瓶颈，同样的样本集跑下来 CPU 有相当一部分消耗在转发上，测出来的吞吐比微虚拟机还低。</p>
+<p>微虚拟机要两台机器，容器一台就够。差价大约是一倍机器成本，换来的是「样本即使拿到内核提权也出不来」。这个交易在文件检测里划算，因为一台机器跑 40 秒一个任务，机器成本早被任务时长摊薄了；换个场景，比如一次只跑 200ms 的表达式求值，同样的差价就不划算。</p>
+<h2 id="改动哪个数会推翻结论">改动哪个数会推翻结论</h2>
+<p>选型结论对三个数最敏感，改一个就要重算：</p>
+<ul>
+<li>单任务时长从 40 秒降到 5 秒，并发变成 40，微虚拟机一台机器就有余量，容器和微虚拟机的差别只剩启动开销（19.7ms 对 20ms 左右），选哪个都行。</li>
+<li>峰值 QPS 从 8 掉到 1，池化就没必要了，冷启动 125ms 完全可以接受，池子那套预热逻辑可以整个删掉。</li>
+<li>客户机内存下限如果能压到 64MB，微虚拟机 320 并发只要 26.2GB，一台机器装得下，前面「两台」的结论不成立。</li>
+</ul>
+<p>所以我不太信「隔离更强所以选它」这类判断。可算的部分是并发、内存、启动和补池算力；不可算的部分才是逃逸面的定价，而那个定价要放到具体场景里看：样本跑 40 秒，值得为它多花一台机器；样本跑 200ms，不值得。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://firecracker-microvm.github.io/">微虚拟机的设计目标与启动开销</a></li>
+<li><a href="https://gvisor.dev/docs/">用户态内核沙箱：syscall 兼容性说明</a></li>
+<li><a href="https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md">OCI Runtime Spec：容器配置里 seccomp 与 namespace 的位置</a></li>
+<li><a href="https://docs.kernel.org/userspace-api/seccomp_filter.html">Linux 内核文档：seccomp 过滤器的语义</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/沙箱/">沙箱</a><a class="tag" href="/tags/隔离/">隔离</a><a class="tag" href="/tags/微虚拟机/">微虚拟机</a><a class="tag" href="/tags/启动开销/">启动开销</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%B2%99%E7%AE%B1%E9%80%89%E5%9E%8B%EF%BC%9A%E4%B8%89%E4%B8%AA%E6%95%B0%E7%AE%97%E5%AE%8C%EF%BC%8C%E5%8F%AA%E5%89%A9%E6%B7%B7%E5%90%88%E9%83%A8%E7%BD%B2" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/cage-the-agent/">← 把 Agent 关进笼子：禁网、只读、超时、审计</a><a class="next" href="/post/token-budget/">上下文预算：三种裁剪方案放在同一张账单上 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/cage-the-agent/">把 Agent 关进笼子：禁网、只读、超时、审计</a><time>2024-08</time></li><li><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a><time>2022-07</time></li><li><a href="/post/sandbox-logs/">动态沙箱的日志里到底有什么</a><time>2022-11</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

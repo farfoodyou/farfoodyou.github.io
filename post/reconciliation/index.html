@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>对账：资金系统的最后一道兜底 - farfood</title>
+<meta name="description" content="对账的判据是能定位到单号、能自动处置差异；总量对账只报警不定位，明细全量差集能定位但跑不动，中间还有一层没人做。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/reconciliation/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "对账：资金系统的最后一道兜底", "description": "对账的判据是能定位到单号、能自动处置差异；总量对账只报警不定位，明细全量差集能定位但跑不动，中间还有一层没人做。", "datePublished": "2021-11-09T14:20:00+08:00", "dateModified": "2021-11-09T14:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/reconciliation/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "对账, 差集, 冲正, 容忍阈值, 补偿"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="对账：资金系统的最后一道兜底 - farfood">
+<meta property="og:description" content="对账的判据是能定位到单号、能自动处置差异；总量对账只报警不定位，明细全量差集能定位但跑不动，中间还有一层没人做。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/reconciliation/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="对账：资金系统的最后一道兜底 - farfood">
+<meta name="twitter:description" content="对账的判据是能定位到单号、能自动处置差异；总量对账只报警不定位，明细全量差集能定位但跑不动，中间还有一层没人做。">
+<meta property="article:published_time" content="2021-11-09T14:20:00+08:00">
+<meta name="keywords" content="对账, 差集, 冲正, 容忍阈值, 补偿">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">对账：资金系统的最后一道兜底</h1>
+    <p class="meta"><time datetime="2021-11-09T14:20:00">2021-11-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/数据/">数据</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#四条判据">四条判据</a></li>
+<li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
+<li class="h2"><a href="#三层漏斗不是二选一">三层漏斗，不是二选一</a></li>
+<li class="h2"><a href="#差异分类决定能不能自动冲正">差异分类决定能不能自动冲正</a></li>
+<li class="h2"><a href="#容忍阈值分三档">容忍阈值分三档</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>第一版对账脚本是我写的，两百行，只比当天的总笔数和总金额。某天两边差一笔 0.2 元，按阈值放过；两周后同类差异滚成三百多笔，三个人查了两天，定位到一条回调重放路径在特定重试序列下多记一笔。</p>
+<p>教训跟 SQL 无关。总量对账能说「有事」，说不了「哪一笔」，而资金系统里能自动处置的动作都落在单号上。</p>
+<h2 id="四条判据">四条判据</h2>
+<ol>
+<li><strong>覆盖哪种单边账</strong>。一边有一边没有最贵，金额或状态不一致次之。</li>
+<li><strong>定位精度</strong>。总量级等于没有定位，分段级能缩到几千笔，只有单号级才能自动处置。</li>
+<li><strong>一轮的耗时和资源</strong>。决定能不能一天多轮、能不能盘中发现。</li>
+<li><strong>差异能否自动处置</strong>。不能自动化的方案，差异全堆到人身上。</li>
+</ol>
+<p>第 2 条最容易被忽略：平时不花钱，出事时最花钱。</p>
+<h2 id="三个方案并排">三个方案并排</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>维度</th>
+<th>总量对账</th>
+<th>明细差集</th>
+<th>分段校验和</th>
+</tr></thead>
+<tbody>
+<tr><td>能发现</td><td>总额不一致</td><td>全部类型</td><td>全部类型</td></tr>
+<tr><td>定位精度</td><td>无</td><td>单号</td><td>分段（万笔级）再下钻</td></tr>
+<tr><td>单轮耗时</td><td>秒级</td><td>十二分钟量级</td><td>四十秒量级</td></tr>
+<tr><td>资源</td><td>两次聚合</td><td>两张全量表排序外连接</td><td>两次分段聚合</td></tr>
+<tr><td>自动处置</td><td>不可能</td><td>可以</td><td>可以</td></tr>
+<tr><td>主要成本</td><td>人</td><td>磁盘 IO 与副本</td><td>分段键两边一致</td></tr>
+</tbody>
+</table></div>
+<p>耗时是实测口径：日成功流水 4000 万笔，明细差集单机 8 核跑 12 分钟，这期间两张表都在写，只能落只读副本。分段校验和同样数据量 40 秒。</p>
+<p>分段方案只有一个坑，很致命：两边的分段键必须算出同一套结果。自增主键不行，两边 id 空间不同；按单号哈希取模，段号才是同一套坐标系。按文件行号分段的，第一次跨系统就废。</p>
+<pre data-lang="sql"><code class="language-sql">WITH l AS (
+  SELECT (&#x27;x&#x27; || substr(md5(no), 1, 4))::bit(16)::int % 4096 AS seg,
+         count(*) AS n, sum(amount) AS amt
+    FROM local_bill WHERE biz_day = :d GROUP BY 1
+), c AS (
+  SELECT (&#x27;x&#x27; || substr(md5(no), 1, 4))::bit(16)::int % 4096 AS seg,
+         count(*) AS n, sum(amount) AS amt
+    FROM channel_bill WHERE biz_day = :d GROUP BY 1
+)
+SELECT COALESCE(l.seg, c.seg) AS seg, l.n, c.n, l.amt, c.amt
+  FROM l FULL JOIN c USING (seg)
+ WHERE l.n IS DISTINCT FROM c.n
+    OR l.amt IS DISTINCT FROM c.amt
+ ORDER BY 1;</code></pre>
+<p>用 <code>IS DISTINCT FROM</code> 而不是 <code>&lt;&gt;</code>：某段可能只在一侧存在，<code>NULL &lt;&gt; 3</code> 得 NULL，会被 WHERE 过滤掉，最该报警的差异恰好漏掉。</p>
+<h2 id="三层漏斗不是二选一">三层漏斗，不是二选一</h2>
+<p>落地成三层漏斗：总量每十分钟一轮，只比笔数和金额，不一致就置标志位；分段校验和放 T+1 凌晨，把当日切 4096 段聚合比对，就是上面那段 SQL；明细差集只对异常段跑，用 <code>EXCEPT</code> 双向取差。三层跑完出一份差异清单，每行都要带差异码，没归因的差异等于没查。</p>
+<h2 id="差异分类决定能不能自动冲正">差异分类决定能不能自动冲正</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>差异类型</th>
+<th>判定依据</th>
+<th>处置</th>
+<th>执行</th>
+</tr></thead>
+<tbody>
+<tr><td>渠道有、本地无</td><td>有渠道流水号，本地无单</td><td>补账，重放原回调</td><td>自动</td></tr>
+<tr><td>本地有、渠道无</td><td>本地入账，渠道文件无此单</td><td>挂账，禁止冲正</td><td>人工</td></tr>
+<tr><td>金额不一致</td><td>单号匹配，金额差</td><td>多为部分退款或手续费口径</td><td>人工</td></tr>
+<tr><td>重复入账</td><td>同单号多条成功流水</td><td>留最早一条，其余冲正</td><td>自动</td></tr>
+</tbody>
+</table></div>
+<p>第二行不允许自动，因为信息不足。本地有渠道没有，可能是渠道文件漏传（冲正等于把自己的账抹掉），也可能是本地重复记账（必须冲正），拿到补充文件之前分辨不出来。</p>
+<p>冲正本身有三条硬规则：</p>
+<ul>
+<li><strong>只追加，不改原流水</strong>。冲正写一条反向流水，唯一键是「原单号 + 原因码」，重复执行被挡住。</li>
+<li><strong>冲正必须排在原流水之后</strong>。用单调入账序号，不用应用层时间：两台机器差几秒就能让冲正排到前面，余额被算成负数。</li>
+<li><strong>只处理已确认的差异</strong>。确认靠差异码加人工复核或渠道补文件，对账系统不猜。</li>
+</ul>
+<h2 id="容忍阈值分三档">容忍阈值分三档</h2>
+<p>拍一个总数当阈值是错的，不同差异码的基线差几个数量级。重复通知类的基线在千分之零点三上下（口径：三个月日均值，含活动日），属于噪音；单边账基线是 0，出一笔就值得看。</p>
+<p>所以按差异码分别设三档：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>档位</th>
+<th>口径</th>
+<th>动作</th>
+</tr></thead>
+<tbody>
+<tr><td>条数</td><td>单差异码笔数 &gt; 50</td><td>停该类自动冲正，告警</td></tr>
+<tr><td>金额</td><td>单笔 &gt; 100 元，或日累计差 &gt; 当日成功金额 × 2e-5</td><td>立即告警，人工介入</td></tr>
+<tr><td>结构</td><td>某差异码占比 &gt; 30%，或连续三天同码</td><td>判定系统性问题，停对账并排查</td></tr>
+</tbody>
+</table></div>
+<p>三档是「或」的关系，任一触发就升级。第三档后来才加，比金额管用：手续费四舍五入方向不一致这类差异，一天几百笔、一笔两分钱，金额拦不住，占比会立刻暴露。</p>
+<p>阈值钉在配置里，改动要两人确认并记下前值。这条流程拦下过一次事故：有人为消掉告警把金额阈值调大一个数量级。</p>
+<p>对账的价值不在对上多少，在于给出差异时人能多快决定怎么处置。能定位到单号、带差异码、分档告警的清单才算把兜底做完；只比总额的脚本给的是心理安慰。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.postgresql.org/docs/13/queries-union.html">PostgreSQL: 集合操作 EXCEPT / INTERSECT</a>：双向取差集，比外连接更好读</li>
+<li><a href="https://www.postgresql.org/docs/13/sql-select.html">PostgreSQL: SELECT 与 FULL JOIN</a>：<code>IS DISTINCT FROM</code> 与外连接的 NULL 语义</li>
+<li><a href="https://microservices.io/patterns/data/saga.html">Saga 模式</a>：补偿动作的语义边界，冲正属于其中最简单的一类</li>
+<li><a href="https://martinfowler.com/articles/patterns-of-distributed-systems/">分布式系统模式</a>：至少一次投递与幂等接收者，重复入账的来源</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/对账/">对账</a><a class="tag" href="/tags/差集/">差集</a><a class="tag" href="/tags/冲正/">冲正</a><a class="tag" href="/tags/容忍阈值/">容忍阈值</a><a class="tag" href="/tags/补偿/">补偿</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%AF%B9%E8%B4%A6%EF%BC%9A%E8%B5%84%E9%87%91%E7%B3%BB%E7%BB%9F%E7%9A%84%E6%9C%80%E5%90%8E%E4%B8%80%E9%81%93%E5%85%9C%E5%BA%95" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/loss-prevention/">← 营销资损的四层防线</a><a class="next" href="/post/transaction-message/">事务消息：把扣额度和发券放进一个故事 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li><li><a href="/post/close-order-reconcile/">一次「关单」引发的对账</a><time>2021-04</time></li><li><a href="/post/loss-prevention/">营销资损的四层防线</a><time>2021-12</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

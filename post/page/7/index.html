@@ -26,28 +26,76 @@
 <meta name="twitter:description" content="记模型、记系统、记踩过的坑。">
 </head>
 <body class="">
-<div id="progress"></div>
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/" class="active">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/" class="active">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
 <h1 class="page-title">全部文章 · 第 7 页</h1>
 <article class="card">
-  <h2><a href="/2017/09/18/hexo/">hexo</a></h2>
-  <p class="meta"><time datetime="2017-09-18T18:09:00">2017-09-18</time> </p>
-  <p class="excerpt">hexo的安装配置和常用命令安装# 安装hexo npm install hexo -g #-g表示全局安装, npm默认为当前项目安装 hexo version # 初始化博客文件夹 hexo init blog # 切换到该路径 cd blog # 安装hexo的扩展插件 n…</p>
-  <a class="more" href="/2017/09/18/hexo/">阅读全文 →</a>
+  <h2><a href="/post/structured-output/">结构化输出为什么难：一份 oneOf 与四层失败</a></h2>
+  <p class="meta"><time datetime="2024-06-25T09:15:00">2024-06-25</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">schema 能表达的东西和解码器能保证的东西不是同一个集合。解析失败按语法、结构、语义分开算，兜底手段也各不相同。</p>
+  <a class="more" href="/post/structured-output/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/18/hello-world/">Hello World</a></h2>
-  <p class="meta"><time datetime="2017-09-18T17:09:00">2017-09-18</time> </p>
-  <p class="excerpt">Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the…</p>
-  <a class="more" href="/2017/09/18/hello-world/">阅读全文 →</a>
+  <h2><a href="/post/function-calling-orchestration/">工具调用编排：一次重复建单之后收紧的三处约束</a></h2>
+  <p class="meta"><time datetime="2024-06-11T10:40:00">2024-06-11</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">编排层把工具失败一律当瞬时故障重试，非幂等的写接口被重复调用。改法是把工具描述收紧、错误分层、重试预算放进执行器。</p>
+  <a class="more" href="/post/function-calling-orchestration/">阅读全文 →</a>
 </article>
-<nav class="pager"><a class="prev" href="/post/page/6/">← 更新的文章</a></nav>
+<article class="card">
+  <h2><a href="/post/weekly-report-auto/">周报的账：65 分钟压到 9 分钟，大头还在校对</a></h2>
+  <p class="meta"><time datetime="2024-05-28T21:50:00">2024-05-28</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">把周报拆成聚合、排版、校对三段算时间账，增量指纹让重跑一次只花 0.8 秒。</p>
+  <a class="more" href="/post/weekly-report-auto/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/task-state-machine/">任务清单的三种存法：把一个方括号字符当状态源</a></h2>
+  <p class="meta"><time datetime="2024-05-14T20:30:00">2024-05-14</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">扫文件、文件加旁路索引、索引当源，三种存法在编辑性、可重建性、写路径上各有硬伤；判据先摆出来再选。</p>
+  <a class="more" href="/post/task-state-machine/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/sqlite-fts5/">FTS5 的中文检索：一个分词器选项撑起来的整套设计</a></h2>
+  <p class="meta"><time datetime="2024-04-23T22:15:00">2024-04-23</time> <a class="cat" href="/categories/后端/">后端</a></p>
+  <p class="excerpt">默认分词把整段中文当成一个 token，召回率接近零；换分词方式之后，索引体积、短语查询和增量维护的约束全都跟着变。</p>
+  <a class="more" href="/post/sqlite-fts5/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/local-first-layers/">索引被当成了源：一次知识库重建事故</a></h2>
+  <p class="meta"><time datetime="2024-04-02T10:40:00">2024-04-02</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">摘要字段只写进索引，索引就成了唯一副本。崩溃后重建跑出一个空库，水位线还宣布一切正常。</p>
+  <a class="more" href="/post/local-first-layers/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/markdown-source-of-truth/">把 Markdown 当唯一真源：索引、版本与重建</a></h2>
+  <p class="meta"><time datetime="2024-03-12T20:15:00">2024-03-12</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">索引的风险偏在悄悄落后于源：三个版本号加一份抽样对账，才能回答查到的数据是不是当前这一代。</p>
+  <a class="more" href="/post/markdown-source-of-truth/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/false-negative-hunting/">漏报从哪来：用回归集找检测盲区</a></h2>
+  <p class="meta"><time datetime="2024-02-06T21:00:00">2024-02-06</time> <a class="cat" href="/categories/安全/">安全</a></p>
+  <p class="excerpt">只存样本哈希的回归集只能告诉你「挂了」，换成家族级取样加能力矩阵审计，漏报才有归因，门禁也才卡得住。</p>
+  <a class="more" href="/post/false-negative-hunting/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/pe-dotnet/">PE 资源节与 .NET：托管程序集的检测要点</a></h2>
+  <p class="meta"><time datetime="2024-01-09T20:40:00">2024-01-09</time> <a class="cat" href="/categories/安全/">安全</a></p>
+  <p class="excerpt">原生特征全没命中的样本，载荷在资源槽里，由 IL 取出后反射加载；要答的是哪段字节最终被执行，字段只是这条链的地标。</p>
+  <a class="more" href="/post/pe-dotnet/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/detection-latency/">检测延迟：从收到文件到给出结论的每一毫秒</a></h2>
+  <p class="meta"><time datetime="2023-12-12T21:10:00">2023-12-12</time> <a class="cat" href="/categories/安全/">安全</a></p>
+  <p class="excerpt">p99 从 3.4 秒涨到 11 秒那次发布，暴露的是四段耗时串行相加、解析跑两遍、单条规则没有时间预算。</p>
+  <a class="more" href="/post/detection-latency/">阅读全文 →</a>
+</article>
+<nav class="pager"><a class="prev" href="/post/page/6/">← 更新的文章</a><a class="next" href="/post/page/8/">更早的文章 →</a></nav>
 </main>
 <footer class="site-footer">
   <div class="wrap">
@@ -94,6 +142,98 @@
     else if (e.key === 't' && btn) { btn.click(); }
     else if (e.key === 'g') { location.href = '/'; }
   });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';

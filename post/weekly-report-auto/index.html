@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>周报的账：65 分钟压到 9 分钟，大头还在校对 - farfood</title>
+<meta name="description" content="把周报拆成聚合、排版、校对三段算时间账，增量指纹让重跑一次只花 0.8 秒。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/weekly-report-auto/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "周报的账：65 分钟压到 9 分钟，大头还在校对", "description": "把周报拆成聚合、排版、校对三段算时间账，增量指纹让重跑一次只花 0.8 秒。", "datePublished": "2024-05-28T21:50:00+08:00", "dateModified": "2024-05-28T21:50:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/weekly-report-auto/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "自动化, 幂等, 指纹, 报告生成"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="周报的账：65 分钟压到 9 分钟，大头还在校对 - farfood">
+<meta property="og:description" content="把周报拆成聚合、排版、校对三段算时间账，增量指纹让重跑一次只花 0.8 秒。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/weekly-report-auto/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="周报的账：65 分钟压到 9 分钟，大头还在校对 - farfood">
+<meta name="twitter:description" content="把周报拆成聚合、排版、校对三段算时间账，增量指纹让重跑一次只花 0.8 秒。">
+<meta property="article:published_time" content="2024-05-28T21:50:00+08:00">
+<meta name="keywords" content="自动化, 幂等, 指纹, 报告生成">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">周报的账：65 分钟压到 9 分钟，大头还在校对</h1>
+    <p class="meta"><time datetime="2024-05-28T21:50:00">2024-05-28</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2441 字 <a class="cat" href="/categories/工程/">工程</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#时间账">时间账</a></li>
+<li class="h2"><a href="#指纹账">指纹账</a></li>
+<li class="h2"><a href="#增量的实际跳过率">增量的实际跳过率</a></li>
+<li class="h2"><a href="#剩下那-6-分钟">剩下那 6 分钟</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>一份周报 4,100 字，我原来要花 65 分钟。50 周下来是 54 小时，接近七个工作日。这个账不难算，难的是算清楚省下来的时间花在哪一步上，否则自动化只是把手工劳动换成了维护脚本。</p>
+<p>我把这活拆成三段，分别记了量。</p>
+<h2 id="时间账">时间账</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>阶段</th>
+<th>输入</th>
+<th>单次耗时</th>
+<th>每周次数</th>
+<th>周耗时</th>
+</tr></thead>
+<tbody>
+<tr><td>聚合（拉提交、issue、任务行，分组）</td><td>6 个仓库 / 2,600 条事件</td><td>0.8 秒</td><td>1</td><td>0.8 秒</td></tr>
+<tr><td>排版（生成表格与正文，编译成 PDF）</td><td>780 条条目 / 3 页</td><td>1.2 秒</td><td>3 到 5</td><td>6 秒</td></tr>
+<tr><td>校对（读一遍、改措辞、删掉不该写的）</td><td>4,100 字</td><td>6 分钟</td><td>1</td><td>6 分钟</td></tr>
+<tr><td>维护（模板与解析器改 bug）</td><td>—</td><td>约 20 分钟</td><td>每 6 周一次</td><td>3.3 分钟</td></tr>
+</tbody>
+</table></div>
+<p>合计从 65 分钟降到 9.3 分钟，其中 6 分钟是校对，3.3 分钟是脚本自身的维护折旧。这个结构决定了后续所有优化的方向：聚合和排版已经接近零成本，再优化它们没有意义；校对不能自动化，因为它做的判断是「这条要不要写进周报」，那属于人的取舍。</p>
+<p>0.8 秒和 1.2 秒这两个数没什么可优化的，能优化的数只有一个：重跑一次要多久。写完发现某个仓库漏了分支，改配置重跑，如果每次都要 40 秒，我就会倾向于手工补一行，久而久之周报就不一致了。整套东西的核心指标因此定成<strong>重跑成本</strong>，而它由增量决定。</p>
+<h2 id="指纹账">指纹账</h2>
+<p>输入有三类：git 提交、条目导出、任务行文本。三类都能取内容哈希，于是每份输入有一个指纹，整份报告有一个 key：</p>
+<pre data-lang="text"><code class="language-text">key = sha256( join(sorted(blob_hash_i)) + template_ver )</code></pre>
+<p><code>template_ver</code> 是我手改的整数，模板或分组规则一改就加 1。把它拼进去的理由是哈希只覆盖输入，不覆盖处理逻辑；只改输入哈希，改了模板之后不会重算。</p>
+<pre data-lang="python"><code class="language-python">import hashlib, subprocess
+
+def blob_hash(path):
+    return subprocess.run([&#x27;git&#x27;, &#x27;hash-object&#x27;, str(path)],
+                          capture_output=True, text=True, check=True).stdout.strip()
+
+def report_key(paths, template_ver):
+    parts = sorted(blob_hash(p) for p in paths)
+    h = hashlib.sha256()
+    h.update(&#x27;\n&#x27;.join(parts).encode())
+    h.update((&#x27;|v%d&#x27; % template_ver).encode())
+    return h.hexdigest()[:16]</code></pre>
+<p>用内容哈希而不是 <code>mtime</code>，是因为 <code>mtime</code> 在这个场景里几乎总是错的。从别处同步过来的工作副本、<code>git checkout</code> 换分支、备份还原，任何一次都会让 <code>mtime</code> 变成「刚刚」，于是每一份输入都被判成新的。反过来，<code>mtime</code> 也没法告诉你内容真的变了还是只是被碰了一下。1,900 个文件的哈希算下来 240ms，比一次误判导致的 40 秒全量重排便宜得多。</p>
+<p>输出按 key 命名：<code>out/2024-w21-9f3c2a71.pdf</code>。同一批输入重跑，key 一样，文件存在就直接跳过。这样既不覆盖上一版（历史还在），也不会在目录里堆出十个内容相同的副本。</p>
+<h2 id="增量的实际跳过率">增量的实际跳过率</h2>
+<p>2,600 条事件里，真正会改变周报内容的约 780 条，剩下的 70% 是同一分支的中间提交、机器人的版本号碰撞、关闭又重开的 issue。这 70% 不是靠指纹跳过的，指纹只判断「输入变了没有」，去重是聚合阶段的事。</p>
+<p>聚合按三个键去重：仓库加提交哈希、issue 编号、任务行的稳定 id。去重后 780 条，按项目分组写进模板的数据文件，约 28KB 的 UTF-8，折合 9.4k 汉字。</p>
+<p>排版用 Typst，模板里三张表加一段正文，单页编译 0.35 秒左右，三页 1.2 秒。比在脚本里手拼 PDF 省事的地方在于它能直接对数据文件做循环，表格列宽和分页不用我算；代价是模板本身要学一遍，第一次写花了两小时。</p>
+<p>三个坑，都跟「稳定」有关：</p>
+<ul>
+<li><strong>排序必须全键确定</strong>。按日期排序，同一天的多条记录顺序取决于字典插入顺序，重跑就换序，diff 里整段变色。改成 <code>(项目名, 日期, 条目 id)</code> 三段排序之后才稳定。</li>
+<li><strong>时区边界</strong>。周界按本地周一 00:00 算，但提交时间是 UTC。我一开始两边混用，跨年那一周的条目掉了一半。改成存储全用 UTC，只在计算周界时转一次。</li>
+<li><strong>长名字撑破表格</strong>。项目名超过 14 个字符就把列挤变形，早期版本会出现一行字压到相邻单元格上。定成超过就截断加省略号，全名放进附表，这一条是排版层的规则，不要指望数据层去截。</li>
+</ul>
+<h2 id="剩下那-6-分钟">剩下那 6 分钟</h2>
+<p>校对那 6 分钟里，一半时间在删东西：某条修复只在测试环境生效、某个需求后来被撤、某个指标口径变了。这些判断没有任何输入能算出来，所以我说这块不自动化。</p>
+<p>还值得投入的方向是「哪些条目根本不该进聚合」。现在 2,600 条里能过滤掉 1,820 条，规则还很粗：分支合并、纯依赖升级、只改文档的提交。再往下做就得读 diff 语义，成本远超每周省下的几分钟。我停在这里，把规则写成配置文件，每季度看一次误判。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://git-scm.com/docs/git-hash-object">git hash-object</a>：按内容取对象哈希，增量指纹的基础</li>
+<li><a href="https://docs.python.org/3/library/hashlib.html">Python hashlib</a>：<code>sha256</code> 的用法与 <code>usedforsecurity</code> 参数</li>
+<li><a href="https://typst.app/docs/reference/">Typst 文档</a>：循环、表格与分页控制都在 reference 里</li>
+<li><a href="https://www.sqlite.org/cli.html">SQLite 命令行工具</a>：聚合结果落库、按周切片时用</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/自动化/">自动化</a><a class="tag" href="/tags/幂等/">幂等</a><a class="tag" href="/tags/指纹/">指纹</a><a class="tag" href="/tags/报告生成/">报告生成</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%91%A8%E6%8A%A5%E7%9A%84%E8%B4%A6%EF%BC%9A65+%E5%88%86%E9%92%9F%E5%8E%8B%E5%88%B0+9+%E5%88%86%E9%92%9F%EF%BC%8C%E5%A4%A7%E5%A4%B4%E8%BF%98%E5%9C%A8%E6%A0%A1%E5%AF%B9" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/function-calling-orchestration/">← 工具调用编排：一次重复建单之后收紧的三处约束</a><a class="next" href="/post/task-state-machine/">任务清单的三种存法：把一个方括号字符当状态源 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/api-doc-what/">接口文档到底该写什么：一次重复扣款的复盘</a><time>2022-05</time></li><li><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a><time>2020-03</time></li><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

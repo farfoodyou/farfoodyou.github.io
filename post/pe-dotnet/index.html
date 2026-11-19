@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PE 资源节与 .NET：托管程序集的检测要点 - farfood</title>
+<meta name="description" content="原生特征全没命中的样本，载荷在资源槽里，由 IL 取出后反射加载；要答的是哪段字节最终被执行，字段只是这条链的地标。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/pe-dotnet/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "PE 资源节与 .NET：托管程序集的检测要点", "description": "原生特征全没命中的样本，载荷在资源槽里，由 IL 取出后反射加载；要答的是哪段字节最终被执行，字段只是这条链的地标。", "datePublished": "2024-01-09T20:40:00+08:00", "dateModified": "2024-01-09T20:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/pe-dotnet/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "PE格式, 托管程序集, 资源目录, IL"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="PE 资源节与 .NET：托管程序集的检测要点 - farfood">
+<meta property="og:description" content="原生特征全没命中的样本，载荷在资源槽里，由 IL 取出后反射加载；要答的是哪段字节最终被执行，字段只是这条链的地标。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/pe-dotnet/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PE 资源节与 .NET：托管程序集的检测要点 - farfood">
+<meta name="twitter:description" content="原生特征全没命中的样本，载荷在资源槽里，由 IL 取出后反射加载；要答的是哪段字节最终被执行，字段只是这条链的地标。">
+<meta property="article:published_time" content="2024-01-09T20:40:00+08:00">
+<meta name="keywords" content="PE格式, 托管程序集, 资源目录, IL">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">PE 资源节与 .NET：托管程序集的检测要点</h1>
+    <p class="meta"><time datetime="2024-01-09T20:40:00">2024-01-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#第一跳资源槽里的字节">第一跳：资源槽里的字节</a></li>
+<li class="h2"><a href="#第二跳数据目录第-15-项指向-clr-头">第二跳：数据目录第 15 项指向 CLR 头</a></li>
+<li class="h2"><a href="#第三跳元数据流与托管资源的落点">第三跳：元数据流与托管资源的落点</a></li>
+<li class="h2"><a href="#终点方法体里的-il">终点：方法体里的 IL</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p><code>IMAGE_DIRECTORY_ENTRY_RESOURCE</code> 是 PE 数据目录第 3 项，一个 RVA 加大小。把 <code>OffsetToData</code> 当文件偏移直接用是常见错误：读出来一堆垃圾。</p>
+<p>漏掉的那份样本就这么过去了。3.2MB 的 PE，导入表只有十几个函数，节数量和节熵都正常，原生规则一条没命中。沙箱日志只有一次写临时目录。翻资源目录看到 1.1MB 的条目，名字是 <code>ICON</code> 加一串数字，而可执行代码只有 40KB。异或后是托管程序集。下面顺着链走一遍：资源槽里的字节怎么变成执行代码。</p>
+<h2 id="第一跳资源槽里的字节">第一跳：资源槽里的字节</h2>
+<p>第 3 项指向 <code>IMAGE_RESOURCE_DIRECTORY</code>，下面按类型、名字或 ID、语言分三层。每层是一组 <code>IMAGE_RESOURCE_DIRECTORY_ENTRY</code>，高位标志决定 <code>OffsetToData</code> 指向下一层目录还是叶子；叶子是 <code>IMAGE_RESOURCE_DATA_ENTRY</code>，给 RVA、大小和代码页。目录项偏移相对<strong>资源节起点</strong>，叶子给的是 RVA，要过一次节表映射，且只有 <code>SizeOfRawData</code> 覆盖该 RVA 时映射才成立。</p>
+<pre data-lang="python"><code class="language-python">def walk(pe, base, off, depth=0):
+    d = pe.read_struct(base + off, IMAGE_RESOURCE_DIRECTORY)
+    for i in range(d.NumberOfNamedEntries + d.NumberOfIdEntries):
+        e = pe.read_struct(base + off + 16 + i * 8, ENTRY)
+        if e.DataIsDirectory and depth &lt; 3:
+            yield from walk(pe, base, e.OffsetToDirectory, depth + 1)
+        else:
+            leaf = pe.read_struct(base + e.OffsetToData, DATA_ENTRY)
+            yield Resource(e.Name, leaf.RVA, leaf.Size)</code></pre>
+<p>对恶意样本不够：<code>NumberOfIdEntries</code> 能填成 65535，目录项能指向自身成环，<code>Size</code> 能超过文件剩余长度。先校验再读，映射失败就放弃这棵子树。</p>
+<h2 id="第二跳数据目录第-15-项指向-clr-头">第二跳：数据目录第 15 项指向 CLR 头</h2>
+<p>PE32 数据目录共 16 项，第 15 项（索引 14）指向 <code>IMAGE_COR20_HEADER</code>，字段都在这条链上：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>字段</th>
+<th>含义</th>
+<th>用法</th>
+</tr></thead>
+<tbody>
+<tr><td><code>MetaData</code></td><td>元数据根的 RVA 与大小</td><td>比例异常说明元数据被塞了东西</td></tr>
+<tr><td><code>Flags</code></td><td><code>ILONLY</code>、<code>NATIVE_ENTRYPOINT</code> 等</td><td><code>ILONLY</code> 为 0 且有原生入口即混合模式</td></tr>
+<tr><td><code>Resources</code></td><td>托管资源区的 RVA 与大小</td><td>算资源占比</td></tr>
+</tbody>
+</table></div>
+<p>混合模式同时有原生节和 IL，导入表可能很干净：不调 <code>LoadLibrary</code>，运行时把 IL 编译成本地代码，<code>VTableFixups</code> 非空是标志。只按导入表打分的规则必然给低分。</p>
+<h2 id="第三跳元数据流与托管资源的落点">第三跳：元数据流与托管资源的落点</h2>
+<p>CLR 头的 <code>MetaData</code> 指向元数据根，前四字节签名 <code>BSJB</code>，后面跟版本字符串和几条命名流：<code>#~</code>（表流）、<code>#Strings</code>、<code>#US</code>（用户字符串）、<code>#Blob</code>。</p>
+<p>托管资源由 <code>ManifestResource</code> 表描述，每行给偏移、标志、名字索引和实现索引。偏移相对 CLR 头里 <code>Resources</code> 的 RVA，和原生资源目录是两套坐标，混用是常见 bug。内容一般是 <code>.resources</code> 格式：魔数 <code>0xBEEFCACE</code>、一段清单，然后逐个资源是长度前缀的字节流。装载器当字典读，清单写对就能把任意字节塞进资源槽位。</p>
+<p>可用量有三个：条目名与扩展名不符，或名字是随机高熵串；单个条目占文件一半以上而声明类型是图标；解压后熵接近 8 且没有可读字符串。</p>
+<h2 id="终点方法体里的-il">终点：方法体里的 IL</h2>
+<p>方法体在 <code>MethodDef</code> 表的 RVA 里。头两个字节决定形态：低两位为 2 是 tiny 头，代码长度在同一字节的高六位；低两位为 3 是 fat 头，跟 flags、maxstack、代码长度和局部变量签名 token。IL 是栈式指令，<code>newarr</code>、<code>stelem.i1</code>、<code>call</code>、<code>callvirt</code> 几条就够描述「构造字节数组并反射加载」的骨架。</p>
+<p>能抓的模式不多，但稳：</p>
+<ol>
+<li><code>Assembly.Load(byte[])</code> 的参数来自 <code>GetManifestResourceStream</code> 的返回值；</li>
+<li>大量 <code>ldstr</code> 拼出成员名再 <code>InvokeMember</code>，目标在运行时才确定；</li>
+<li><code>ImplMap</code> 表项指向内存分配与改保护属性的函数，而导入表里没有对应模块。</li>
+</ol>
+<p>前两条读表就够，第三条误报多，要几条同时成立才压得住。</p>
+<p>做法是压成一个分数，另配两条硬规则：<code>ILONLY=0</code> 且有 <code>VTableFixups</code> 直接进沙箱；资源占比超过 60% 且条目名不可读直接提人工。硬规则不看分数，误报的代价可控，漏报不可控。</p>
+<p>单文件发布把依赖打进资源，再由引导代码在内存里装配，字节层面和上面的恶意装载几乎一样。区分只能靠依赖清单、版本号合理性和加载顺序是否像打包器，这条判据始终没做稳。判断只能落在链的终点：谁把这段字节交给运行时。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://ecma-international.org/publications-and-standards/standards/ecma-335/">ECMA-335: Common Language Infrastructure</a>：元数据表、IL 指令集与资源语义</li>
+<li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.reflection.assembly.load">Assembly.Load 的重载</a>：从字节数组装配程序集</li>
+<li><a href="https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview">单文件发布</a>：依赖打进资源、运行时再装配</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/pe格式/">PE格式</a><a class="tag" href="/tags/托管程序集/">托管程序集</a><a class="tag" href="/tags/资源目录/">资源目录</a><a class="tag" href="/tags/il/">IL</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=PE+%E8%B5%84%E6%BA%90%E8%8A%82%E4%B8%8E+.NET%EF%BC%9A%E6%89%98%E7%AE%A1%E7%A8%8B%E5%BA%8F%E9%9B%86%E7%9A%84%E6%A3%80%E6%B5%8B%E8%A6%81%E7%82%B9" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/false-negative-hunting/">← 漏报从哪来：用回归集找检测盲区</a><a class="next" href="/post/detection-latency/">检测延迟：从收到文件到给出结论的每一毫秒 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段</a><time>2022-09</time></li><li><a href="/post/nonresident-code/">非常驻代码：节表里那块只有虚拟大小的内存</a><time>2022-10</time></li><li><a href="/post/import-list-features/">导入函数列表当特征：四条判据和三种做法</a><time>2022-10</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

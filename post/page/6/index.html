@@ -26,74 +26,74 @@
 <meta name="twitter:description" content="记模型、记系统、记踩过的坑。">
 </head>
 <body class="">
-<div id="progress"></div>
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/" class="active">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/" class="active">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
 <h1 class="page-title">全部文章 · 第 6 页</h1>
 <article class="card">
-  <h2><a href="/2017/10/04/MB/">SMB</a></h2>
-  <p class="meta"><time datetime="2017-10-04T03:10:00">2017-10-04</time> </p>
-  <p class="excerpt">终于可以在手机上看电脑里地资料了下午的时候从同事哪里知道了可以通过win10自带的共享实现，手机上在线看视频的功能。晚上我回校内网络尝试了，结果怎么都不能够搜索到我的台式机。然后我就把笔记本也接入了热点中，结果手机可以搜索到我的笔记本，但是仍然无法搜索到我的台式机。 居然，bug…</p>
-  <a class="more" href="/2017/10/04/MB/">阅读全文 →</a>
+  <h2><a href="/post/local-llm-agent/">本地跑模型做 Agent：一次显存打满的复盘</a></h2>
+  <p class="meta"><time datetime="2024-12-10T21:10:00">2024-12-10</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">24GB 卡上跑 4bit 的 13B，白天并发一上来就集体变慢然后退出；账算清楚后发现瓶颈是 KV cache 和没有上限的上下文拼接。</p>
+  <a class="more" href="/post/local-llm-agent/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/25/现在开始走向梦想吧/">从现在开始走向梦想吧</a></h2>
-  <p class="meta"><time datetime="2017-09-25T21:09:00">2017-09-25</time> </p>
-  <p class="excerpt">从现在开始走向梦想吧我不知道十年以后下面的东西我能看多少，但是我想如果我开始看，一天看一点，总有一天会成为一个高手的。 目录 语言无关 IDE MySQL NoSQL PostgreSQL Web WEB服务器 其它 函数式概念 分布式系统 在线教育 大数据 操作系统 数据库 智…</p>
-  <a class="more" href="/2017/09/25/现在开始走向梦想吧/">阅读全文 →</a>
+  <h2><a href="/post/agent-tool-loop/">Agent 的工具循环：什么时候该停</a></h2>
+  <p class="meta"><time datetime="2024-11-12T23:05:00">2024-11-12</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比过，最后我把停止从语义判断改成了记账。</p>
+  <a class="more" href="/post/agent-tool-loop/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/23/platformio/">platformio</a></h2>
-  <p class="meta"><time datetime="2017-09-23T03:09:00">2017-09-23</time> </p>
-  <p class="excerpt">我的单片机手上有一块BBB还是大二那时候买的，现在却没有怎么好好玩过platformio有atom下开发arduino程序的IDE插件。看上去很不错的样子，就是左边的边框一直都在太占地方了毕竟也不是没次都写这个程序。我想到的办法是，平常不用的时候就disable了然后要用了再打开…</p>
-  <a class="more" href="/2017/09/23/platformio/">阅读全文 →</a>
+  <h2><a href="/post/after-o1/">什么时候「多想一会儿」不值：推理档位的账</a></h2>
+  <p class="meta"><time datetime="2024-10-22T22:10:00">2024-10-22</time> <a class="cat" href="/categories/模型/">模型</a></p>
+  <p class="excerpt">推理档位的成本藏在看不见的思考 token 里：延迟大头在它，账单大头也在它。值不值取决于答案能不能被便宜地验证，与模型强弱无关。</p>
+  <a class="more" href="/post/after-o1/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/21/markdown/">markdown</a></h2>
-  <p class="meta"><time datetime="2017-09-21T22:09:00">2017-09-21</time> </p>
-  <p class="excerpt">常用markdown代码[TOC]二八定律： 百分之二十的知识解决百分之八十的问题。 &gt;这个可以用来表示引用 &gt; 这是一级引用 &gt;&gt;这是二级引用 &gt;&gt;&gt; 这是三级引用 &gt;这是一级引用 这是一级引用 这是二级引用 这是三级引用 这是一级引用 \//这是代码块 \ ![Markdow…</p>
-  <a class="more" href="/2017/09/21/markdown/">阅读全文 →</a>
+  <h2><a href="/post/pwa-offline/">PWA 离线可用：Service Worker 的取舍</a></h2>
+  <p class="meta"><time datetime="2024-10-08T21:40:00">2024-10-08</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">离线可读上线后暴露两个故障：旧缓存里的壳配新脚本导致白屏；离线写入没有前置条件，新内容被旧全文盖回去。</p>
+  <a class="more" href="/post/pwa-offline/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/20/NodeJS/">NodeJS</a></h2>
-  <p class="meta"><time datetime="2017-09-20T23:09:00">2017-09-20</time> </p>
-  <p class="excerpt">console.log(“Hello World”); node helloworld.js npm install express -g # 全局安装express 安装好之后，express 包就放在了工程目录下的 node_modules 目录中，因此在代码中只需要通过 r…</p>
-  <a class="more" href="/2017/09/20/NodeJS/">阅读全文 →</a>
+  <h2><a href="/post/git-sync-conflict/">多端同步：Git 版本化与冲突合并</a></h2>
+  <p class="meta"><time datetime="2024-09-17T22:30:00">2024-09-17</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">1.4 万篇笔记放进一个 Git 仓库做多端同步，每天 130 KB 流量、索引增量一百多毫秒；大头开销在冲突，冲突率可以用文件粒度改下来。</p>
+  <a class="more" href="/post/git-sync-conflict/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/20/npm/">npm</a></h2>
-  <p class="meta"><time datetime="2017-09-20T22:09:00">2017-09-20</time> </p>
-  <p class="excerpt">npm install -g cnpm –registry=https://registry.npm.taobao.org 安装模块 从 registry.npm.taobao.org 安装所有模块. 当安装的时候发现安装的模块还没有同步过来, 淘宝 NPM 会自动在后台进行同步…</p>
-  <a class="more" href="/2017/09/20/npm/">阅读全文 →</a>
+  <h2><a href="/post/search-vs-links/">双链笔记的检索困境</a></h2>
+  <p class="meta"><time datetime="2024-09-03T20:10:00">2024-09-03</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">链接、标签、全文各自只能回答一类问题；把三者当成同一个索引来设计，才会得到一套能编译成一条 SQL 的查询语法。</p>
+  <a class="more" href="/post/search-vs-links/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/20/mongoDB/">mongoDB</a></h2>
-  <p class="meta"><time datetime="2017-09-20T19:09:00">2017-09-20</time> </p>
-  <p class="excerpt">安装curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.0.6.tgz 下载tar -zxvf mongodb-linux-x86_64-3.0.6.tgz 解压 mv mongodb-linux-x86…</p>
-  <a class="more" href="/2017/09/20/mongoDB/">阅读全文 →</a>
+  <h2><a href="/post/prompt-injection/">Prompt Injection：为什么过滤不管用</a></h2>
+  <p class="meta"><time datetime="2024-08-20T21:05:00">2024-08-20</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">指令和数据在同一个 token 流里没有语法分层，输入侧过滤只能降低概率；把「读不可信内容」和「能执行动作」拆成两个上下文，才改变了风险量级。</p>
+  <a class="more" href="/post/prompt-injection/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/18/知识体系/">知识体系</a></h2>
-  <p class="meta"><time datetime="2017-09-18T23:09:00">2017-09-18</time> </p>
-  <p class="excerpt">框架客户端 Vue.js,jquery.js服务器端 Spring，node.js,Mybatis 软件客户端 Navicat,Xmanager服务器端 docker,spring cloud,MySQL,mongoDB,Ngnix,apache,redis 开发软件vim,gi…</p>
-  <a class="more" href="/2017/09/18/知识体系/">阅读全文 →</a>
+  <h2><a href="/post/cage-the-agent/">把 Agent 关进笼子：禁网、只读、超时、审计</a></h2>
+  <p class="meta"><time datetime="2024-08-06T09:40:00">2024-08-06</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">给执行型 Agent 用的服务账号等于半个运维，一次清理任务删掉 41 GB 原始包；权限改成内核层面拒绝之后，越权从「靠它自觉」变成「跑不出来」。</p>
+  <a class="more" href="/post/cage-the-agent/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/18/Vue-js/">Vue.js</a></h2>
-  <p class="meta"><time datetime="2017-09-18T22:09:00">2017-09-18</time> </p>
-  <p class="excerpt">在用 Vue.js 构建大型应用时推荐使用 NPM 安装: # 最新稳定版本 $ npm install vue # 最新稳定 CSP 兼容版本 $ npm install vue@csp # 开发版本（直接从 GitHub 安装） $ npm install vuejs/vue…</p>
-  <a class="more" href="/2017/09/18/Vue-js/">阅读全文 →</a>
+  <h2><a href="/post/sandbox-choice/">沙箱选型：三个数算完，只剩混合部署</a></h2>
+  <p class="meta"><time datetime="2024-07-23T20:30:00">2024-07-23</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">峰值 8 QPS、单任务 40 秒，算下来并发 320、内存 36GB。容器一台够，微虚拟机要两台，差价换的是逃逸面。</p>
+  <a class="more" href="/post/sandbox-choice/">阅读全文 →</a>
 </article>
 <article class="card">
-  <h2><a href="/2017/09/18/git-remote/">git remote</a></h2>
-  <p class="meta"><time datetime="2017-09-18T18:09:00">2017-09-18</time> </p>
-  <p class="excerpt">git remote add origin https://github.com/farfoodyou/farfoodyou.github.io 本文作者： Farfoodyou 发布时间 : 2017年09月18日 - 18:09 最后更新 : 2017年09月18日 - 19…</p>
-  <a class="more" href="/2017/09/18/git-remote/">阅读全文 →</a>
+  <h2><a href="/post/token-budget/">上下文预算：三种裁剪方案放在同一张账单上</a></h2>
+  <p class="meta"><time datetime="2024-07-09T21:05:00">2024-07-09</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">20 轮里裁历史几乎省不下 token，大头是检索片段和工具返回；判据要用事实留存、每任务 token 和可观测。</p>
+  <a class="more" href="/post/token-budget/">阅读全文 →</a>
 </article>
 <nav class="pager"><a class="prev" href="/post/page/5/">← 更新的文章</a><a class="next" href="/post/page/7/">更早的文章 →</a></nav>
 </main>
@@ -142,6 +142,98 @@
     else if (e.key === 't' && btn) { btn.click(); }
     else if (e.key === 'g') { location.href = '/'; }
   });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>把 Markdown 当唯一真源：索引、版本与重建 - farfood</title>
+<meta name="description" content="索引的风险偏在悄悄落后于源：三个版本号加一份抽样对账，才能回答查到的数据是不是当前这一代。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/markdown-source-of-truth/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "把 Markdown 当唯一真源：索引、版本与重建", "description": "索引的风险偏在悄悄落后于源：三个版本号加一份抽样对账，才能回答查到的数据是不是当前这一代。", "datePublished": "2024-03-12T20:15:00+08:00", "dateModified": "2024-03-12T20:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/markdown-source-of-truth/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "本地优先, 索引, 重建, 版本控制"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="把 Markdown 当唯一真源：索引、版本与重建 - farfood">
+<meta property="og:description" content="索引的风险偏在悄悄落后于源：三个版本号加一份抽样对账，才能回答查到的数据是不是当前这一代。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/markdown-source-of-truth/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="把 Markdown 当唯一真源：索引、版本与重建 - farfood">
+<meta name="twitter:description" content="索引的风险偏在悄悄落后于源：三个版本号加一份抽样对账，才能回答查到的数据是不是当前这一代。">
+<meta property="article:published_time" content="2024-03-12T20:15:00+08:00">
+<meta name="keywords" content="本地优先, 索引, 重建, 版本控制">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">把 Markdown 当唯一真源：索引、版本与重建</h1>
+    <p class="meta"><time datetime="2024-03-12T20:15:00">2024-03-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2281 字 <a class="cat" href="/categories/架构/">架构</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#同代怎么证明三个版本号">同代怎么证明：三个版本号</a></li>
+<li class="h2"><a href="#增量mtime-和-size-都会骗人">增量：mtime 和 size 都会骗人</a></li>
+<li class="h2"><a href="#重建要能原子替换">重建要能原子替换</a></li>
+<li class="h2"><a href="#抽样对账抓悄悄落后的那一类">抽样对账：抓「悄悄落后」的那一类</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>月初我把索引库的每日备份删了。理由与存储成本无关：备份这个动作会让一个更麻烦的问题变得不显眼，两份快照之间谁更新，谁也说不清。从备份恢复出来的库看着一切正常，但它和源文件是不是同一代，没有任何字段能回答。</p>
+<p>索引是派生数据，删了能从 .md 重新长出来：全量重建在十几秒的量级，从对象存储拉一份备份再校验要几分钟。重建比恢复快的时候，备份换来的只是一份可能过期的副本。</p>
+<p>删完之后浮出来的是另一种失败：索引悄悄落后于源。它不报错，只是少返回几条，或者用旧规则切了词，等你发现时已经影响了全部查询。</p>
+<h2 id="同代怎么证明三个版本号">同代怎么证明：三个版本号</h2>
+<p>索引和源分叉的原因只有三种，对应三个版本号。表里第四行是种特殊情况，它不触发重建：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>变了什么</th>
+<th>靠什么发现</th>
+<th>动作</th>
+</tr></thead>
+<tbody>
+<tr><td>表结构、分词口径</td><td><code>schema_version</code> 不等</td><td>后台全量重建，旧库继续服务</td></tr>
+<tr><td>抽取规则</td><td><code>parser_version</code> 不等</td><td>逐文件比较，分批重解</td></tr>
+<tr><td>文件内容</td><td><code>blob_hash</code> 不等</td><td>增量更新该文件</td></tr>
+<tr><td>历史提交</td><td><code>source_commit</code> 不在祖先链上</td><td>只影响历史版本查询，不重建</td></tr>
+</tbody>
+</table></div>
+<p>三个值写在索引库的 <code>meta</code> 表里，查询入口先读它们，任何一个对不上就把结果标成 stale 并触发后台任务，界面照常返回旧结果。重建因此不需要停机，代价是短时间内的结果可能落后一个版本。</p>
+<p>分成三个而不是一个，是为了让最常见的变更落在最便宜的那一档：改内容只动 <code>blob_hash</code>，逐文件增量；改解析器动 <code>parser_version</code>，只重解候选；改表结构才轮到全量。版本号粒度粗一格，日常就得为了一次小改付全量的代价。</p>
+<h2 id="增量mtime-和-size-都会骗人">增量：mtime 和 size 都会骗人</h2>
+<p><code>mtime</code> 会被 rsync、解压和版本库切换重置，<code>size</code> 相同的改动（替换一个字符）看不出来。用内容哈希：读全文，算 blake2b 16 字节，热缓存下扫完四十多 MB 在 200ms 以内，比解析便宜一个量级。</p>
+<pre data-lang="python"><code class="language-python">def sync(root, db):
+    seen = set()
+    for p in root.rglob(&#x27;*.md&#x27;):
+        raw = p.read_bytes()
+        h = blake2b(raw, digest_size=16).hexdigest()
+        seen.add(str(p))
+        row = db.doc(str(p))
+        if row and row.hash == h and row.parser_ver == PARSER_V:
+            continue
+        db.upsert(parse(raw, h, PARSER_V))
+    db.delete_missing(seen)</code></pre>
+<p>增量成本：每天约 260 个文件变化，读加解析加 upsert 不到 1 秒，加上全目录哈希扫描 0.2 秒。所以触发方式不按时间，按扫描加差异，每 30 秒跑一次也不心疼。这个频率下，索引落后源最多半分钟，比我手写笔记的节奏快得多。</p>
+<p><code>delete_missing</code> 这一步不能省。增量逻辑最容易漏的就是删除：源文件没了，索引行还在，查询会返回一个已经不存在的路径，比查不到更难排查。</p>
+<h2 id="重建要能原子替换">重建要能原子替换</h2>
+<p>重建写临时库，完成后一次 <code>rename</code> 替换目录，读侧持有的是旧文件句柄，不受影响。旧库保留一代，回滚就是反向替换。切换时把 <code>generation</code> 写进 <code>meta</code>，同时记下当时的 <code>source_commit</code>。</p>
+<pre data-lang="sql"><code class="language-sql">CREATE TABLE docs (
+  path       TEXT PRIMARY KEY,
+  blob_hash  TEXT NOT NULL,
+  parser_ver INTEGER NOT NULL,
+  indexed_at INTEGER NOT NULL
+);
+CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);</code></pre>
+<p>进版本库的东西只留两样：<code>.md</code> 源文件，以及一个记录 <code>generation</code> 到 <code>source_commit</code> 映射的单文件。索引库本身不进版本库，二进制每天变几十次，clone 和 diff 都跟着受罪；派生导出（渲染后的页面、清单）也不进，构建时生成即可。</p>
+<h2 id="抽样对账抓悄悄落后的那一类">抽样对账：抓「悄悄落后」的那一类</h2>
+<p>改分词口径那次忘了 bump <code>schema_version</code>。旧索引里有 4 万条记录还在用旧口径切词，查「付款失败」时结果少了三分之一。召回下降不会报错，三天后才有人问「为什么搜不到那篇」。</p>
+<p>修复靠一次全量重建加切换，前后不到两分钟。之后加了两条约束：查询接口返回 <code>generation</code>，出问题时能确认用户看到的是哪一代；每天抽 30 条查询，与「直接在源文件上 grep」的结果对比，不一致率超过 1% 就告警。</p>
+<p>抽样对账是唯一能发现索引和源悄悄分叉的手段。它抓不到所有问题，但抓得到「版本号忘了改」这一类系统性问题，而这类问题一旦发生，影响的是全部查询。</p>
+<p>还有一个不该开的口子：索引不能反写。只要允许「顺手在索引表里补一条」，版本号就无法再证明同代，因为源里没有这件事。写路径只留一条，改源文件，让增量把改动带进来。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://spec.commonmark.org/0.31.2/">CommonMark Spec 0.31.2</a>：解析一篇文章的语法口径</li>
+<li><a href="https://git-scm.com/docs/git-hash-object">git-hash-object</a>：内容寻址的哈希口径，索引里的 blob 哈希沿用同一套思路</li>
+<li><a href="https://docs.python.org/3/library/hashlib.html">Python hashlib: blake2b</a>：16 字节摘要的参数与用途</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/本地优先/">本地优先</a><a class="tag" href="/tags/索引/">索引</a><a class="tag" href="/tags/重建/">重建</a><a class="tag" href="/tags/版本控制/">版本控制</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8A%8A+Markdown+%E5%BD%93%E5%94%AF%E4%B8%80%E7%9C%9F%E6%BA%90%EF%BC%9A%E7%B4%A2%E5%BC%95%E3%80%81%E7%89%88%E6%9C%AC%E4%B8%8E%E9%87%8D%E5%BB%BA" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/local-first-layers/">← 索引被当成了源：一次知识库重建事故</a><a class="next" href="/post/false-negative-hunting/">漏报从哪来：用回归集找检测盲区 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/task-state-machine/">任务清单的三种存法：把一个方括号字符当状态源</a><time>2024-05</time></li><li><a href="/post/json-as-database/">拿 JSON 字段当表用，是怎么把配置平台拖死的</a><time>2020-01</time></li><li><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：一次调度配置下发改造</a><time>2020-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

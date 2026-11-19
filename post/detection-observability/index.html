@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>四个数：检测系统的账怎么算 - farfood</title>
+<meta name="description" content="同一次季度评审上，误报率报出了三个不同的数；把精度、漏报上界、排队延迟、回流样本量四个账逐条算清，才发现指标定义比采集方式重要得多。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/detection-observability/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "四个数：检测系统的账怎么算", "description": "同一次季度评审上，误报率报出了三个不同的数；把精度、漏报上界、排队延迟、回流样本量四个账逐条算清，才发现指标定义比采集方式重要得多。", "datePublished": "2023-08-15T23:05:00+08:00", "dateModified": "2023-08-15T23:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/detection-observability/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "指标口径, 漏报估计, 排队延迟, 样本回流"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="四个数：检测系统的账怎么算 - farfood">
+<meta property="og:description" content="同一次季度评审上，误报率报出了三个不同的数；把精度、漏报上界、排队延迟、回流样本量四个账逐条算清，才发现指标定义比采集方式重要得多。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/detection-observability/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="四个数：检测系统的账怎么算 - farfood">
+<meta name="twitter:description" content="同一次季度评审上，误报率报出了三个不同的数；把精度、漏报上界、排队延迟、回流样本量四个账逐条算清，才发现指标定义比采集方式重要得多。">
+<meta property="article:published_time" content="2023-08-15T23:05:00+08:00">
+<meta name="keywords" content="指标口径, 漏报估计, 排队延迟, 样本回流">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">四个数：检测系统的账怎么算</h1>
+    <p class="meta"><time datetime="2023-08-15T23:05:00">2023-08-15</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2079 字 <a class="cat" href="/categories/工程/">工程</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#精度-71">精度 71%</a></li>
+<li class="h2"><a href="#漏报的-006-只是一个上界">漏报的 0.06% 只是一个上界</a></li>
+<li class="h2"><a href="#8-分钟的沙箱和-5s-的吞吐">8 分钟的沙箱和 5/s 的吞吐</a></li>
+<li class="h2"><a href="#450-条回流样本一个月">450 条回流样本一个月</a></li>
+<li class="h2"><a href="#四个数放在一起">四个数放在一起</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>季度评审上被问了三次同一个问题：你们的误报率是多少。第一次有人答 29%，第二次有人答 0.18%，第三次有人答「大概三成吧，但主要是低危」。三个数都不是编的，来自同一套系统，差在分母。</p>
+<p>那天之后我把检测链路上所有对外说过的数重新算了一遍。下面四个是本账本里最贵的。</p>
+<h2 id="精度-71">精度 71%</h2>
+<p>日送检 180 万个文件，产生 1.1 万条告警，人工复核确认 7800 条。精度 = TP / (TP + FP) = 7800 / 11000，71%。</p>
+<p>这个数只对「送检全集」成立，而且依赖复核队列不积压：积压时没复核的告警按未确认计，精度会被低估；反过来，如果只统计「复核完成」的那部分，精度会被高估，因为复核员倾向于先处理看起来像真的。我们的做法是把未复核的告警单独列一档，按历史复核确认率折算，不混进分子。</p>
+<p>按告警算出来的 29% 误报率，和按文件算的 0.18%（3200 个误报文件 / 180 万），差 160 倍。两个数都对，用途不同：前者衡量复核成本，后者衡量对业务的影响。对外只说一个，必然挨问。</p>
+<h2 id="漏报的-006-只是一个上界">漏报的 0.06% 只是一个上界</h2>
+<p>漏报没法直接数，只能估。每月从放行流量里分层抽样 5000 个文件做人工复核，连续几个月都是 0 命中。0 命中不等于 0 漏报，按 rule of three，95% 置信上界约等于 3 / n：</p>
+<pre data-lang="text"><code class="language-text">p95_upper = 3 / n = 3 / 5000 = 0.0006  →  0.06%</code></pre>
+<p>n 要翻到 3 万才能把这个上界压到 0.01%。人工复核 3 万个文件不现实，所以真实做法是分层：按文件类型、来源渠道、评级分十几层，每层抽固定量，再按层权重加权。这样名义上 5000 个样本能覆盖住大部分层，代价是每层的估计都很粗。</p>
+<p>这里有个容易忽略的偏差：抽样只覆盖「已送检」和「已放行」两部分，从来没进过检测链路的文件不在分母里。这部分靠采集侧的对账来兜：入口网关上记接收数，检测队列里记入队数，两个数的差就是漏送，按天对，超过 0.1% 就查。</p>
+<h2 id="8-分钟的沙箱和-5s-的吞吐">8 分钟的沙箱和 5/s 的吞吐</h2>
+<p>延迟预算写的是 p99 三十分钟。实际拆下来，p50 只有 40ms（静态扫描），p99 由沙箱排队决定。单个样本在沙箱里平均跑 8 分钟，全集群 2400 个并发槽位（约 60 台、每台 40 个），吞吐约 5 个每秒。高峰送检 900 个每秒，其中约 2% 需要沙箱，也就是 18 个每秒进队列，是吞吐的三倍半。</p>
+<p>按 Little 定律 L = λW，即使到达率不变，队列也会一直涨：积压 30 万个、到达 18 个每秒，停留时间 16667 秒，四个半小时。这不是容量规划的问题，是「2% 触发沙箱」这个策略在高峰期不成立。后来把触发条件从「评级中以上全送」改成按家族命中与评级分层，高峰期的沙箱占比压到 0.6%，队列才稳在十分钟以内。</p>
+<p>延迟指标本身也有坑。用直方图算 p99 时，桶边界一旦按线性切分，长尾全挤在最后一个桶里，p99 永远等于桶上界。我们改成指数桶，从 10ms 到 1h 共十几档，并且把「排队时间」和「执行时间」分成两个指标：混在一起算，优化了执行时间也看不出效果。</p>
+<h2 id="450-条回流样本一个月">450 条回流样本一个月</h2>
+<p>申诉每月 900 条左右，成立一半，450 条误报样本进回归集；加上每天从放行流量里随机抽 20 个文件，回归集一个月长一千多条，一年下来会到万级，跑一遍要几个小时。</p>
+<p>所以回归集要分层保留：申诉样本永久留，随机抽样只留三个月，重复的按哈希去重。规则包发布前跑全量回归，命中变化超过 0.5% 就阻断，变化在 0.1% 到 0.5% 之间要求人工看一眼差异清单。这个阈值是拍的，作用是拦住「顺手改一条规则结果扫掉一整类」这类事故，不是保证质量。</p>
+<p>数据对账还有一个副产品：把「申诉成立」的样本按规则分组统计，前三条规则贡献了四成的误报。这类清单比任何评分模型都更能指导下一轮规则治理。</p>
+<h2 id="四个数放在一起">四个数放在一起</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>指标</th>
+<th>定义式</th>
+<th>数据来源</th>
+<th>常见错口径</th>
+</tr></thead>
+<tbody>
+<tr><td>精度</td><td>TP / (TP + FP)</td><td>复核结论表</td><td>只算复核完成的，高估</td></tr>
+<tr><td>误报率</td><td>FP / 全部文件</td><td>同上</td><td>与「按告警」混用，差两个数量级</td></tr>
+<tr><td>漏报上界</td><td>3 / 抽样量（95%）</td><td>分层抽样 + 人工复核</td><td>把上界当实测值对外说</td></tr>
+<tr><td>端到端延迟</td><td>排队 + 执行，分指标</td><td>直方图指数桶</td><td>桶边界线性，p99 被截断</td></tr>
+</tbody>
+</table></div>
+<p>这四个数每个月光是采集和对账就要一个人两天。曾经有人提议把它们做成一个 0 到 100 的健康分，被否掉了：这四个数之间没有稳定的换算关系，合成一个分只会让讨论停在分数上。</p>
+<p>现在评审会上先报口径再报数，谁也不许说「大概三成」。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://prometheus.io/docs/practices/histograms/">Prometheus: Histograms and summaries</a>：分位数为什么不能跨实例平均</li>
+<li><a href="https://prometheus.io/docs/concepts/metric_types/">Prometheus: Metric types</a>：直方图桶的语义</li>
+<li><a href="https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm">NIST/SEMATECH e-Handbook: 比例的置信区间</a>：零命中时上界怎么给</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/指标口径/">指标口径</a><a class="tag" href="/tags/漏报估计/">漏报估计</a><a class="tag" href="/tags/排队延迟/">排队延迟</a><a class="tag" href="/tags/样本回流/">样本回流</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%9B%9B%E4%B8%AA%E6%95%B0%EF%BC%9A%E6%A3%80%E6%B5%8B%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%B4%A6%E6%80%8E%E4%B9%88%E7%AE%97" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/rule-model-hybrid/">← 规则、模型、再一层规则：一晚漏检换来的编排顺序</a><a class="next" href="/post/evidence-chain/">给人看的证据链：检测结论怎么才解释得清 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a><time>2020-02</time></li><li><a href="/post/config-form-not-json/">配置单为什么难填：把「写 JSON」换成「点菜单」</a><time>2020-03</time></li><li><a href="/post/two-step-change/">可回滚的变更：把一次上线拆成三步</a><time>2020-06</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

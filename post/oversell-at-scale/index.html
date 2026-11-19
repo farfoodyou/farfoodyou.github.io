@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3w/s 下名额超卖是怎么发生的 - farfood</title>
+<meta name="description" content="可售数、预扣记录、真实扣减是三份独立状态，任何两份之间的时间差都是超卖空间。压到 3w/s 时这个空间被放大成了具体数字。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/oversell-at-scale/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "3w/s 下名额超卖是怎么发生的", "description": "可售数、预扣记录、真实扣减是三份独立状态，任何两份之间的时间差都是超卖空间。压到 3w/s 时这个空间被放大成了具体数字。", "datePublished": "2021-12-21T22:05:00+08:00", "dateModified": "2021-12-21T22:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/oversell-at-scale/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "库存扣减, 预扣, 超卖, 幂等, 缓存一致性"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="3w/s 下名额超卖是怎么发生的 - farfood">
+<meta property="og:description" content="可售数、预扣记录、真实扣减是三份独立状态，任何两份之间的时间差都是超卖空间。压到 3w/s 时这个空间被放大成了具体数字。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/oversell-at-scale/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="3w/s 下名额超卖是怎么发生的 - farfood">
+<meta name="twitter:description" content="可售数、预扣记录、真实扣减是三份独立状态，任何两份之间的时间差都是超卖空间。压到 3w/s 时这个空间被放大成了具体数字。">
+<meta property="article:published_time" content="2021-12-21T22:05:00+08:00">
+<meta name="keywords" content="库存扣减, 预扣, 超卖, 幂等, 缓存一致性">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">3w/s 下名额超卖是怎么发生的</h1>
+    <p class="meta"><time datetime="2021-12-21T22:05:00">2021-12-21</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2498 字 <a class="cat" href="/categories/数据/">数据</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#可售数预扣真扣是三份状态">可售数、预扣、真扣是三份状态</a></li>
+<li class="h2"><a href="#一段-lua-承担了什么">一段 Lua 承担了什么</a></li>
+<li class="h2"><a href="#超卖的空间不在脚本里在复制和回补上">超卖的空间不在脚本里，在复制和回补上</a></li>
+<li class="h2"><a href="#分段之后的新问题">分段之后的新问题</a></li>
+<li class="h2"><a href="#为什么最后接受了千分之三">为什么最后接受了千分之三</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>压测报告里有一列我一开始没打算看：脚本统计的「DECRBY 返回负值的次数」，不在任何既定指标里。那轮目标是 3w/s 下单峰值，报告里成功率 99.98%，挺好看，这一列却是 41200。</p>
+<p>返回负数表示那一秒该名额的可用数已经小于零。41200 次意味着大量请求在卖完之后还挤进了扣减逻辑，只是被后面的环节挡掉了。挡掉不代表没发生：真实开卖那天，挡它的那环慢了，就是超卖。</p>
+<p>这次把链路从头走一遍，看超卖空间在哪。</p>
+<h2 id="可售数预扣真扣是三份状态">可售数、预扣、真扣是三份状态</h2>
+<p>链路上有三个地方在描述「还剩多少」：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>状态</th>
+<th>存在哪</th>
+<th>谁写</th>
+<th>更新时机</th>
+</tr></thead>
+<tbody>
+<tr><td>可售数</td><td>计数组件里的一个整数</td><td>预扣脚本</td><td>请求进来时</td></tr>
+<tr><td>预扣记录</td><td>一张带过期时间的明细</td><td>预扣脚本</td><td>请求进来时</td></tr>
+<tr><td>真实扣减</td><td>订单库的行</td><td>批量落库任务</td><td>支付成功后，200ms 一批</td></tr>
+</tbody>
+</table></div>
+<p>产品页面显示第一份，下单校验用第一份，钱按第三份收。三份之间的差值在任何时刻都不为零，正常运行时等于「在途请求数 + 未支付订单数」，量级几十到几千。</p>
+<p>超卖出现在两份状态朝相反方向动的时候：可售数已经扣掉，但预扣记录过期释放，钱没收到；或者可售数被回补，但订单已经支付成功。前一种是浪费库存，后一种是超卖。</p>
+<h2 id="一段-lua-承担了什么">一段 Lua 承担了什么</h2>
+<p>预扣逻辑原来写在应用层，读一次、判断、再写一次。3w/s 下它的正确性和看起来的样子无关，两次操作之间隔着一次网络往返。</p>
+<p>改成单脚本：</p>
+<pre data-lang="lua"><code class="language-lua">-- KEYS[1] 可售数  KEYS[2] 预扣明细 hash
+-- ARGV[1] 数量    ARGV[2] 预扣单号  ARGV[3] 过期时间戳(ms)
+if redis.call(&#x27;HEXISTS&#x27;, KEYS[2], ARGV[2]) == 1 then
+  return 0                                  -- 重复请求，直接放行
+end
+local left = tonumber(redis.call(&#x27;GET&#x27;, KEYS[1]) or &#x27;0&#x27;)
+if left &lt; tonumber(ARGV[1]) then
+  return -1                                 -- 卖完了
+end
+redis.call(&#x27;DECRBY&#x27;, KEYS[1], ARGV[1])
+redis.call(&#x27;HSET&#x27;, KEYS[2], ARGV[2], ARGV[1] .. &#x27;:&#x27; .. ARGV[3])
+return left - tonumber(ARGV[1])</code></pre>
+<p>脚本做两件事：幂等判断（同一预扣单号只算一次）和判断加扣减的原子化。返回 <code>-1</code> 才是卖完之后的请求；那 41200 个负数里绝大多数来自脚本上线前的旧路径。</p>
+<p>这段脚本只保证一件事：<strong>可售数不会被扣成负数</strong>。它不保证「扣掉的都成交」。第二件事要由预扣明细的回收来保证。</p>
+<h2 id="超卖的空间不在脚本里在复制和回补上">超卖的空间不在脚本里，在复制和回补上</h2>
+<p>脚本是原子的，但计数组件的主从复制是异步的。主节点故障切到从节点，最近几百毫秒的 <code>DECRBY</code> 就没了，可售数回升，于是同一批名额被卖第二遍。窗口大小取决于复制延迟，峰值期 100 到 400ms。</p>
+<p>第二次超卖来自回补。未支付订单的预扣 15 分钟后释放，由定时任务扫明细。任务重启时若从「上次扫描位置」继续，中间到期的记录被漏掉，可售数永远少一截（少卖）；若按「当前时间」重扫，又会把释放过的记录再释放一次（超卖）。这两种错误在监控上长得一样：可售数和真实库存对不上。</p>
+<p>修法两条：明细里的过期时间用绝对时间戳，回收任务按「过期时间 &lt; now」条件删除，删成功才 <code>INCRBY</code>，删除本身就是幂等闸门；再给计数器加兜底校准，每 5 分钟用「初始额度 - 有效预扣 - 已成交」重算一次。覆盖是危险操作，只在偏差超过 50 时做，并记录覆盖前后的值。</p>
+<h2 id="分段之后的新问题">分段之后的新问题</h2>
+<p>单键计数在 3w/s 下已经接近上限，把额度切成 128 段，请求按用户 id 取模落段。吞吐上去了，换来一个新失败模式：其中一段卖空、全局还有额度，落到该段的人下单失败。这是 41200 之外的另一个隐形损失，方向相反，是少卖。比例大概千分之二到千分之五（按压测流量算）。</p>
+<p>处理办法是小步长转移：段空了向全局池申请 50 个名额，失败重试两次，不成返回失败。步长太小会把全局池打成热点，太大则在活动末尾留下成片碎片额度。50 按单段平均消耗速率估，宁可留碎片也不打热点。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>方案</th>
+<th>单机吞吐</th>
+<th>故障时会超卖吗</th>
+<th>修复难度</th>
+</tr></thead>
+<tbody>
+<tr><td>订单库单行条件更新</td><td>4k~6k/s</td><td>不会</td><td>无需修复</td></tr>
+<tr><td>单键预扣 + 批量落库</td><td>3w~5w/s</td><td>会，复制延迟窗口内</td><td>事后按订单补偿</td></tr>
+<tr><td>分段预扣 + 本地令牌</td><td>10w/s 以上</td><td>会；碎片方向是少卖</td><td>需要全局校准</td></tr>
+</tbody>
+</table></div>
+<h2 id="为什么最后接受了千分之三">为什么最后接受了千分之三</h2>
+<p>零超卖只有一种做法：所有扣减串行进同一个共识组，延迟乘节点数，3w/s 撑不住。既然做不到，就把超卖量算成可承受的数，提前想好怎么消化。</p>
+<p>当时的账是这样：峰值 3w/s 持续 30 秒，总请求 90 万。超卖只算复制窗口和回补两项：切主丢掉的 100 到 400ms 扣减，按千分之三估约 2700 单。分段碎片是反方向的账，1800 到 4500 单少卖，不进这个数。消化那 2700 单靠候补队列加等值补偿，每单几十块，不到十万。相比之下，为消除这 2700 单去做全局串行，硬件多三倍，延迟从 40ms 涨到 150ms 以上。</p>
+<p>这个取舍有前提：名额必须是可替代的，多给一个的边际成本有限，比如发券、发资格、预约位。卖不可替代的东西（特定座位、特定编号）时，千分之三就不成立，只能退回单行条件更新加限流，用吞吐换正确性。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://redis.io/commands/eval/">Redis: EVAL 命令与脚本原子性</a>：脚本执行期间不插入其他命令的语义依据</li>
+<li><a href="https://redis.io/commands/incr/">Redis: INCR 命令</a>：计数器作为分布式锁/额度载体的经典用法与限制</li>
+<li><a href="https://www.postgresql.org/docs/13/explicit-locking.html">PostgreSQL 13: 显式锁</a>：行级锁与条件更新为何串行</li>
+<li><a href="https://microservices.io/patterns/data/saga.html">microservices.io: Saga 模式</a>：跨服务补偿与回补的通用取舍</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/库存扣减/">库存扣减</a><a class="tag" href="/tags/预扣/">预扣</a><a class="tag" href="/tags/超卖/">超卖</a><a class="tag" href="/tags/幂等/">幂等</a><a class="tag" href="/tags/缓存一致性/">缓存一致性</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=3w%2Fs+%E4%B8%8B%E5%90%8D%E9%A2%9D%E8%B6%85%E5%8D%96%E6%98%AF%E6%80%8E%E4%B9%88%E5%8F%91%E7%94%9F%E7%9A%84" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/coupon-writeoff-refund/">← 券的核销与退款：状态机、幂等、补偿</a><a class="next" href="/post/loss-prevention/">营销资损的四层防线 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li><li><a href="/post/order-state-machine/">订单状态机：让乱序到达变成不可能</a><time>2021-04</time></li><li><a href="/post/close-order-reconcile/">一次「关单」引发的对账</a><time>2021-04</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

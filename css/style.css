@@ -586,3 +586,94 @@ a.hm:hover { transform: scale(1.35); box-shadow: 0 0 0 2px color-mix(in srgb, va
   body { background: #fff; color: #000; }
   .post-content a { color: #000; }
 }
+
+/* ==================================================================
+   2026-11 增补：首页终端块 / 标签云 / 目录跟随 / 图片灯箱 / 代码角标 / 字号
+   ================================================================== */
+
+/* 字号调节（A- / A+） */
+body { font-size: calc(16px * var(--fs-scale, 1)); }
+.fs-ctrl { display: inline-flex; gap: .2rem; margin-right: .15rem; }
+.fs-ctrl button {
+  border: 1px solid var(--line); background: var(--panel);
+  color: var(--muted); border-radius: 6px; padding: .12rem .34rem;
+  font: 500 .7rem/1.4 var(--mono); cursor: pointer;
+}
+.fs-ctrl button:hover { color: var(--accent); border-color: var(--accent); }
+
+/* 阅读进度数字 */
+#progress-num {
+  position: fixed; top: 6px; right: 10px; z-index: 90;
+  font: 500 .68rem/1 var(--mono); color: var(--muted);
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  padding: .2rem .35rem; border-radius: 4px;
+}
+#progress-num.show { opacity: .9; }
+
+/* 首页终端块 */
+.hero {
+  margin: .4rem 0 2.2rem; border: 1px solid var(--line); border-radius: 12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 70%),
+    var(--panel);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.hero-bar {
+  display: flex; align-items: center; gap: .4rem; padding: .45rem .8rem;
+  background: var(--panel-2); border-bottom: 1px solid var(--line);
+  font: .72rem/1 var(--mono); color: var(--muted);
+}
+.hero-bar .d { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.hero-bar .d.r { background: #ff5f56; } .hero-bar .d.y { background: #ffbd2e; } .hero-bar .d.g { background: #27c93f; }
+.hero-path { margin-left: .5rem; }
+.hero-body { padding: .9rem 1.1rem 1.1rem; font: .82rem/1.9 var(--mono); }
+.hero-body p { margin: 0; color: var(--fg); }
+.hero-body p.out { color: var(--muted); padding-left: 1.15rem; }
+.hero-body p.out b, .hero-body p.out strong { color: var(--accent); font-weight: 500; }
+.hero-body .prompt { color: var(--accent); margin-right: .5rem; }
+.hero-body .cursor {
+  display: inline-block; width: .55em; height: 1em; margin-left: .15em;
+  background: var(--accent); vertical-align: -.12em;
+  animation: blink 1.1s steps(2, start) infinite;
+}
+@keyframes blink { to { visibility: hidden; } }
+
+/* 标签云 */
+.taxonomy.cloud { gap: .5rem; align-items: baseline; }
+.taxonomy.cloud li { border: 0; background: none; padding: .18rem .1rem; }
+.taxonomy.cloud li a { border-bottom: 1px dashed transparent; }
+.taxonomy.cloud li:hover a { border-bottom-color: var(--accent); }
+.taxonomy.cloud li.t1 a { font-size: .82rem; color: var(--muted); }
+.taxonomy.cloud li.t2 a { font-size: .95rem; }
+.taxonomy.cloud li.t3 a { font-size: 1.08rem; }
+.taxonomy.cloud li.t4 a { font-size: 1.24rem; color: var(--accent-2); }
+.taxonomy.cloud li.t5 a { font-size: 1.45rem; color: var(--accent); }
+.taxonomy.cloud .count { font-size: .68rem; color: var(--muted); opacity: .7; }
+
+/* 目录跟随高亮 */
+.toc a { color: var(--fg); text-decoration: none; transition: color .15s; }
+.toc a:hover { color: var(--accent-2); }
+.toc li.on a { color: var(--accent); }
+.toc li.on::before { color: var(--accent); }
+
+/* 图片灯箱 */
+.post-content img.zoomable { cursor: zoom-in; }
+.lightbox {
+  position: fixed; inset: 0; z-index: 300; display: none;
+  background: color-mix(in srgb, #000 82%, transparent);
+  padding: 4vh 4vw; cursor: zoom-out;
+}
+.lightbox.show { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem; }
+.lightbox img { max-width: 100%; max-height: 88vh; border: 1px solid var(--line); border-radius: 8px; }
+.lightbox-cap { margin: 0; font: .78rem/1.6 var(--mono); color: var(--fg); }
+
+/* 代码块语言角标 */
+.post-content pre { position: relative; }
+.code-lang {
+  position: absolute; top: 6px; right: 8px;
+  font: .66rem/1 var(--mono); color: var(--muted);
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 4px; padding: .2rem .35rem; pointer-events: none; opacity: .8;
+}
+.post-content pre .copy-btn { right: auto; left: 8px; }

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>什么时候「多想一会儿」不值：推理档位的账 - farfood</title>
+<meta name="description" content="推理档位的成本藏在看不见的思考 token 里：延迟大头在它，账单大头也在它。值不值取决于答案能不能被便宜地验证，与模型强弱无关。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/after-o1/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "什么时候「多想一会儿」不值：推理档位的账", "description": "推理档位的成本藏在看不见的思考 token 里：延迟大头在它，账单大头也在它。值不值取决于答案能不能被便宜地验证，与模型强弱无关。", "datePublished": "2024-10-22T22:10:00+08:00", "dateModified": "2024-10-22T22:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/after-o1/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "推理成本, 测试时计算, 延迟预算, 采样, 模型推理"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="什么时候「多想一会儿」不值：推理档位的账 - farfood">
+<meta property="og:description" content="推理档位的成本藏在看不见的思考 token 里：延迟大头在它，账单大头也在它。值不值取决于答案能不能被便宜地验证，与模型强弱无关。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/after-o1/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="什么时候「多想一会儿」不值：推理档位的账 - farfood">
+<meta name="twitter:description" content="推理档位的成本藏在看不见的思考 token 里：延迟大头在它，账单大头也在它。值不值取决于答案能不能被便宜地验证，与模型强弱无关。">
+<meta property="article:published_time" content="2024-10-22T22:10:00+08:00">
+<meta name="keywords" content="推理成本, 测试时计算, 延迟预算, 采样, 模型推理">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">什么时候「多想一会儿」不值：推理档位的账</h1>
+    <p class="meta"><time datetime="2024-10-22T22:10:00">2024-10-22</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2338 字 <a class="cat" href="/categories/模型/">模型</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#一次请求里发生了什么">一次请求里发生了什么</a></li>
+<li class="h2"><a href="#三个档位放在一张表上">三个档位放在一张表上</a></li>
+<li class="h2"><a href="#不值的时候">不值的时候</a></li>
+<li class="h2"><a href="#把档位做成可降级的东西">把档位做成可降级的东西</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>上个月对账，有一条请求让我停下来看了两遍：账单记了 5,800 个输出 token，聊天记录里模型的回答不到 400 字。差额不是缓存、不是重试，是思考过程——它被生成、被计费、被丢弃。</p>
+<p>用量统计里现在多了一个明细字段，各家的命名不同，位置一样：</p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;usage&quot;: {
+    &quot;input_tokens&quot;: 1840,
+    &quot;output_tokens&quot;: 5820,
+    &quot;output_tokens_details&quot;: { &quot;reasoning_tokens&quot;: 5460 }
+  }
+}</code></pre>
+<p><code>reasoning_tokens</code> 是 output 的子集，按 output 单价计费。这个字段是理解这一代模型成本结构的入口，顺着数据流走一遍，「什么时候该开、什么时候该关」就变成了算术。</p>
+<h2 id="一次请求里发生了什么">一次请求里发生了什么</h2>
+<p>前段与普通模型一样：prompt 一次性 prefill，KV cache 按输入长度分配。</p>
+<p>分叉在 decode。普通模型每生成一个 token 就追加进输出；长思考档在输出之前先自己续写一段内部序列，这段序列的每个 token 同样要跑一次前向、同样往 KV cache 里追加、同样受逐 token 串行的限制。于是思考长度直接乘在两个量上：显存占用与墙钟时间。</p>
+<p>区别只在最后一步：思考段不返回给调用方，只留一个计数。</p>
+<p>一个量级参考：单流 decode 在当时的托管服务上大致 30 到 60 token/s（短请求、批量未打满的口径），思考 5,000 token 就是 80 到 160 秒的墙钟，而这段时间用户什么也看不到。答案本身 400 token 只要 10 秒左右。延迟的大头在看不见的部分。</p>
+<p>成本同理。设输入单价 p，输出单价通常取 4p 上下（口径：当时的公开价目表，档位之间有差异），一次请求的花费是：</p>
+<pre data-lang="text"><code class="language-text">cost ≈ p × input + 4p × (reasoning + answer)
+每 1,000 思考 token ≈ 4,000 输入 token 的钱</code></pre>
+<p>单次多花三分钱不算什么，乘上每天 6 万次调用就是 1,800 块，再乘上「失败重试两次」是 5,400 块。</p>
+<h2 id="三个档位放在一张表上">三个档位放在一张表上</h2>
+<p>同一个任务集（120 道我自己的排障题，有标准答案，自动判分）跑三档，每档三次取中位：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>档位</th>
+<th>思考 token（中位）</th>
+<th>单题墙钟（中位 / p95）</th>
+<th>单题成本</th>
+<th>通过率</th>
+</tr></thead>
+<tbody>
+<tr><td>直答</td><td>0</td><td>1.8 s / 4 s</td><td>0.4 分</td><td>62%</td></tr>
+<tr><td>中档</td><td>1,400</td><td>22 s / 48 s</td><td>1.6 分</td><td>78%</td></tr>
+<tr><td>高档</td><td>5,600</td><td>96 s / 210 s</td><td>5.1 分</td><td>84%</td></tr>
+</tbody>
+</table></div>
+<p>中档到高档：成本 3.2 倍，p95 延迟 4 倍多，通过率涨 6 个点。这 6 个点值不值，取决于答错一次要赔多少，不取决于模型有多聪明。</p>
+<h2 id="不值的时候">不值的时候</h2>
+<p>判据三条，都能在动手之前算出来。</p>
+<p><strong>结果可自动验证，且验证比推理便宜。</strong> 单元测试、编译、schema 校验、链接探活都属于这类。这时候把预算挪到采样上更划算：同一提示采样 8 次，用验证器筛，取第一个通过的。公开评测里这个做法在可验证题目上的收益曲线比单次长思考更陡，而且成本线性、中途可截断；长思考是一口气花完，没有中途退出的机会。</p>
+<p><strong>缺的是知识，不是推理步数。</strong> 问「这个错误码在哪个版本引入的」，模型不知道就是不知道；让它多想 5,000 token，多出来的是围绕错误前提搭起来的链条，而且链条越长越有说服力。这类问题该做检索和引用，加思考预算只会让错的答案更像对的。</p>
+<p><strong>答案确定且会被重复问。</strong> 同一份日志、同一个报错，第二次调用就该命中缓存。缓存键取提示 + 模型 + 档位，思考过程不进键（它每次都不一样），进键的是最终答案。</p>
+<p>反过来，这几个场景我确实开高档：多约束的排期与迁移方案取舍（约束之间互相让，答案短、验收靠人）、跨文件的重构计划（要先建立全局依赖图）、以及我自己说不清楚但一眼能判对错的设计评审。</p>
+<h2 id="把档位做成可降级的东西">把档位做成可降级的东西</h2>
+<p>调用封装里档位不是常量，是任务类型带出来的默认值，外加两条运行时规则：</p>
+<ul>
+<li>交互路径的时间预算 8 秒。超了就不在前台等，转后台任务，完成后通知；用户点「再想想」才升级到高档。</li>
+<li>重试不升级档位。第一次答错往往是题目读错了，把同样的预算再烧一遍不会更好，改成换提示或补上下文。</li>
+</ul>
+<p>跑满一个月的分布大致是：78% 走直答，17% 走中档，5% 走高档。成本比「全部高档」低一个数量级，等待反而更少，因为长时间等待只发生在用户主动要求的场景里。</p>
+<p>一个反面观察：把高档用在「看这段代码有没有并发问题」上，效果不稳定。它能列出七八种可能，但手里没有运行的证据，最后还是要人去复现。这类任务我现在用直答 + 一个最小复现脚本的模板，人跑一遍比模型多想十分钟管用。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://arxiv.org/abs/2408.03314">Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters</a>：思考预算与采样预算的换算关系</li>
+<li><a href="https://arxiv.org/abs/2407.21787">Large Language Monkeys: Scaling Inference Compute with Repeated Sampling</a>：可验证任务上重复采样的收益曲线</li>
+<li><a href="https://arxiv.org/abs/2203.11171">Chain-of-Thought Prompting Elicits Reasoning in Large Language Models</a>：思考长度与推理能力的原始观察</li>
+<li><a href="https://arxiv.org/abs/2310.01798">Large Language Models Cannot Self-Correct Reasoning Yet</a>：没有外部反馈时「再想一遍」为何常常无效</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/推理成本/">推理成本</a><a class="tag" href="/tags/测试时计算/">测试时计算</a><a class="tag" href="/tags/延迟预算/">延迟预算</a><a class="tag" href="/tags/采样/">采样</a><a class="tag" href="/tags/模型推理/">模型推理</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E3%80%8C%E5%A4%9A%E6%83%B3%E4%B8%80%E4%BC%9A%E5%84%BF%E3%80%8D%E4%B8%8D%E5%80%BC%EF%BC%9A%E6%8E%A8%E7%90%86%E6%A1%A3%E4%BD%8D%E7%9A%84%E8%B4%A6" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/agent-tool-loop/">← Agent 的工具循环：什么时候该停</a><a class="next" href="/post/pwa-offline/">PWA 离线可用：Service Worker 的取舍 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/payment-observability/">支付链路的可观测三件套：日志、指标、追踪</a><time>2022-04</time></li><li><a href="/post/sandbox-log-pipeline/">沙箱日志的结构化与压缩：一份报告 9MB 的账</a><time>2023-05</time></li><li><a href="/post/detection-latency/">检测延迟：从收到文件到给出结论的每一毫秒</a><time>2023-12</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

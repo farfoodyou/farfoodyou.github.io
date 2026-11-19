@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分类：工程 - farfood</title>
+<meta name="description" content="记模型、记系统、记踩过的坑。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/categories/工程/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="分类：工程 - farfood">
+<meta property="og:description" content="记模型、记系统、记踩过的坑。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://farfoodyou.github.io/categories/工程/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分类：工程 - farfood">
+<meta name="twitter:description" content="记模型、记系统、记踩过的坑。">
+</head>
+<body class="">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/" class="active">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<h1 class="page-title">分类：工程 <span class="count">17 篇</span></h1>
+<article class="card">
+  <h2><a href="/post/pwa-offline/">PWA 离线可用：Service Worker 的取舍</a></h2>
+  <p class="meta"><time datetime="2024-10-08T21:40:00">2024-10-08</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">离线可读上线后暴露两个故障：旧缓存里的壳配新脚本导致白屏；离线写入没有前置条件，新内容被旧全文盖回去。</p>
+  <a class="more" href="/post/pwa-offline/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/git-sync-conflict/">多端同步：Git 版本化与冲突合并</a></h2>
+  <p class="meta"><time datetime="2024-09-17T22:30:00">2024-09-17</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">1.4 万篇笔记放进一个 Git 仓库做多端同步，每天 130 KB 流量、索引增量一百多毫秒；大头开销在冲突，冲突率可以用文件粒度改下来。</p>
+  <a class="more" href="/post/git-sync-conflict/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/search-vs-links/">双链笔记的检索困境</a></h2>
+  <p class="meta"><time datetime="2024-09-03T20:10:00">2024-09-03</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">链接、标签、全文各自只能回答一类问题；把三者当成同一个索引来设计，才会得到一套能编译成一条 SQL 的查询语法。</p>
+  <a class="more" href="/post/search-vs-links/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/weekly-report-auto/">周报的账：65 分钟压到 9 分钟，大头还在校对</a></h2>
+  <p class="meta"><time datetime="2024-05-28T21:50:00">2024-05-28</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">把周报拆成聚合、排版、校对三段算时间账，增量指纹让重跑一次只花 0.8 秒。</p>
+  <a class="more" href="/post/weekly-report-auto/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/detection-observability/">四个数：检测系统的账怎么算</a></h2>
+  <p class="meta"><time datetime="2023-08-15T23:05:00">2023-08-15</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">同一次季度评审上，误报率报出了三个不同的数；把精度、漏报上界、排队延迟、回流样本量四个账逐条算清，才发现指标定义比采集方式重要得多。</p>
+  <a class="more" href="/post/detection-observability/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/sandbox-log-pipeline/">沙箱日志的结构化与压缩：一份报告 9MB 的账</a></h2>
+  <p class="meta"><time datetime="2023-05-23T21:50:00">2023-05-23</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">从每天 3.15TB 的原始报告压到 227GB 可查询数据，每一步省下的字节都用同一个算式核对过，采样率是按查询需求倒推的。</p>
+  <a class="more" href="/post/sandbox-log-pipeline/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/api-doc-what/">接口文档到底该写什么：一次重复扣款的复盘</a></h2>
+  <p class="meta"><time datetime="2022-05-10T10:40:00">2022-05-10</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">文档里没写重试语义，也没写幂等键由哪几个字段构成，接入方超时重试时换了参数，同一笔支付扣了两次。事后补的是五类契约，并非字段说明。</p>
+  <a class="more" href="/post/api-doc-what/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/payment-observability/">支付链路的可观测三件套：日志、指标、追踪</a></h2>
+  <p class="meta"><time datetime="2022-04-12T09:15:00">2022-04-12</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">三个信号各自回答不同的问题，判据混用就会三套都上还定位不了单笔。错误与慢请求全采样，成功请求抽 0.1%。</p>
+  <a class="more" href="/post/payment-observability/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/ops-platform-three/">运营平台三件套：预发、灰度、回滚</a></h2>
+  <p class="meta"><time datetime="2021-09-07T11:15:00">2021-09-07</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">发布权交给运营之后，事故来源从「代码写错」变成「配置和数据改错」。预发、灰度、回滚三件事的判据不同，不能当一套东西做。</p>
+  <a class="more" href="/post/ops-platform-three/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/holiday-capacity/">节假日扩容：从求人扩容到自己扛住</a></h2>
+  <p class="meta"><time datetime="2021-07-28T10:40:00">2021-07-28</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">节前流量翻了三倍，机器提前加到位，CPU 却一直在 40% 以下。补上放大倍数、缓存预热、弱依赖隔离，峰值才不靠人守。</p>
+  <a class="more" href="/post/holiday-capacity/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/what-tests-to-write/">覆盖率 85% 是怎么来的：哪些测试值得写</a></h2>
+  <p class="meta"><time datetime="2021-06-01T10:20:00">2021-06-01</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">覆盖率数的单位是基本块里的语句，不是业务规则。看清这一点之后，我把测试从 service 挪到了领域对象上。</p>
+  <a class="more" href="/post/what-tests-to-write/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/gray-flag-debt/">灰度开关是怎么变成技术债的</a></h2>
+  <p class="meta"><time datetime="2021-05-11T09:40:00">2021-05-11</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">四十七个开关里有一半没人说得清现状，缺省值不一致让两台机器走了不同分支。清理完我把开关组合写进了测试表。</p>
+  <a class="more" href="/post/gray-flag-debt/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/fault-injection-payment/">故障演练：怎么证明「单分片故障不影响支付」</a></h2>
+  <p class="meta"><time datetime="2021-02-24T09:40:00">2021-02-24</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">「单分片故障不影响支付」是一句可证伪的话，前提是先把判定阈值写死，再让注入真的打到故障分片上。</p>
+  <a class="more" href="/post/fault-injection-payment/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/solo-refactor-plan/">半年重构复盘：一个人怎么排重构的期</a></h2>
+  <p class="meta"><time datetime="2020-06-19T10:40:00">2020-06-19</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">一个人做重构，排期的单位不是月而是周；每周要有一片能独立上线并被观测到的东西，删代码也算一片。</p>
+  <a class="more" href="/post/solo-refactor-plan/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/two-step-change/">可回滚的变更：把一次上线拆成三步</a></h2>
+  <p class="meta"><time datetime="2020-06-02T22:15:00">2020-06-02</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">把「加新字段」和「切读路径」塞进同一个版本，回滚就变成一次数据事故；拆成三步后最坏结果只是多跑几天旧代码。</p>
+  <a class="more" href="/post/two-step-change/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/config-form-not-json/">配置单为什么难填：把「写 JSON」换成「点菜单」</a></h2>
+  <p class="meta"><time datetime="2020-03-24T10:05:00">2020-03-24</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">填错配置单不是用户不会写 JSON，而是校验在提交之后：把规则变成 schema 前置到输入框，退回率从三成降到个位数。</p>
+  <a class="more" href="/post/config-form-not-json/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a></h2>
+  <p class="meta"><time datetime="2020-02-14T09:40:00">2020-02-14</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">评审时所有人都同意「行为不能变」，但没人能说出怎么证明。双读把这句话变成一周的差异率曲线和一份归因表。</p>
+  <a class="more" href="/post/dual-read-verification/">阅读全文 →</a>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

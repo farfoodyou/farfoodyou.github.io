@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>钱包页平台化：页面、分组、单元三层抽象 - farfood</title>
+<meta name="description" content="一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/wallet-page-platform/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "钱包页平台化：页面、分组、单元三层抽象", "description": "一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。", "datePublished": "2021-06-22T21:05:00+08:00", "dateModified": "2021-06-22T21:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/wallet-page-platform/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "页面搭建, 数据驱动, 分层抽象, 灰度"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="钱包页平台化：页面、分组、单元三层抽象 - farfood">
+<meta property="og:description" content="一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/wallet-page-platform/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="钱包页平台化：页面、分组、单元三层抽象 - farfood">
+<meta name="twitter:description" content="一个页面塞到二十六个运营位，改一句文案要三天。把判据先摆出来，三个方案并排比过之后，选了三层数据驱动。">
+<meta property="article:published_time" content="2021-06-22T21:05:00+08:00">
+<meta name="keywords" content="页面搭建, 数据驱动, 分层抽象, 灰度">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">钱包页平台化：页面、分组、单元三层抽象</h1>
+    <p class="meta"><time datetime="2021-06-22T21:05:00">2021-06-22</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/架构/">架构</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
+<li class="h2"><a href="#三层各自管什么">三层各自管什么</a></li>
+<li class="h2"><a href="#单元按数据来源分四类">单元按数据来源分四类</a></li>
+<li class="h2"><a href="#数据落在哪配置-渲染器注册表">数据落在哪：配置 + 渲染器注册表</a></li>
+<li class="h2"><a href="#有状态单元的那次批量改造">有状态单元的那次批量改造</a></li>
+<li class="h2"><a href="#什么时候不要这层抽象">什么时候不要这层抽象</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>钱包首页从三个运营位长到二十六个，用了不到一年。改动成本不是线性涨的：第三个位是加一段代码，第二十六个位是加一段代码再加一次三方评审，没人敢确定这段不会碰到别人的位置。</p>
+<p>挑方案之前我先摆了五条判据，后面所有讨论都对着它打分：</p>
+<ul>
+<li>P1 运营换文案、换图、调顺序，要不要研发介入</li>
+<li>P2 某个运营位出错，能不能只回滚那一个</li>
+<li>P3 新增一种展示形态，要改几处代码</li>
+<li>P4 同一类运营位出现在多个页面时，改一处能不能全生效</li>
+<li>P5 一个单元的脏数据，会不会让整页白屏</li>
+</ul>
+<h2 id="三个方案并排">三个方案并排</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>判据</th>
+<th>A 页面直写</th>
+<th>B 整页 JSON</th>
+<th>C 页面-分组-单元</th>
+</tr></thead>
+<tbody>
+<tr><td>P1 运营自助</td><td>不能，要发版</td><td>能，但字段含义靠猜</td><td>能，有 schema 校验</td></tr>
+<tr><td>P2 单点回滚</td><td>只能整页回滚</td><td>能，可整页 JSON 是一个事务边界</td><td>能，单元级配置带版本</td></tr>
+<tr><td>P3 新增形态</td><td>改 1 处</td><td>改 2 处：渲染 + 校验</td><td>加 1 个渲染器</td></tr>
+<tr><td>P4 跨页复用</td><td>复制粘贴</td><td>结构太自由，难复用</td><td>单元 id 直接复用</td></tr>
+<tr><td>P5 爆炸半径</td><td>代码内 try/catch 可控</td><td>解析失败即白屏</td><td>单元级降级，保留占位</td></tr>
+</tbody>
+</table></div>
+<p>A 的失效模式是每次改动都得有人重新理解整页。B 的失效模式是配置能表达任何东西，于是表达了一堆没人读得懂的东西：字段叫 <code>ext2</code>、<code>ext3</code>，改完靠肉眼验证。C 的失效模式是新框架本身的复杂度，抽象写错会得到 A 和 B 的缺点之和。</p>
+<p>权重不一样：P1、P2 是运营的硬需求，P3 是研发成本，P4 决定这套东西能不能长期不腐化。B 在 P1 上最高，P2、P4 不及格，所以没选。</p>
+<h2 id="三层各自管什么">三层各自管什么</h2>
+<p><strong>页面</strong>管路由、可见性、页面级开关、版本号，以及兜底策略：任一单元渲染失败时是留白、留占位还是阻断全页。这个决策只能写在页面层，只有它知道该位置空缺是否可接受。</p>
+<p><strong>分组</strong>管顺序、分栏、单元数量上限，以及组的显示条件（未登录整组不出现）。它不渲染任何业务内容，职责只有一个：把顺序从代码里挪进数据里。</p>
+<p><strong>单元</strong>是最小可运营实体，它是唯一带业务语义的一层。</p>
+<p>三层之间只允许父子引用：分组不知道单元的数据从哪来，单元不知道自己在哪个页面，跨层引用在评审时打回。一旦允许单元反查页面配置，页面就成了全局变量。</p>
+<h2 id="单元按数据来源分四类">单元按数据来源分四类</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>类型</th>
+<th>数据来源</th>
+<th>何时取数</th>
+<th>缓存</th>
+<th>失败时的降级</th>
+</tr></thead>
+<tbody>
+<tr><td>固定</td><td>配置本身</td><td>请求时读配置</td><td>可长缓存</td><td>保留占位</td></tr>
+<tr><td>入口</td><td>配置 + 跳转规则</td><td>请求时读配置</td><td>短缓存</td><td>隐藏</td></tr>
+<tr><td>有状态</td><td>配置 + 用户域查询</td><td>请求前批量预取</td><td>不缓存</td><td>显示默认态</td></tr>
+<tr><td>开关</td><td>配置 + 实验分组</td><td>请求时判定</td><td>不缓存</td><td>走兜底分支</td></tr>
+</tbody>
+</table></div>
+<p>分四类的理由是取数行为不同。固定和入口是纯函数，配置进来、视图出去，可以放心缓存；有状态单元必须实时，且彼此存在可合并的查询；开关单元决定渲染哪个分支而不是渲染什么内容，判定时机比取数更早。</p>
+<p>开关单独成类，是因为它最容易被写成前三种类型里的一个 <code>if</code>，写到第十个就没人知道它在什么条件下出现。</p>
+<h2 id="数据落在哪配置-渲染器注册表">数据落在哪：配置 + 渲染器注册表</h2>
+<p>单元数据是带类型的 <code>RawMessage</code>，类型决定用哪个渲染器校验和渲染：</p>
+<pre data-lang="go"><code class="language-go">type Unit struct {
+    ID    string
+    Kind  string          // fixed | entry | stateful | toggle
+    Order int
+    Data  json.RawMessage // 由 Kind 对应的 schema 校验
+}
+
+type Renderer interface {
+    Schema() json.RawMessage
+    Prepare(ctx context.Context, us []Unit) (map[string]Box, error)
+    Render(ctx context.Context, u Unit, env Env) (View, error)
+}
+
+func Register(kind string, r Renderer) // 启动时注册，schema 解析失败直接 panic</code></pre>
+<p>注册在启动时完成，schema 也在启动时校验。坏配置于是在发布阶段暴露，而不是在请求路径上暴露。<a href="https://12factor.net/config">把配置当代码管</a> 的前提是它本身有可校验的结构。</p>
+<p>渲染分两段：<code>Prepare</code> 收集本页有状态单元的查询需求合并成一次批量调用，<code>Render</code> 纯内存拼装。两段之间不允许有别的 IO，否则批量白做。</p>
+<h2 id="有状态单元的那次批量改造">有状态单元的那次批量改造</h2>
+<p>上线第一个月首屏 P99 是 210ms，比改造前的 160ms 还慢：七个有状态单元各自查一次用户域，七次 RPC 串起来。</p>
+<p>改成两段渲染后，七个单元的查询合并成一次批量请求，首屏 P99 掉到 90ms（同期混合口径，非对照实验）。代价是接口多了一个阶段，纯展示类型要实现空实现，评审时被质疑过，换来的是新加有状态单元不必再考虑批量化。</p>
+<p>爆炸半径也在这时候被验证：一次配置错误让两个单元返回了空数据，页面其它部分照常显示，只有那两个位置留了占位。如果没有单元级降级，这次事故就是一次首页白屏。</p>
+<h2 id="什么时候不要这层抽象">什么时候不要这层抽象</h2>
+<p>运营位少于二十个、月变更少于十次，方案 A 更便宜。C 的前期成本是三周框架加每类渲染器，A 的边际成本是每次改动两天，交叉点大概就在这个量级，且随团队规模变，没有普适值。</p>
+<p>要提防的是抽象建好了、运营仍然走研发改代码：成本照付，收益为零。所以平台化的第一件事不是写框架，是让运营真的自己发布一次。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://martinfowler.com/articles/micro-frontends.html">Martin Fowler: Micro Frontends</a>：页面组合的边界</li>
+<li><a href="https://martinfowler.com/bliki/BoundedContext.html">Martin Fowler: BoundedContext</a>：单元、分组、页面三层的语义归属</li>
+<li><a href="https://12factor.net/config">The Twelve-Factor App: III. Config</a></li>
+<li><a href="https://www.json.org/json-en.html">JSON 规范</a>：<code>RawMessage</code> 延迟解析的语义基础</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/页面搭建/">页面搭建</a><a class="tag" href="/tags/数据驱动/">数据驱动</a><a class="tag" href="/tags/分层抽象/">分层抽象</a><a class="tag" href="/tags/灰度/">灰度</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E9%92%B1%E5%8C%85%E9%A1%B5%E5%B9%B3%E5%8F%B0%E5%8C%96%EF%BC%9A%E9%A1%B5%E9%9D%A2%E3%80%81%E5%88%86%E7%BB%84%E3%80%81%E5%8D%95%E5%85%83%E4%B8%89%E5%B1%82%E6%8A%BD%E8%B1%A1" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/decouple-by-subscribe/">← 把「调用业务方」换成「订阅业务方」</a><a class="next" href="/post/what-tests-to-write/">覆盖率 85% 是怎么来的：哪些测试值得写 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/stateful-unit-data/">有状态单元：把运营能力做成数据</a><time>2021-08</time></li><li><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a><time>2020-02</time></li><li><a href="/post/two-step-change/">可回滚的变更：把一次上线拆成三步</a><time>2020-06</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

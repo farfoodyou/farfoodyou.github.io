@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>静态扫描流水线：从收到文件到给出判定 - farfood</title>
+<meta name="description" content="拆成三种可选架构之前先写能一票否决的判据：时延、可解释、冷启动、嵌套容器。判据定完，能进同步路径的只剩浅层那一档。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/static-scan-pipeline/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "静态扫描流水线：从收到文件到给出判定", "description": "拆成三种可选架构之前先写能一票否决的判据：时延、可解释、冷启动、嵌套容器。判据定完，能进同步路径的只剩浅层那一档。", "datePublished": "2022-07-06T20:30:00+08:00", "dateModified": "2022-07-06T20:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/static-scan-pipeline/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "文件检测, 类型识别, 解包, 规则引擎"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="静态扫描流水线：从收到文件到给出判定 - farfood">
+<meta property="og:description" content="拆成三种可选架构之前先写能一票否决的判据：时延、可解释、冷启动、嵌套容器。判据定完，能进同步路径的只剩浅层那一档。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/static-scan-pipeline/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="静态扫描流水线：从收到文件到给出判定 - farfood">
+<meta name="twitter:description" content="拆成三种可选架构之前先写能一票否决的判据：时延、可解释、冷启动、嵌套容器。判据定完，能进同步路径的只剩浅层那一档。">
+<meta property="article:published_time" content="2022-07-06T20:30:00+08:00">
+<meta name="keywords" content="文件检测, 类型识别, 解包, 规则引擎">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">静态扫描流水线：从收到文件到给出判定</h1>
+    <p class="meta"><time datetime="2022-07-06T20:30:00">2022-07-06</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2425 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#五条判据其中两条能否决">五条判据，其中两条能否决</a></li>
+<li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
+<li class="h2"><a href="#类型识别先看字节别信扩展名">类型识别：先看字节，别信扩展名</a></li>
+<li class="h2"><a href="#解包把爆炸半径关在小盒子里">解包：把爆炸半径关在小盒子里</a></li>
+<li class="h2"><a href="#规则按类型分桶先便宜后昂贵">规则：按类型分桶，先便宜后昂贵</a></li>
+<li class="h2"><a href="#判定的可解释性怎么落到字段上">判定的可解释性怎么落到字段上</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>选型讨论最容易跑偏的地方是先比方案。两年前我参与过一次检测引擎的架构评审，三个方案各有拥趸，讨论了两周没有结论，最后卡在一个没人定义的问题上：这引擎到底要在多少毫秒内给出答案。判据没写下来，方案就没法比。</p>
+<p>所以这次先把判据摆在前面。</p>
+<h2 id="五条判据其中两条能否决">五条判据，其中两条能否决</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>判据</th>
+<th>阈值</th>
+<th>为什么能否决</th>
+</tr></thead>
+<tbody>
+<tr><td>单文件判定时延</td><td>同步路径 P95 ≤ 300ms</td><td>上传即等结果，超过就得改成异步，产品形态全变</td></tr>
+<tr><td>判定可解释</td><td>必须给出规则名与命中偏移</td><td>客户要来申诉，说不出理由的判定无法运营</td></tr>
+<tr><td>冷启动</td><td>新文件类型不依赖历史样本</td><td>新格式出现时没有标注数据</td></tr>
+<tr><td>嵌套容器</td><td>压缩包、Office 内嵌、邮件附件要能看到</td><td>大多数投递都套了一层壳</td></tr>
+<tr><td>误报可控</td><td>单规则误报率 ≤ 0.2%（回归集口径）</td><td>扣文件这件事，误伤一次的成本远高于放过</td></tr>
+</tbody>
+</table></div>
+<p>后两条是硬否决，前三条可以谈判。判据写完之后，讨论从「哪个方案先进」变成了「哪个方案能过这五条」。</p>
+<h2 id="三个方案并排">三个方案并排</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>判据</th>
+<th>A 纯规则静态</th>
+<th>B 静态特征 + 打分模型</th>
+<th>C 动态沙箱</th>
+</tr></thead>
+<tbody>
+<tr><td>单文件时延</td><td>50–200ms</td><td>200ms–1s（上界越线）</td><td>30–120s</td></tr>
+<tr><td>单机吞吐</td><td>每核每天十万级</td><td>每核每天万级</td><td>每核每天千级</td></tr>
+<tr><td>可解释</td><td>规则名 + 偏移，最干净</td><td>特征贡献度，需要额外说明</td><td>行为日志，人能读但要归纳</td></tr>
+<tr><td>冷启动</td><td>写规则即可，天级</td><td>需标注样本，周级</td><td>无需训练，但要环境适配</td></tr>
+<tr><td>嵌套容器</td><td>解包后逐层判，成本可控</td><td>同左，特征提取要防炸</td><td>多数样本跑不到内层</td></tr>
+<tr><td>误报可控</td><td>靠规则精度，易回滚</td><td>靠阈值，整体可调</td><td>依赖环境保真度</td></tr>
+</tbody>
+</table></div>
+<p>C 在第一条就被淘汰：30 秒起步的时延没法放进同步上传路径，只能做二级分析。B 也只守住下半段，200ms–1s 的上界同样越线，能留在同步路径上的只有静态特征那一部分，打分模型不能在线等。剩下 A 和 B 的差别在覆盖面上，B 能吃到「一堆单独看都不致命、凑一起很可疑」的文件，A 只能吃到写得出规则的东西。</p>
+<p>实际落地是 A 打底、B 补位：所有文件先过 A，A 给出高分直接判；A 给不出结论、类型又可解析的样本才进 B 的静态特征部分，这一段压到 P95 300ms 以内。要跑打分模型或沙箱的样本走异步队列，一天的回溯窗口足够，C 也在这一侧。</p>
+<h2 id="类型识别先看字节别信扩展名">类型识别：先看字节，别信扩展名</h2>
+<p>流水线的第一个动作决定后面所有分支。扩展名来自发送方，只当作一个交叉校验字段：内容判断结果与扩展名不一致，本身就是一条特征（一个 <code>.doc</code> 实际是 PE 文件，权重不低）。</p>
+<p>判类型读文件头 8KB 就够，用 magic 之类的字节签名库，比手写 <code>if</code> 稳，也比全量解析便宜。这一步同时决定了「能不能解包」和「该用哪一组规则」。</p>
+<pre data-lang="yaml"><code class="language-yaml">type_probe:
+  read_bytes: 8192
+  on_mismatch: record_feature      # 扩展名与内容不一致 -&gt; 记为特征，不拒绝
+unpack:
+  max_depth: 5
+  max_total_bytes: 209715200       # 展开后总量上限 200MB
+  max_ratio: 200                   # 压缩比超限按疑似炸弹隔离，不再展开
+  recurse_types: [zip, gzip, ole2, ooxml, pdf]
+  per_member: true                 # 每个成员重新走类型识别
+score:
+  threshold_flag: 60
+  threshold_block: 80</code></pre>
+<p><code>max_ratio</code> 这条有具体数字支撑：一个 40KB 的压缩包能展开成几个 GB，解包器如果不设总量上限，一次投递就能把扫描节点的磁盘写满，后面的正常文件全部排队。</p>
+<h2 id="解包把爆炸半径关在小盒子里">解包：把爆炸半径关在小盒子里</h2>
+<p>解包器要当成不可信输入处理，三件事必做：深度上限（嵌套压缩包按层递归，5 层之后一律只记录不展开）、总量上限、单成员大小上限。任何一个超限，判定结果直接写「容器异常」，不再往下走。</p>
+<p>每个展开出来的成员要重新走类型识别，不能沿用父容器的结论。Office 文档里嵌一个可执行文件、PDF 里挂一个压缩流，这类结构在投递样本里占比不低，跳过这一步等于白做。</p>
+<h2 id="规则按类型分桶先便宜后昂贵">规则：按类型分桶，先便宜后昂贵</h2>
+<p>规则按文件类型分桶，别全局扫。一堆针对 PE 节的规则拿去扫 PDF，纯属浪费 CPU。</p>
+<p>同一个桶内按代价排序执行：字符串与文件大小条件最便宜，正则次之，带循环或偏移计算的最后。命中一条高分规则就可以短路，跳过后续昂贵规则。</p>
+<p>分数不是规则权重的简单相加，而是「最高分 + 命中数量的对数加成」，避免一个文件靠堆一堆低分规则冲过阈值：</p>
+<pre data-lang="text"><code class="language-text">score = clamp(max(weight_i) + min(20, 4 * log2(1 + hits)), 0, 100)</code></pre>
+<p>阈值定在两处：60 进人工复核队列，80 直接隔离。这两个数是在 12 万条历史样本上（口径：仅静态扫描，不含沙箱）按「误报 ≤ 0.2%」反推出来的，换个样本集就得重算。</p>
+<h2 id="判定的可解释性怎么落到字段上">判定的可解释性怎么落到字段上</h2>
+<p>每条判定结果里必须带四样东西：命中规则名、命中位置（偏移或容器内路径）、分数构成、以及流水线版本号。前两个给人看，后两个用来复现。</p>
+<p>少了版本号，同一份文件隔一周扫出两个结论就没法解释，因为规则集或者解包器在这期间变过。这条要求后来被写进结果格式的强制字段，比任何评审都管用。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://yara.readthedocs.io/en/stable/">YARA 文档</a>：规则语法、字符串条件与模块</li>
+<li><a href="https://www.darwinsys.com/file/">file(1) 与 libmagic</a>：字节签名的类型识别实现</li>
+<li><a href="https://www.iana.org/assignments/media-types/media-types.xhtml">IANA Media Types</a>：类型命名的对照表</li>
+<li><a href="https://www.first.org/cvss/v3.1/specification-document">CVSS v3.1 规范</a>：打分维度与阈值设计的参考口径</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/文件检测/">文件检测</a><a class="tag" href="/tags/类型识别/">类型识别</a><a class="tag" href="/tags/解包/">解包</a><a class="tag" href="/tags/规则引擎/">规则引擎</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E9%9D%99%E6%80%81%E6%89%AB%E6%8F%8F%E6%B5%81%E6%B0%B4%E7%BA%BF%EF%BC%9A%E4%BB%8E%E6%94%B6%E5%88%B0%E6%96%87%E4%BB%B6%E5%88%B0%E7%BB%99%E5%87%BA%E5%88%A4%E5%AE%9A" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/why-signature-still/">← 免杀率 60% 的今天，为什么还在用签名检测</a><a class="next" href="/post/distributed-lock/">分布式锁的三种实现与它们的失效场景 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报</a><time>2022-08</time></li><li><a href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段</a><time>2022-09</time></li><li><a href="/post/csharp-pdf-support/">检测率 +3% 背后：C# 与 PDF 支持</a><time>2022-12</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

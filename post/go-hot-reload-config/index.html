@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Go 里做配置热更新的三种姿势 - farfood</title>
+<meta name="description" content="热更新的难点不是换指针，而是换完之后谁还在引用旧快照；三种同步姿势的差别都在这里。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/go-hot-reload-config/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Go 里做配置热更新的三种姿势", "description": "热更新的难点不是换指针，而是换完之后谁还在引用旧快照；三种同步姿势的差别都在这里。", "datePublished": "2020-05-08T22:40:00+08:00", "dateModified": "2020-05-08T22:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/go-hot-reload-config/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "Go, 并发, 配置管理, 快照"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="Go 里做配置热更新的三种姿势 - farfood">
+<meta property="og:description" content="热更新的难点不是换指针，而是换完之后谁还在引用旧快照；三种同步姿势的差别都在这里。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/go-hot-reload-config/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Go 里做配置热更新的三种姿势 - farfood">
+<meta name="twitter:description" content="热更新的难点不是换指针，而是换完之后谁还在引用旧快照；三种同步姿势的差别都在这里。">
+<meta property="article:published_time" content="2020-05-08T22:40:00+08:00">
+<meta name="keywords" content="Go, 并发, 配置管理, 快照">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">Go 里做配置热更新的三种姿势</h1>
+    <p class="meta"><time datetime="2020-05-08T22:40:00">2020-05-08</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2468 字 <a class="cat" href="/categories/后端/">后端</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#前提发布的快照必须不可变">前提：发布的快照必须不可变</a></li>
+<li class="h2"><a href="#三种姿势">三种姿势</a></li>
+<li class="h2"><a href="#只换指针忘了引用">只换指针，忘了引用</a></li>
+<li class="h2"><a href="#文件层与监听层">文件层与监听层</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>一个 Go 服务，调度配置约 8MB（机房权重、后端组、限流阈值都在里面），20 分钟改一次，重启会切断长连接，所以得做热更新。第一版就三行：<code>var cfg *Config</code>，<code>apply(b []byte)</code> 里直接 <code>json.Unmarshal(b, cfg)</code>。</p>
+<p>预发跑了一周没事，联调第二天 <code>-race</code> 抓到数据竞争。更麻烦的是：某个机房权重改了，一部分请求按新的走，一部分按旧的。</p>
+<p>结论：<strong>热更新要解决的是「读侧看到什么」，不是「怎么拿到新字节」</strong>。</p>
+<h2 id="前提发布的快照必须不可变">前提：发布的快照必须不可变</h2>
+<p>不管用什么同步原语，先立一条约定：交给读者的配置对象，内部 map 和 slice 之后不再修改。变更都是「构造新对象 → 校验 → 发布」。</p>
+<p>理由很实际：<code>cfg.Backends[2].Weight</code> 在汇编层面是多次 load（slice 头、长度、元素、字段），发布方在中间改了底层数组，读者就拿到新长度配旧元素。原子指针只保证指针读写原子，保护不了对象内部。</p>
+<p>违反这条，三种姿势都不安全。</p>
+<h2 id="三种姿势">三种姿势</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>方案</th>
+<th>读开销（8 核，当时压测口径）</th>
+<th>写开销</th>
+<th>适合</th>
+<th>失效边界</th>
+</tr></thead>
+<tbody>
+<tr><td><code>atomic.Value</code></td><td>一次 load，约 5ns</td><td>每次全量构造并分配</td><td>几 MB 内、变更不频繁</td><td>存 struct 值会复制；类型固定</td></tr>
+<tr><td><code>RWMutex</code></td><td>RLock 一对约 20–30ns，核多退化</td><td>写时阻塞全部读者</td><td>万级 QPS 以下、读逻辑复杂</td><td>持锁期间做慢操作</td></tr>
+<tr><td>双缓冲 + 代际号</td><td>一次 load 加一次校验</td><td>两块内存轮换写，几乎不分配</td><td>MB 级、变更频繁</td><td>读者必须重试</td></tr>
+</tbody>
+</table></div>
+<p><strong>atomic.Value：读侧零锁，但只接受指针。</strong> 每次 Store 的类型必须一致，第一次存 <code>*Snapshot</code> 就只能存它；Store nil 会 panic；存 struct 值则每次 Load 都拿副本。规则是「一次 Load，指着用到底」：</p>
+<pre data-lang="go"><code class="language-go">type Snapshot struct {
+    Version uint64
+    Conf    *Config
+}
+
+type Store struct{ v atomic.Value } // 只存 *Snapshot
+
+func (s *Store) Get() *Snapshot { return s.v.Load().(*Snapshot) }
+
+func (s *Store) Reload(b []byte, ver uint64) error {
+    c, err := ParseAndValidate(b) // 新对象上解析 + 校验
+    if err != nil {
+        return err // 旧快照不动，调用方告警
+    }
+    s.v.Store(&amp;Snapshot{Version: ver, Conf: c})
+    return nil
+}</code></pre>
+<p>易忽略的点：<code>ParseAndValidate</code> 如果复用读缓冲（一直往同一个 <code>bytes.Buffer</code> 里 <code>io.Copy</code> 再取 <code>Bytes()</code>），下次读文件会改到已发布的快照。校验通过的字节必须新分配。</p>
+<p><strong>RWMutex：适合读侧要「多个字段一起看」。</strong> 一个判断同时需要 <code>cfg.Limit</code> 和 <code>cfg.Window</code>，用 atomic 要么 Load 两次（可能跨版本），要么把字段打包成结构体——那就是 atomic.Value 干的事。RWMutex 一把锁圈住整段读，语义最直白。</p>
+<p>代价是写者阻塞所有读者，读者计数是全局共享的原子变量，核多读多时缓存行争用明显。8 核纯读压测 RLock/Unlock 一对 20–30ns，慢一个量级；3w/s 下占 0.1% CPU，所以只在超高读频时才在意。</p>
+<p><strong>双缓冲：给「大配置 + 高频变更」准备的。</strong> 两块等大内存，写侧写 inactive 那块，校验通过后切换指针并递增代际号；读侧读前后各看一次代际号，不一致就重试（seqlock 思路），省掉每次变更的全量分配。</p>
+<p>代价是读者可能重试、复杂度高一档，还要保证写侧对 inactive 块的写入对别的 goroutine 不可见，否则读者校验通过时读到的仍是半份数据。用之前先问：真到 MB 级、真在每秒变吗？多数服务答「没有」。</p>
+<h2 id="只换指针忘了引用">只换指针，忘了引用</h2>
+<p>这是这个项目里拖得最久的坑，和锁无关。</p>
+<p>现象一：某功能在配置更新后一直用旧值。查下来是业务代码初始化时把 <code>snap.Conf.Backends</code> 存进了自己的结构体——指针换了，字段还指着旧 slice。判据：<strong>生命周期长于一次请求的结构体不许持有快照内部引用</strong>，要持有就拷贝。</p>
+<p>现象二：内存锯齿状上涨。订阅回调的闭包捕获了 <code>*Snapshot</code>，reload 后旧快照不释放。8MB 一份、20 分钟一次，一天 500MB 量级，pprof heap 里是斜线升到 GC 线再跌回来。发布新版本不等于旧版本可以丢。</p>
+<h2 id="文件层与监听层">文件层与监听层</h2>
+<ul>
+<li><strong>写文件不是原子的。</strong> 直接 truncate + write，watcher 会在写到一半时触发，读到半截 JSON。做法是同目录写临时文件再 <code>rename</code>——POSIX 的 rename 在同一文件系统内是原子的，容器里也成立（临时文件和目标文件同一挂载点）。</li>
+<li><strong>一次写入触发多个事件。</strong> fsnotify 可能给 WRITE、CREATE、CHMOD 好几条，每条都 reload 会重复解析大配置。加 200–500ms debounce，或用单调版本号去重。</li>
+</ul>
+<p>失败策略只能有一个：<strong>校验失败保留旧快照并上报指标，连续 N 次失败告警</strong>。「加载失败就当空配置」会把一次笔误放大成全量故障。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://go.dev/ref/mem">The Go Memory Model</a>：发布快照需要 happens-before</li>
+<li><a href="https://pkg.go.dev/sync#Value">sync · atomic.Value</a>：类型一致性与 nil Store 的 panic</li>
+<li><a href="https://pkg.go.dev/sync#RWMutex">sync · RWMutex</a>：读者计数与写者优先</li>
+<li><a href="https://github.com/fsnotify/fsnotify">fsnotify</a>：inotify/kqueue/FSEvents 的封装</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/go/">Go</a><a class="tag" href="/tags/并发/">并发</a><a class="tag" href="/tags/配置管理/">配置管理</a><a class="tag" href="/tags/快照/">快照</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=Go+%E9%87%8C%E5%81%9A%E9%85%8D%E7%BD%AE%E7%83%AD%E6%9B%B4%E6%96%B0%E7%9A%84%E4%B8%89%E7%A7%8D%E5%A7%BF%E5%8A%BF" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/two-step-change/">← 可回滚的变更：把一次上线拆成三步</a><a class="next" href="/post/cross-idc-traffic/">跨机房调用为什么慢：条带化与同机房收敛 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/json-as-database/">拿 JSON 字段当表用，是怎么把配置平台拖死的</a><time>2020-01</time></li><li><a href="/post/payment-idempotency/">支付幂等的三层防线</a><time>2021-03</time></li><li><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：一次调度配置下发改造</a><time>2020-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>把「调用业务方」换成「订阅业务方」 - farfood</title>
+<meta name="description" content="0.999 的九次方是 0.9910，每月三百八十九分钟。这笔账算清楚之后，支付成功后的九个下游调用全改成了订阅。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/decouple-by-subscribe/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "把「调用业务方」换成「订阅业务方」", "description": "0.999 的九次方是 0.9910，每月三百八十九分钟。这笔账算清楚之后，支付成功后的九个下游调用全改成了订阅。", "datePublished": "2021-07-13T22:40:00+08:00", "dateModified": "2021-07-13T22:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/decouple-by-subscribe/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "消息解耦, 最终一致, 幂等消费, 降级读"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="把「调用业务方」换成「订阅业务方」 - farfood">
+<meta property="og:description" content="0.999 的九次方是 0.9910，每月三百八十九分钟。这笔账算清楚之后，支付成功后的九个下游调用全改成了订阅。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/decouple-by-subscribe/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="把「调用业务方」换成「订阅业务方」 - farfood">
+<meta name="twitter:description" content="0.999 的九次方是 0.9910，每月三百八十九分钟。这笔账算清楚之后，支付成功后的九个下游调用全改成了订阅。">
+<meta property="article:published_time" content="2021-07-13T22:40:00+08:00">
+<meta name="keywords" content="消息解耦, 最终一致, 幂等消费, 降级读">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">把「调用业务方」换成「订阅业务方」</h1>
+    <p class="meta"><time datetime="2021-07-13T22:40:00">2021-07-13</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/架构/">架构</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#主链路只剩两个乘数">主链路只剩两个乘数</a></li>
+<li class="h2"><a href="#九个订阅者没有一份共同的最小事实">九个订阅者没有一份共同的最小事实</a></li>
+<li class="h2"><a href="#读-kv-引入的三种失效">读 KV 引入的三种失效</a></li>
+<li class="h2"><a href="#积压的账">积压的账</a></li>
+<li class="h2"><a href="#丢的那部分靠对账补">丢的那部分靠对账补</a></li>
+<li class="h2"><a href="#什么时候不该改">什么时候不该改</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>支付成功后通知九个下游：营销、券、积分、账单、风控、消息、数据、工单、对账。串行调一遍，主链路耗时是九个之和，可用性是九个之积：</p>
+<p><code>P99 = 30+45+25+60+80+40+35+30+35 = 380ms</code>，<code>A = 0.999^9 = 0.9910</code>。按每月 43200 分钟算，0.9% 是 389 分钟。这个数不准：它假设九个下游的失效独立，而同机房、同发布窗口的失效高度相关；数量级对，一个下游的抖动会被串联放大成全链路。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>量</th>
+<th>算式</th>
+<th>结果</th>
+</tr></thead>
+<tbody>
+<tr><td>主链路 P99</td><td>Σ 九个下游</td><td>380ms</td></tr>
+<tr><td>串联可用性</td><td>0.999^9</td><td>99.10%</td></tr>
+<tr><td>每月不可用</td><td>43200 × 0.9%</td><td>389 分钟</td></tr>
+<tr><td>峰值事件流量</td><td>3w/s × 1.2KB</td><td>36MB/s</td></tr>
+<tr><td>消息瘦身后的流量</td><td>3w/s × 0.18KB</td><td>5.4MB/s</td></tr>
+<tr><td>峰值积压（30 秒）</td><td>(30000-8000) × 30</td><td>66 万条</td></tr>
+<tr><td>积压消化时间</td><td>660000/(8000-3000)</td><td>132 秒</td></tr>
+<tr><td>日均存储</td><td>6000/s × 1.2KB × 86400 ÷ 4 × 3</td><td>466GB</td></tr>
+</tbody>
+</table></div>
+<p>口径：6000/s 是日均不是峰值，拿峰值当平均值会高估五倍；÷4 是压缩比，×3 是三副本。算完这行得到「消息体必须瘦」，后面都是推论。</p>
+<h2 id="主链路只剩两个乘数">主链路只剩两个乘数</h2>
+<p>订阅后主链路只做两件事：本地事务提交，向中间件写一次并拿到确认。</p>
+<pre data-lang="text"><code class="language-text">A&#x27; = 0.9999（本地库）× 0.9995（写入确认）= 0.9994</code></pre>
+<p>每月不可用从 389 分钟降到 26 分钟，代价是下游看到支付成功从毫秒变成 P99 800ms、P999 4s。</p>
+<h2 id="九个订阅者没有一份共同的最小事实">九个订阅者没有一份共同的最小事实</h2>
+<p>原来的消息塞了整个订单快照，1.2KB。比带宽更麻烦的是快照会过期：消息在队列躺三分钟，订单可能已被撤销，消费方拿到的是三分钟前的事实。</p>
+<p>只有一个下游时，可以带「判定所需的最小事实」，让消息自足。九个下游做不到：营销要金额，积分要用户，风控要支付方式，并集就是快照，每加一个下游还要改一次契约。</p>
+<p>所以只带 <code>order_id</code> 和 <code>version</code>，消费方按自己的读模型回查状态 KV：</p>
+<pre data-lang="go"><code class="language-go">func (h *Handler) Handle(ctx context.Context, m Msg) error {
+    st, err := h.kv.Get(ctx, m.OrderID)          // 权威状态
+    if err != nil { return err }                  // 不 ack，交给重试
+    if st.Version &lt;= seen(orderID) { return nil } // 旧版本，丢弃
+    return h.apply(ctx, st)
+}</code></pre>
+<p>效果有两条：日均存储 466GB → 70GB；重复和迟到都不再有危害，重复读到同一状态，迟到的那条版本更低。代价是回查放大九倍，这笔读 QPS 记在 KV 的容量账上。</p>
+<p>判据是扇出数：一两个下游就让消息自足，五个以上只做通知。</p>
+<h2 id="读-kv-引入的三种失效">读 KV 引入的三种失效</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>失效</th>
+<th>表现</th>
+<th>处理</th>
+</tr></thead>
+<tbody>
+<tr><td>KV 读超时</td><td>消费卡住，积压上涨</td><td>不 ack 重试；积压告警</td></tr>
+<tr><td>KV 状态还没写</td><td>读到旧状态，后续被覆盖</td><td>版本号单调，旧版本写入不影响终态</td></tr>
+<tr><td>KV 不可用</td><td>消费全停</td><td>主链路不受影响，恢复后追平</td></tr>
+</tbody>
+</table></div>
+<p>第三种最坏，影响只到「下游数据滞后」，不传导到支付本身。</p>
+<h2 id="积压的账">积压的账</h2>
+<p>峰值 3w/s 持续三十秒，消费 8k/s，积压 <code>(30000-8000)×30 = 66 万条</code>；峰值过后回到 3k/s 稳态，消化 5k/s，<code>660000/5000 = 132 秒</code>。</p>
+<p>这两个数定了三件事：broker 至少兜住 66 万条积压（0.18KB 是 119MB，1.2KB 是 792MB）；消费者扩容要在两分钟内完成；下游实时性承诺不小于三分钟。第三条最容易忘，写进 SLA 后没人再问「刚付完积分怎么没到」。</p>
+<p>这套估算叫 <a href="https://mathworld.wolfram.com/LittlesLaw.html">Little 定律</a>，<code>L = λW</code>：系统内平均数量等于到达率乘平均停留时间，上面的算式都是它的变形。</p>
+<h2 id="丢的那部分靠对账补">丢的那部分靠对账补</h2>
+<p>先写库再发消息，中间进程挂掉消息就丢了。所以顺序定死：先写 KV，提交后由投递组件发出，失败重试；这一步的形状是 <a href="https://microservices.io/patterns/data/transactional-outbox.html">Transactional Outbox</a>，不再推一遍。</p>
+<p>投递彻底失败也不要紧，状态在 KV 里，丢的消息由对账补：扫「已支付但下游无记录」的差集，日常每天百笔以内。补偿任务自身要有上限：单轮条数、每小时轮次，否则它会变成第二个积压源。消费端幂等见 <a href="https://www.enterpriseintegrationpatterns.com/patterns/messaging/IdempotentReceiver.html">Idempotent Receiver</a>。</p>
+<h2 id="什么时候不该改">什么时候不该改</h2>
+<p>调用链只有一两跳、下游和主链路共用一个库、调用方必须在同一事务里看到结果，这三种情况同步更简单。判据：券要不要立刻核销、积分要不要立刻加，都不需要同步；这个下游挂了，能不能接受「晚三十秒才看到」。能就订阅，不能就同步，但要给它单独的超时预算和熔断。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://kafka.apache.org/documentation">Apache Kafka 文档：分区与投递语义</a></li>
+<li><a href="https://microservices.io/patterns/data/transactional-outbox.html">microservices.io: Transactional Outbox</a></li>
+<li><a href="https://www.enterpriseintegrationpatterns.com/patterns/messaging/IdempotentReceiver.html">Enterprise Integration Patterns: Idempotent Receiver</a></li>
+<li><a href="https://mathworld.wolfram.com/LittlesLaw.html">MathWorld: Little&#x27;s Law</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/消息解耦/">消息解耦</a><a class="tag" href="/tags/最终一致/">最终一致</a><a class="tag" href="/tags/幂等消费/">幂等消费</a><a class="tag" href="/tags/降级读/">降级读</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8A%8A%E3%80%8C%E8%B0%83%E7%94%A8%E4%B8%9A%E5%8A%A1%E6%96%B9%E3%80%8D%E6%8D%A2%E6%88%90%E3%80%8C%E8%AE%A2%E9%98%85%E4%B8%9A%E5%8A%A1%E6%96%B9%E3%80%8D" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/holiday-capacity/">← 节假日扩容：从求人扩容到自己扛住</a><a class="next" href="/post/wallet-page-platform/">钱包页平台化：页面、分组、单元三层抽象 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/transaction-message/">事务消息：把扣额度和发券放进一个故事</a><time>2021-10</time></li><li><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：一次调度配置下发改造</a><time>2020-01</time></li><li><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a><time>2020-03</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

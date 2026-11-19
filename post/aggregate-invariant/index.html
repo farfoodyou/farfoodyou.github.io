@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>聚合根与不变式：把规则焊在对象里 - farfood</title>
+<meta name="description" content="规则只有被唯一入口守住才算存在。一个事务只改一个聚合，跨聚合的保证交给事件和对账，而不是更大的事务。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/aggregate-invariant/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "聚合根与不变式：把规则焊在对象里", "description": "规则只有被唯一入口守住才算存在。一个事务只改一个聚合，跨聚合的保证交给事件和对账，而不是更大的事务。", "datePublished": "2020-11-17T11:20:00+08:00", "dateModified": "2020-11-17T11:20:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/aggregate-invariant/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "DDD, 聚合根, 不变式, 事务边界"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="聚合根与不变式：把规则焊在对象里 - farfood">
+<meta property="og:description" content="规则只有被唯一入口守住才算存在。一个事务只改一个聚合，跨聚合的保证交给事件和对账，而不是更大的事务。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/aggregate-invariant/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="聚合根与不变式：把规则焊在对象里 - farfood">
+<meta name="twitter:description" content="规则只有被唯一入口守住才算存在。一个事务只改一个聚合，跨聚合的保证交给事件和对账，而不是更大的事务。">
+<meta property="article:published_time" content="2020-11-17T11:20:00+08:00">
+<meta name="keywords" content="DDD, 聚合根, 不变式, 事务边界">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">聚合根与不变式：把规则焊在对象里</h1>
+    <p class="meta"><time datetime="2020-11-17T11:20:00">2020-11-17</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2499 字 <a class="cat" href="/categories/架构/">架构</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#先考古再谈模型">先考古，再谈模型</a></li>
+<li class="h2"><a href="#聚合根把门">聚合根把门</a></li>
+<li class="h2"><a href="#一个事务只改一个聚合">一个事务只改一个聚合</a></li>
+<li class="h2"><a href="#聚合多大算合适">聚合多大算合适</a></li>
+<li class="h2"><a href="#边界">边界</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>订单表上出现过一个对不上的数：<code>total_amount</code> 比明细之和少 1 分。金额小到没人当 bug 报，但它出现了几百单，方向还不固定。</p>
+<p>查下去没有任何一处逻辑是「错的」。下单、调价、加项、部分退款四条路径各自维护 total：三条用「在旧值上加」，一条用「重新求和」。并发下两条「加项」同时读到旧 total 再写回，丢更新；退款那条用原始 total 减退款额，没扣后续加项。每条路径单独看都通过了 review。</p>
+<p>结论只有一句：<strong>规则要成立，只能由唯一入口强制执行，写在注释里的意图不算。</strong>只要还有第二条路径能改这笔账，这条不变式就不存在。</p>
+<h2 id="先考古再谈模型">先考古，再谈模型</h2>
+<p>改之前先考古：把「写这张表」的地方全找出来（含批处理与后台脚本），每处把 <code>if</code> 捞出来列成规则清单。这一轮捞出四十多条，真正必须<strong>立刻</strong>成立的不到十条。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>类型</th>
+<th>例子</th>
+<th>能否单事务保证</th>
+<th>手段</th>
+</tr></thead>
+<tbody>
+<tr><td>聚合内不变式</td><td>明细之和 = 总额；状态迁移合法；终态不可逆</td><td>能</td><td>聚合根方法内校验 + 乐观锁</td></tr>
+<tr><td>跨聚合不变式</td><td>当日累计支付 ≤ 可用额度；订单与流水一一对应</td><td>不能</td><td>领域事件 + 补偿 + 日终对账</td></tr>
+<tr><td>跨上下文不变式</td><td>账务口径、报表口径</td><td>不能</td><td>只做对账与差异枚举</td></tr>
+</tbody>
+</table></div>
+<p>分错的代价很直接：第二、三类塞进事务会得到一个跨库的「大事务」，锁范围从一行扩到一条链路；第一类当成最终一致，则出现「已付款但仍待支付」这种没人能解释的中间态。</p>
+<h2 id="聚合根把门">聚合根把门</h2>
+<p>确定边界之后，规矩只有三条：字段不导出、没有 setter、所有变更走方法。</p>
+<pre data-lang="go"><code class="language-go">package order
+
+type Order struct {
+    id      string
+    version int64  // 乐观锁，不导出
+    status  status
+    items   []item
+    total   int64  // 分；只由 recompute 维护
+}
+
+func (o *Order) AddItem(sku string, qty int, unitPrice int64) error {
+    if o.status != draft &amp;&amp; o.status != pendingPay {
+        return ErrStateNotAllowed
+    }
+    if qty &lt;= 0 || unitPrice &lt; 0 {
+        return ErrInvalidItem
+    }
+    o.items = append(o.items, item{sku, qty, unitPrice})
+    o.recompute()
+    return nil
+}
+
+func (o *Order) recompute() {
+    var sum int64
+    for _, it := range o.items {
+        sum += it.amount()
+    }
+    o.total = sum
+}</code></pre>
+<p><code>recompute</code> 是唯一的总额来源。<code>total</code> 不存两份：要么每次算，要么派生并由唯一函数维护，绝不出现「调用方自己加一下」。方法返回 <code>error</code> 而不是打日志继续——规则被违反是调用方的错，静默修正会把错误埋进历史数据。把门守住之后，四条路径变成四个方法，<code>recompute</code> 只剩一个调用者，这条不变式不再依赖「下次改代码的人记得」。</p>
+<h2 id="一个事务只改一个聚合">一个事务只改一个聚合</h2>
+<p>这条约束来自三个物理限制，与团队的纪律无关。</p>
+<p><strong>单行热点。</strong> 事务持有行锁的时间 ≈ 写次数 × 每次写的延迟。持锁 2 ms 时单行理论吞吐上限约 500 TPS，实际因锁等待与排队，同一热点聚合常见上限在百级（经验值）。两个聚合塞进一个事务，等于把两个热点合并成一个更热的点。<strong>跨库不可能。</strong> 订单库与账务库不在一个实例上时本地事务并不存在，写 <code>BeginTx</code> 只是骗自己。<strong>失败半径。</strong> 一个聚合上的锁等待会沿事务传播到另一个聚合的正常请求，合并事务把 A 的抖动变成 B 的抖动。</p>
+<p>跨聚合统一用「本地事务 + 写 outbox」，不引入分布式事务。写法就是一条带版本条件的更新：<code>UPDATE ... WHERE id=$3 AND version=$4</code>，<code>RowsAffected</code> 为 0 即冲突，此时返回明确的 <code>ErrConflict</code>，由业务层有限次重试（当时设 2 次，超过就报错让人看）。这比在数据库层排队等锁好：排队把延迟藏起来，冲突率却不会降。事件行与这条 UPDATE 必须同属一个 <code>tx</code>，否则回到「消息发了、事务回滚了」的老问题。</p>
+<p>裸 SQL 批处理是这条路的反向漏洞：直接 <code>UPDATE</code> 不改 <code>version</code>，乐观锁就静默失效，所以写路径必须收口。</p>
+<h2 id="聚合多大算合适">聚合多大算合适</h2>
+<p>判据是「事务边界 = 一致性边界 = 聚合边界」，落到操作上两条：聚合里只放<strong>必须同时成立</strong>的东西；聚合外的东西只用 id 引用，不持有对象。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>划分</th>
+<th>症状</th>
+<th>代价</th>
+</tr></thead>
+<tbody>
+<tr><td>过大（订单 + 支付 + 退款合一）</td><td>明细 200 行时加载 p99 从 4 ms 涨到 40 ms 以上；同单并发操作全部串行</td><td>热点、长事务、重试风暴</td></tr>
+<tr><td>过小（明细独立成聚合）</td><td>total 与明细之和瞬时不等；读侧要拼装</td><td>不变式无处安放</td></tr>
+<tr><td>合适（订单为根、明细在内、支付只存 id + 状态快照）</td><td>需要一次双写过渡</td><td>读侧跨聚合查询，走查询模型</td></tr>
+</tbody>
+</table></div>
+<p>这个 p99 是当时的实测口径：加载 20 行明细 4 ms，200 行涨到 40 ms 以上，因为聚合整体加载。这也是读多写少要单独做查询模型的原因：读侧不需要不变式，只需要数据。</p>
+<h2 id="边界">边界</h2>
+<p>聚合根守得住「必须立刻成立」，守不住「最终必须成立」。要看别的聚合才能判断的规则，硬塞进聚合只会长成一个巨大的锁；这时候接受最终一致，把保证放在对账上，让差异<strong>可枚举</strong>。反过来，聚合自己就能判断的规则别靠补偿去修——补偿逻辑是最难写对、也最难删的代码。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://martinfowler.com/bliki/DDD_Aggregate.html">Martin Fowler: DDD Aggregate</a></li>
+<li><a href="https://martinfowler.com/eaaDev/DomainEvent.html">Martin Fowler: Domain Event</a></li>
+<li><a href="https://martinfowler.com/eaaCatalog/optimisticOfflineLock.html">Martin Fowler: Optimistic Offline Lock</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/ddd/">DDD</a><a class="tag" href="/tags/聚合根/">聚合根</a><a class="tag" href="/tags/不变式/">不变式</a><a class="tag" href="/tags/事务边界/">事务边界</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E8%81%9A%E5%90%88%E6%A0%B9%E4%B8%8E%E4%B8%8D%E5%8F%98%E5%BC%8F%EF%BC%9A%E6%8A%8A%E8%A7%84%E5%88%99%E7%84%8A%E5%9C%A8%E5%AF%B9%E8%B1%A1%E9%87%8C" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/domain-event-vs-mq/">← 领域事件不是消息队列</a><a class="next" href="/post/bounded-context-ownership/">限界上下文：按「谁的规则谁负责」切，而不是按表切 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/domain-event-vs-mq/">领域事件不是消息队列</a><time>2020-12</time></li><li><a href="/post/anemia-model-debt/">订单服务是怎么变成贫血模型的</a><time>2020-09</time></li><li><a href="/post/bounded-context-ownership/">限界上下文：按「谁的规则谁负责」切，而不是按表切</a><time>2020-10</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

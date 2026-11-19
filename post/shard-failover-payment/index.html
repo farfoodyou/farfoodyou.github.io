@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分片挂了还能付款：跳单容灾怎么设计 - farfood</title>
+<meta name="description" content="订单按用户哈希落在 8 个分片上，一个分片故障就是 12.5% 的用户付不了款。把逻辑分片和物理落点拆开之后，故障期能换来降级，换不来无损。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/shard-failover-payment/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "分片挂了还能付款：跳单容灾怎么设计", "description": "订单按用户哈希落在 8 个分片上，一个分片故障就是 12.5% 的用户付不了款。把逻辑分片和物理落点拆开之后，故障期能换来降级，换不来无损。", "datePublished": "2021-01-12T21:30:00+08:00", "dateModified": "2021-01-12T21:30:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/shard-failover-payment/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "分片, 容灾, 可用性, 路由"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="分片挂了还能付款：跳单容灾怎么设计 - farfood">
+<meta property="og:description" content="订单按用户哈希落在 8 个分片上，一个分片故障就是 12.5% 的用户付不了款。把逻辑分片和物理落点拆开之后，故障期能换来降级，换不来无损。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/shard-failover-payment/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分片挂了还能付款：跳单容灾怎么设计 - farfood">
+<meta name="twitter:description" content="订单按用户哈希落在 8 个分片上，一个分片故障就是 12.5% 的用户付不了款。把逻辑分片和物理落点拆开之后，故障期能换来降级，换不来无损。">
+<meta property="article:published_time" content="2021-01-12T21:30:00+08:00">
+<meta name="keywords" content="分片, 容灾, 可用性, 路由">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">分片挂了还能付款：跳单容灾怎么设计</h1>
+    <p class="meta"><time datetime="2021-01-12T21:30:00">2021-01-12</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2489 字 <a class="cat" href="/categories/数据/">数据</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#数据库层切换救不了哪些故障">数据库层切换救不了哪些故障</a></li>
+<li class="h2"><a href="#逻辑分片与物理落点分开">逻辑分片与物理落点分开</a></li>
+<li class="h2"><a href="#跳单的代价清单">跳单的代价清单</a></li>
+<li class="h2"><a href="#牺牲一次探测换可用性">牺牲一次探测换可用性</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>订单按用户维度哈希落到 8 个库。上线三个月后，一个库所在主机磁盘写满，实例转成只读，那一批用户的订单写入全部失败。故障本身不复杂，清理磁盘二十来分钟就能搞定，但业务侧结结实实挨了四十分钟的投诉。</p>
+<p>为这件事开了两轮会。一派主张把数据库层的高可用做彻底——选主、代理、自动切换；另一派主张应用层能绕过坏分片。我倾向后者。理由跟技术偏好无关，看的是故障谱系：<strong>有一半的故障场景，数据库层自己救不了。</strong></p>
+<h2 id="数据库层切换救不了哪些故障">数据库层切换救不了哪些故障</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>故障</th>
+<th>数据库层切换</th>
+<th>应用层跳单</th>
+</tr></thead>
+<tbody>
+<tr><td>单实例进程退出</td><td>能，选主 10–30 秒</td><td>能</td></tr>
+<tr><td>磁盘写满、实例只读</td><td>不能</td><td>能</td></tr>
+<tr><td>分片整体网络不可达</td><td>不能</td><td>能</td></tr>
+<tr><td>慢查询堆积、连接打满</td><td>会放大，切主后照样排队</td><td>能，但先要区分慢和死</td></tr>
+<tr><td>数据损坏需回滚到旧副本</td><td>不能</td><td>能，写别处、事后修</td></tr>
+</tbody>
+</table></div>
+<p>两种手段保的东西不一样：数据库层的高可用保的是「同一份数据还有另一个副本」，应用层跳单保的是「这笔业务能不能落地」。前者是数据可用性，后者是业务可用性，在只有主从复制的分片里，这两件事经常不重合。</p>
+<h2 id="逻辑分片与物理落点分开">逻辑分片与物理落点分开</h2>
+<p>改法的核心是把一级映射拆成两级，再加一张落点记录：</p>
+<ul>
+<li><strong>逻辑分片</strong>：<code>hash(uid) mod 8</code>，永不变。业务语义（这单属于谁）挂在这层上。</li>
+<li><strong>物理落点</strong>：逻辑分片到实例的映射，可换。</li>
+<li><strong>落点记录</strong>：<code>order_id → 实际所在分片</code>，只在跳单过的单上存在。</li>
+</ul>
+<pre data-lang="go"><code class="language-go">func (r *Router) ShardFor(uid int64, orderID string) (int, error) {
+    if s, ok := r.hints.Get(orderID); ok { // 跳过的单按记录走
+        return s, nil
+    }
+    logical := int(murmur(uid) % uint64(r.n))
+    if r.health.OK(logical) {
+        return r.place[logical], nil
+    }
+    target, err := r.health.Best(r.n, logical) // 排除故障分片后的首选
+    if err == nil {
+        return target, nil
+    }
+    return 0, ErrNoShard
+}</code></pre>
+<p>有一条我坚持不让步：<strong>落点记录必须和订单行写在目标分片的同一个本地事务里。</strong>当时有人提了另一种做法：记录先写到一个独立的配置存储里，这样查路由不用碰业务库。独立存储查得快、不占业务库连接，但它和订单行不在一个事务里，中间任何一次崩溃都会留下查不到的单。 反过来做——先写订单、再写记录。会出现「钱收了、单也落了，但路由查不到它」，这种单在对账里表现为凭空多出来的余额，处理成本比故障本身高一个数量级。同一个本地事务保证了两者要么都在、要么都不在。</p>
+<p>顺带一个约束：订单号不能带分片位。原来号段是按分片发的，号里隐含了「这单在哪」，跳单之后这个隐含关系就假了，运维排查时会把人带到错的分片上。</p>
+<h2 id="跳单的代价清单">跳单的代价清单</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>代价</th>
+<th>表现</th>
+<th>缓解</th>
+</tr></thead>
+<tbody>
+<tr><td>查询扇出</td><td>按用户查订单要合并两个分片</td><td>落点记录带用户维度索引</td></tr>
+<tr><td>号段不单调</td><td>分片内自增不再全局有序</td><td>全局号段发号，分片内只做本地约束</td></tr>
+<tr><td>数据搬家</td><td>故障恢复后数据留在别人家</td><td>异步搬迁，搬迁期以记录为准</td></tr>
+<tr><td>幸存分片过载</td><td>7 个分片承接 8 份写</td><td>跳单配额，单分片最多多接 20%，超了直接失败</td></tr>
+<tr><td>唯一性失效</td><td>同一用户的单散在多个分片</td><td>唯一性靠全局号和事后核对，不靠库内唯一索引</td></tr>
+</tbody>
+</table></div>
+<p>配额这一条是第二次故障才加上的。第一次跳单时没有上限，坏掉的分片占了全部写入的 12.5%，摊到 7 个幸存分片上每个多 1.8%。看起来不多。真正的问题是故障瞬间的重试风暴：客户端同时在重试，7 个分片的连接池同时打满，本来健康的分片开始超时，健康度判定把它们也标灰了。一次单分片故障差点演变成全集群故障。后来加了配额和重试抖动，这个放大链路才断掉。</p>
+<h2 id="牺牲一次探测换可用性">牺牲一次探测换可用性</h2>
+<p>跳单的触发条件上，我们争论最久的是「多快判定一个分片坏了」。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>策略</th>
+<th>判定条件</th>
+<th>故障初期受影响请求</th>
+<th>误判后果</th>
+</tr></thead>
+<tbody>
+<tr><td>保守</td><td>连续 3 次探活失败</td><td>探测窗口内的全部请求</td><td>小</td></tr>
+<tr><td>激进</td><td>单次探测超时即跳</td><td>只有那次超时的请求</td><td>少量单落在非目标分片，可搬回</td></tr>
+</tbody>
+</table></div>
+<p>判据不是「准确性优先还是可用性优先」这种空话，而是<strong>这个动作可逆吗</strong>。跳单可逆：有落点记录，事后能把数据搬回去，代价是脚本和一段时间内的查询扇出。把用户挡在门外不可逆：付款页转圈三十秒，用户就走完了，这笔交易不会回来。</p>
+<p>所以这里是选激进：先付一次探测的代价，把流量挪开，然后再慢慢确认。反过来，如果动作是「把分片标记为永久下线并启动数据迁移」，那是不可逆的，必须保守到确认无误。</p>
+<p>量级：探活间隔 2 秒、单次超时 200 毫秒。激进策略一次超时就切，判定窗口 200 毫秒；保守策略等三个间隔，六秒。单分片平时 200 QPS（当时峰值的八分之一），两百毫秒的窗口是几十个请求，最坏算上客户端重试两百来个，占日订单量不到万分之一。误判导致的搬迁量是几百行，一个脚本能收尾。</p>
+<p>误判本身的成本有限，贵的是<strong>跳单期间那两个分片上的数据没人敢动</strong>：搬迁脚本、对账任务、报表聚合都要知道「按 uid 找单不能只查一个分片」。所有按用户维度扫数据的离线作业都得改，这部分工作量比在线链路大得多。跳单只解决了支付能不能成功，没解决「故障之后这些数据长什么样」。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/">超时、重试与带抖动的退避</a></li>
+<li><a href="https://sre.google/sre-book/addressing-cascading-failures/">SRE 手册：级联故障的成因与处置</a></li>
+<li><a href="https://www.ics.uci.edu/~cs223/papers/cidr07p15.pdf">Life Beyond Distributed Transactions: An Apostate&#x27;s Opinion</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/分片/">分片</a><a class="tag" href="/tags/容灾/">容灾</a><a class="tag" href="/tags/可用性/">可用性</a><a class="tag" href="/tags/路由/">路由</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%88%86%E7%89%87%E6%8C%82%E4%BA%86%E8%BF%98%E8%83%BD%E4%BB%98%E6%AC%BE%EF%BC%9A%E8%B7%B3%E5%8D%95%E5%AE%B9%E7%81%BE%E6%80%8E%E4%B9%88%E8%AE%BE%E8%AE%A1" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/shard-health-score/">← 分片健康度怎么算：成功率、延迟、主动探测</a><a class="next" href="/post/module-boundary-in-code/">包结构与模块边界：让「不该调用」变成编译不过 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li><li><a href="/post/consistent-hashing/">缓存扩容那天：取模哈希搬走了三分之二的 key</a><time>2020-07</time></li><li><a href="/post/shard-health-score/">分片健康度怎么算：成功率、延迟、主动探测</a><time>2021-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

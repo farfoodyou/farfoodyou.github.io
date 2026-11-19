@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>误报治理：把「关规则」换成动阈值之后 - farfood</title>
+<meta name="description" content="误报工单指向的常常是规则的分数与工作点，而不只是规则本身。拆到归一化、累加、阈值三段之后，能动的旋钮就多起来了。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/false-positive-ops/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "误报治理：把「关规则」换成动阈值之后", "description": "误报工单指向的常常是规则的分数与工作点，而不只是规则本身。拆到归一化、累加、阈值三段之后，能动的旋钮就多起来了。", "datePublished": "2023-09-19T20:40:00+08:00", "dateModified": "2023-09-19T20:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/false-positive-ops/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "规则引擎, 误报治理, 回归集, 白名单"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="误报治理：把「关规则」换成动阈值之后 - farfood">
+<meta property="og:description" content="误报工单指向的常常是规则的分数与工作点，而不只是规则本身。拆到归一化、累加、阈值三段之后，能动的旋钮就多起来了。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/false-positive-ops/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="误报治理：把「关规则」换成动阈值之后 - farfood">
+<meta name="twitter:description" content="误报工单指向的常常是规则的分数与工作点，而不只是规则本身。拆到归一化、累加、阈值三段之后，能动的旋钮就多起来了。">
+<meta property="article:published_time" content="2023-09-19T20:40:00+08:00">
+<meta name="keywords" content="规则引擎, 误报治理, 回归集, 白名单">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">误报治理：把「关规则」换成动阈值之后</h1>
+    <p class="meta"><time datetime="2023-09-19T20:40:00">2023-09-19</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2444 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#顺着数据流看一遍">顺着数据流看一遍</a></li>
+<li class="h2"><a href="#四种处置各自的代价">四种处置各自的代价</a></li>
+<li class="h2"><a href="#聚类312-张工单变成-9-个簇">聚类：312 张工单变成 9 个簇</a></li>
+<li class="h2"><a href="#白名单要带租约">白名单要带租约</a></li>
+<li class="h2"><a href="#调阈值要先看分布">调阈值要先看分布</a></li>
+<li class="h2"><a href="#一个不太好量化的部分">一个不太好量化的部分</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>规则引擎里一条检测规则通常是这个样子：字段取 <code>body</code>，先做 URL 解码，再去注释、压空白、转小写，然后拿几个片段做包含匹配，命中一次加 5 分。判定发生在很远的地方——所有规则跑完，分数汇总，达到 10 就拦。</p>
+<p>这套结构决定了难点不在「哪条规则报错了」，而在「命中和判定之间隔着一层可累加的分数」。关掉一条规则，等于同时放弃它全部的正确命中；它错的那部分，可能只是一种输入形态下匹配条件放得太松。这两件事在工单里长得一模一样：用户贴一份文件，说「这个是正常的」。</p>
+<h2 id="顺着数据流看一遍">顺着数据流看一遍</h2>
+<p>从收到字节到给出动作，中间有四段：</p>
+<ol>
+<li><strong>归一化</strong>。解码、去注释、大小写折叠、空白压缩。规则里写的匹配表达式，实际作用在归一化之后的文本上，所以「规则命中」这个事实只对归一化形态成立。反过来，同一段明文可以有几十种归一化前的写法，这一点在治理时经常被忘掉。</li>
+<li><strong>匹配</strong>。每条规则给出布尔结果和一组命中片段（offset、长度、所属字段）。片段是后面一切归因的原材料。</li>
+<li><strong>累加</strong>。不同规则命中不同权重，权重与「这条规则单独命中时有多可信」相关，与文件本身无关。这里的可加性是个近似假设，两条各自 5 分的规则凑到 10，并不等于证据强度翻倍。</li>
+<li><strong>阈值与动作</strong>。阈值把分数切成放行、记录、拦三类。</li>
+</ol>
+<p>误报工单里的「误报」，绝大多数落在第 2 段和第 4 段的交界处：匹配条件过宽（第 2 段），而阈值刚好让这个宽度变成一次拦截（第 4 段）。</p>
+<h2 id="四种处置各自的代价">四种处置各自的代价</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>处置</th>
+<th>召回影响</th>
+<th>生效范围</th>
+<th>可回滚</th>
+<th>留下的债</th>
+</tr></thead>
+<tbody>
+<tr><td>关规则</td><td>该规则的正确命中全部丢失</td><td>全局</td><td>容易</td><td>后续没人记得为什么关</td></tr>
+<tr><td>降权重</td><td>与其他规则共现时仍可能过线</td><td>全局</td><td>容易</td><td>权重语义逐渐失真</td></tr>
+<tr><td>调阈值</td><td>影响全部规则的组合结果</td><td>全局</td><td>容易，但要重跑分布</td><td>边界样本反复横跳</td></tr>
+<tr><td>收窄匹配条件</td><td>只影响特定输入形态</td><td>局部</td><td>需回归验证</td><td>需要有人读懂规则</td></tr>
+<tr><td>白名单</td><td>无（除非白名单本身写宽）</td><td>精确到租户与字段</td><td>需人工摘除</td><td>过期不摘就成了永久豁免</td></tr>
+</tbody>
+</table></div>
+<p>工单多的时候，人倾向于选前三个里的一个，因为它们不需要读规则。这也是「误报治理」常常退化成「关规则」的原因：最快的处置恰好是召回损失最大的那个。</p>
+<h2 id="聚类312-张工单变成-9-个簇">聚类：312 张工单变成 9 个簇</h2>
+<p>一周的误报工单里，按规则和触发形态聚一下，通常只剩个位数的问题。做法简单到不需要模型：取每条工单的命中片段，切 token 集合，两两算 Jaccard，相似度超过 0.6 就并到一个簇，剩下的按规则编号兜底合并。</p>
+<p>那周的 312 张工单聚成 9 簇，最大的一簇 181 张，全部来自同一条规则在一种无分隔符的长字符串上误命中；另外 5 簇各自不到 10 张，其中 3 簇是同一个模板文件的版本差异。这个分布很典型：看着像长尾，实际是同一处匹配条件在不同输入形态上的重复。</p>
+<p>聚完再排优先级，判据是「簇大小 × 该规则的独有召回」。只有一簇大、但那条规则从没单独拦下过真样本的，直接收窄条件；簇大且该规则承担独有召回的，动阈值或者加白名单。</p>
+<h2 id="白名单要带租约">白名单要带租约</h2>
+<p>白名单最容易被写成永久豁免：加的时候都想着「这个客户的这种文件就是正常的」，一年后没人知道它还在不在生效。</p>
+<p>我们现在要求每条白名单带四个字段，缺一个就不让提交：</p>
+<pre data-lang="yaml"><code class="language-yaml">- id: wl-2023-0417
+  match: {tenant: &quot;t-118&quot;, rule: &quot;r-2291&quot;, field: &quot;body&quot;, fragment: &quot;signature-block&quot;}
+  owner: &quot;oncall-detection&quot;
+  expires: 2023-10-17
+  reason: &quot;定期报表模板，结构固定，已人工确认为良性&quot;</code></pre>
+<p>到期后不删除，先降级成「只记录不拦」，观察一周再决定续期还是删除。每条白名单还要上报命中次数，连续 30 天零命中的自动进待摘清单——留着不生效的白名单，下次排查误报时会误导判断。</p>
+<h2 id="调阈值要先看分布">调阈值要先看分布</h2>
+<p>阈值要当成一个工作点来调。改之前得知道分数在良性样本和恶意样本上各自怎么分布。</p>
+<p>我们那次把一类规则的阈值从 10 提到 12，依据是：良性样本的分数在 11 以上只占 0.07%，而恶意样本里 12 分以上的覆盖是 98.4%，与改动前相比掉 0.6 个百分点。这两个数字都来自 3400 份标注样本，样本构成是过去半年的工单加随机抽样，标注口径写在回归集的说明里。</p>
+<p>改完必须跑回归集。回归集能给的是排除「变差」：同一批样本、同一套期望结论，改前改后逐条 diff，只看翻转的几十条，人工确认每一条翻转是不是预期方向。至于「变好了」，回归集回答不了，得靠抽样复核的误报率曲线。CI 里跑一次全量大约 40 秒，比人工复核快两个数量级。</p>
+<h2 id="一个不太好量化的部分">一个不太好量化的部分</h2>
+<p>误报率的分母是「用户提交的工单」，而用户只在被拦住时才提交工单。所以放宽阈值之后，误报率看起来会下降，但只要还有人在被拦，就说明工作点还没到他们的痛点上。反过来收紧阈值，工单会涨，但涨的那部分里混着真实告警被误判成误报的情况。</p>
+<p>我现在的做法是把「工单」和「抽样复核」分开记：工单反映用户体验，抽样复核反映真实误报率。两个数一起看，才知道这次调阈值到底动了什么。只看工单，很容易把「用户懒得提了」误读成「误报没了」。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://scikit-learn.org/stable/modules/clustering.html">scikit-learn: 聚类算法总览</a>：相似度阈值合并那一步的口径</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc2119">RFC 2119: 规范中的要求级别</a>：白名单字段写成 MUST 而不是建议，提交时才拦得住</li>
+<li><a href="https://docs.pytest.org/en/7.4.x/">pytest 文档</a>：回归集挂在 CI 里的组织方式</li>
+<li><a href="https://owasp.org/www-project-modsecurity-core-rule-set/">OWASP Core Rule Set 项目文档</a>：规则权重与阈值分层的参考实现</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/规则引擎/">规则引擎</a><a class="tag" href="/tags/误报治理/">误报治理</a><a class="tag" href="/tags/回归集/">回归集</a><a class="tag" href="/tags/白名单/">白名单</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E8%AF%AF%E6%8A%A5%E6%B2%BB%E7%90%86%EF%BC%9A%E6%8A%8A%E3%80%8C%E5%85%B3%E8%A7%84%E5%88%99%E3%80%8D%E6%8D%A2%E6%88%90%E5%8A%A8%E9%98%88%E5%80%BC%E4%B9%8B%E5%90%8E" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/recursive-scan/">← 压缩包递归扫描：五重预算和三个方案的取舍</a><a class="next" href="/post/rule-model-hybrid/">规则、模型、再一层规则：一晚漏检换来的编排顺序 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报</a><time>2022-08</time></li><li><a href="/post/static-scan-pipeline/">静态扫描流水线：从收到文件到给出判定</a><time>2022-07</time></li><li><a href="/post/ransomware-fingerprint/">勒索软件的加密指纹：非对称文件头识别</a><time>2022-08</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

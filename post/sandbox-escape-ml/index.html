@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>沙箱逃逸检测：从日志特征到随机森林 - farfood</title>
+<meta name="description" content="逃逸检测卡的不是模型：日志里的路径不是内核看到的对象，正负样本比 1:2800，阈值只能按每天的告警预算定。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/sandbox-escape-ml/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "沙箱逃逸检测：从日志特征到随机森林", "description": "逃逸检测卡的不是模型：日志里的路径不是内核看到的对象，正负样本比 1:2800，阈值只能按每天的告警预算定。", "datePublished": "2022-11-30T21:05:00+08:00", "dateModified": "2022-11-30T21:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/sandbox-escape-ml/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "沙箱, 随机森林, 特征工程, 样本不平衡, 阈值"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="沙箱逃逸检测：从日志特征到随机森林 - farfood">
+<meta property="og:description" content="逃逸检测卡的不是模型：日志里的路径不是内核看到的对象，正负样本比 1:2800，阈值只能按每天的告警预算定。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/sandbox-escape-ml/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="沙箱逃逸检测：从日志特征到随机森林 - farfood">
+<meta name="twitter:description" content="逃逸检测卡的不是模型：日志里的路径不是内核看到的对象，正负样本比 1:2800，阈值只能按每天的告警预算定。">
+<meta property="article:published_time" content="2022-11-30T21:05:00+08:00">
+<meta name="keywords" content="沙箱, 随机森林, 特征工程, 样本不平衡, 阈值">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">沙箱逃逸检测：从日志特征到随机森林</h1>
+    <p class="meta"><time datetime="2022-11-30T21:05:00">2022-11-30</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2483 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#从寄存器到一行记录">从寄存器到一行记录</a></li>
+<li class="h2"><a href="#特征只取结构">特征只取结构</a></li>
+<li class="h2"><a href="#12800">1:2800</a></li>
+<li class="h2"><a href="#阈值按告警预算定">阈值按告警预算定</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p><code>SECCOMP_RET_TRACE</code> 让匹配到的系统调用先不执行，把控制权交给 tracer，处理完再让内核继续，出口处再停一次。这个“两次停”决定了两件事：日志天然成对，以及后面能算出什么特征。</p>
+<p>我做的事是把成对事件变成一张树模型能吃的表；坑的位置由内核接口语义决定，跟模型选型无关。</p>
+<h2 id="从寄存器到一行记录">从寄存器到一行记录</h2>
+<p>入口读 <code>orig_rax</code> 与六个参数寄存器（<code>rdi</code> / <code>rsi</code> / <code>rdx</code> / <code>r10</code> / <code>r8</code> / <code>r9</code>），出口读 <code>rax</code> 取返回值。</p>
+<p>参数里的指针指向被测进程的地址空间，取值要用 <code>process_vm_readv</code>；读失败是常态（映射被改、地址是编的、页被换出去），记空值不重试，重试等于把停顿时间交给对方控制。</p>
+<p>调用号架构相关，同一个 <code>openat</code> 在两种主流架构上编号不同，宿主又是混布的，采集侧做归一化表，模型只看内部 id。</p>
+<p>最要命的是 <code>openat</code> 第二个参数：那是用户态的字符串，不是内核最后打开的对象。换成对象要 <code>dirfd</code> 加当前 <code>cwd</code>，而两者都会变，符号链接也会指向别处。所以入口读出的字符串只用于结构特征，“打开了哪个文件”一律等出口返回值加一次 <code>readlink(/proc/&lt;pid&gt;/fd/&lt;n&gt;)</code>。</p>
+<p><code>RESOLVE_BENEATH</code> 那一维我最早判错了：它让内核把路径解析限制在 <code>dirfd</code> 之下，越界的 <code>..</code> 直接返回 <code>EXDEV</code>，方向与逃逸相反，正常软件里也少见；它的用处是反向判据——出现它更可能是良性组件。</p>
+<h2 id="特征只取结构">特征只取结构</h2>
+<p>字面量特征离线漂亮、上线就崩：改一个码位就换一族特征，同族样本还会跨训练集与验证集泄漏。412 维里没有一维是原始字符串。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>特征组</th>
+<th>具体量</th>
+<th>单特征 PR-AUC</th>
+</tr></thead>
+<tbody>
+<tr><td>文件越界</td><td>挂载点外操作占比、失败率、目标目录基数</td><td>0.19</td></tr>
+<tr><td>序列 n-gram</td><td>归一化调用号的 3-gram 哈希到 2^14 桶</td><td>0.16</td></tr>
+<tr><td>特权调用</td><td><code>mount</code>、<code>unshare</code>、<code>ptrace</code>、<code>io_uring_setup</code></td><td>0.11</td></tr>
+<tr><td>反分析</td><td>读 <code>/proc/self/status</code>、<code>cpuid</code> 频率</td><td>0.12</td></tr>
+</tbody>
+</table></div>
+<p>（口径：1400 正样本、400 万负窗口，按族分组 5 折，取折均值。）</p>
+<p>单看哪组都不够，合起来 0.56。越界文件操作说明“想往沙箱外落东西”，特权调用说明“在找内核面”，反分析说明“知道自己被看着”，三者同时出现才构成逃逸的形状。组合由树自己找，不必手写 <code>A and B and not C</code>。</p>
+<p>序列：窗口 30 秒，从样本启动算起；先去噪（<code>futex</code> / <code>epoll_wait</code> / <code>clock_gettime</code>），剩下调用号做 3-gram 哈希到固定宽度。牺牲长程依赖换维度可控。</p>
+<h2 id="12800">1:2800</h2>
+<p>正样本 1400 个：历史人工确认的逃逸尝试，加按内核接口构造的样本（主动碰 <code>core_pattern</code>、无 <code>CAP_SYS_ADMIN</code> 时 <code>mount</code>）。负样本 400 万窗口。</p>
+<ul>
+<li><strong>不做 SMOTE。</strong> 离散特征上插值会造出“半开 <code>openat2</code> 且半个 <code>ptrace</code>”这种不可能窗口，模型学到的是插值器的偏差。</li>
+<li><strong>训练时降到 1:10，但挑着降。</strong> 随机降采样会筛掉打包器、安装器、编译器，而这些正是误报主要来源；按特征距离保留难负样本。</li>
+<li><strong>只看 PR 曲线。</strong> 1:2800 下 ROC-AUC 0.99 毫无信息：假阳率从 0.1% 到 1%，ROC 上看不出，人工队列却从 8 条变成 8000 条。</li>
+</ul>
+<p>划分按“样本族”分组而非按样本：同族变体跨两侧时 PR-AUC 虚高 0.1 以上。我第一次跑就踩了，查两天才发现泄漏。</p>
+<h2 id="阈值按告警预算定">阈值按告警预算定</h2>
+<pre data-lang="python"><code class="language-python">clf = RandomForestClassifier(
+    n_estimators=400, max_depth=12, min_samples_leaf=5, n_jobs=8,
+    max_features=0.3, class_weight=&#x27;balanced_subsample&#x27;, random_state=7)
+
+def pick_threshold(scores, budget):          # 夹到 [0.40, 0.90]
+    q = 1.0 - float(budget) / max(len(scores), 1)
+    return float(np.clip(np.quantile(scores, q), 0.40, 0.90))</code></pre>
+<p>概率值不能跨天比：森林输出是叶子投票比例，分布一漂，0.83 的排名可能完全不同。固定的是“每天进人工队列的条数”——沙箱每天四万窗口，复核侧能吃下 6 到 9 条，就按这个预算算分位数。</p>
+<p>夹逼防两种退化：0.90 防止分数整体偏高时没人能过，0.40 防止塌下去时放进几千条。入队条数偏离预算两倍以上就告警，不自动调阈值；跟着分布跑等于把漂移藏起来。再加“同一样本只出最高分窗口”，队列重复率从三成降到不足一成。</p>
+<p>上线首月（口径：30 天，仅该模型推入）：41 条确认为逃逸尝试，9 条是同批重复；已知 14 起事件命中 11 起。漏掉的 3 起是同一类：进程在窗口开启前就完成探测，日志里只剩无害尾部。调阈值解决不了，只能改窗口起点。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://docs.kernel.org/userspace-api/seccomp_filter.html">seccomp filter：返回值语义与 tracer 交互</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/ensemble.html">scikit-learn：随机森林与 class_weight</a></li>
+<li><a href="https://scikit-learn.org/stable/auto_examples/model_selection/plot_precision_recall.html">scikit-learn：precision-recall 曲线的解读</a></li>
+<li><a href="https://www.kernel.org/doc/html/latest/filesystems/proc.html">proc 文件系统：<code>/proc/&lt;pid&gt;/fd</code> 与 <code>status</code> 字段</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/沙箱/">沙箱</a><a class="tag" href="/tags/随机森林/">随机森林</a><a class="tag" href="/tags/特征工程/">特征工程</a><a class="tag" href="/tags/样本不平衡/">样本不平衡</a><a class="tag" href="/tags/阈值/">阈值</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%B2%99%E7%AE%B1%E9%80%83%E9%80%B8%E6%A3%80%E6%B5%8B%EF%BC%9A%E4%BB%8E%E6%97%A5%E5%BF%97%E7%89%B9%E5%BE%81%E5%88%B0%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/csharp-pdf-support/">← 检测率 +3% 背后：C# 与 PDF 支持</a><a class="next" href="/post/sandbox-logs/">动态沙箱的日志里到底有什么 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a><time>2022-07</time></li><li><a href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段</a><time>2022-09</time></li><li><a href="/post/import-list-features/">导入函数列表当特征：四条判据和三种做法</a><time>2022-10</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

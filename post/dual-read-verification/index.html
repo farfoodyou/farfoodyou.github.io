@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>双读比对：把「重构不能改行为」变成可验证的实验 - farfood</title>
+<meta name="description" content="评审时所有人都同意「行为不能变」，但没人能说出怎么证明。双读把这句话变成一周的差异率曲线和一份归因表。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/dual-read-verification/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "双读比对：把「重构不能改行为」变成可验证的实验", "description": "评审时所有人都同意「行为不能变」，但没人能说出怎么证明。双读把这句话变成一周的差异率曲线和一份归因表。", "datePublished": "2020-02-14T09:40:00+08:00", "dateModified": "2020-02-14T09:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/dual-read-verification/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "重构, 双读, 灰度, 可观测"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="双读比对：把「重构不能改行为」变成可验证的实验 - farfood">
+<meta property="og:description" content="评审时所有人都同意「行为不能变」，但没人能说出怎么证明。双读把这句话变成一周的差异率曲线和一份归因表。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/dual-read-verification/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="双读比对：把「重构不能改行为」变成可验证的实验 - farfood">
+<meta name="twitter:description" content="评审时所有人都同意「行为不能变」，但没人能说出怎么证明。双读把这句话变成一周的差异率曲线和一份归因表。">
+<meta property="article:published_time" content="2020-02-14T09:40:00+08:00">
+<meta name="keywords" content="重构, 双读, 灰度, 可观测">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">双读比对：把「重构不能改行为」变成可验证的实验</h1>
+    <p class="meta"><time datetime="2020-02-14T09:40:00">2020-02-14</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2495 字 <a class="cat" href="/categories/工程/">工程</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三条纪律">三条纪律</a></li>
+<li class="h2"><a href="#差异归因三分法">差异归因三分法</a></li>
+<li class="h2"><a href="#抽样省算力但不能省掉变更面">抽样：省算力，但不能省掉变更面</a></li>
+<li class="h2"><a href="#停的条件">停的条件</a></li>
+<li class="h2"><a href="#几个坑">几个坑</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>二月重写调度配置的读取路径：老路径把整份配置反序列化进内存、每次请求全量匹配，新路径按字段建倒排桶、只碰命中的一小部分。目标是延迟，行为必须不变。</p>
+<p>评审会卡住了。有人问怎么证明，我的回答是「单测覆盖了主要路径」——在场没人信。单测覆盖的是我能想到的 case，而这套配置的语义是一年多里被十几个需求堆出来的，边界条件散在 <code>if</code> 里。</p>
+<p>结论是：<strong>「行为不变」不是承诺，是一个需要被测量的量</strong>。要测，就得两条实现并行跑、互相比较。这就是双读比对，跑了一周。</p>
+<h2 id="三条纪律">三条纪律</h2>
+<p>双读的做法：同一请求新旧路径都算一遍，返回旧的，比较两个结果。难的是不让它变成新的故障源。</p>
+<ol>
+<li><strong>影子不许影响主路径</strong>。影子跑在独立的有界 worker pool 里，队列满则丢弃并计数；自己的 <code>context</code> 超时 20ms；整段包 <code>recover</code>。上线前用同一份压测流量比过开/关的 P99，差异在噪声内。</li>
+<li><strong>开关粒度是规则级，不是进程级</strong>。进程级开关在灰度时会让同一台机器上两种请求混在一起，出差异无法归因。</li>
+<li><strong>在语义层比较，不在字节层比较</strong>。两边的顺序、零值填充、精度天然不同，直接比字符串会得到 30% 的差异率，里面没有一个是 bug。</li>
+</ol>
+<p>第三条的落地是把两侧结果归一化成同一结构再比，规则要显式登记：集合去重、按 key 排序、缺键补默认值、金额按分取整。<strong>没登记的归一化一律当缺陷</strong>，不能当个案豁免。</p>
+<h2 id="差异归因三分法">差异归因三分法</h2>
+<p>一周七千多条差异，不分类没人看得完。标准只有一条：能不能用<strong>最小配置</strong>判定谁对。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>类型</th>
+<th>判据</th>
+<th>处理</th>
+<th>占比</th>
+</tr></thead>
+<tbody>
+<tr><td>等价差异</td><td>归一化后相等，或差异只落在未定义顺序上</td><td>补归一化规则</td><td>92.3%</td></tr>
+<tr><td>新路径缺陷</td><td>最小配置可复现，新路径输出与规则语义不符</td><td>修新路径，补回归用例</td><td>7.4%</td></tr>
+<tr><td>旧路径缺陷</td><td>新路径符合语义，旧路径不符合</td><td>只登记，双读期不修</td><td>0.3%</td></tr>
+</tbody>
+</table></div>
+<p>第三类最有意思：追下去是老代码本来就算错——某类规则优先级相等时用了 map 遍历顺序，也就是随机。很容易顺手在新路径里「对齐旧行为」，但那等于把 bug 固化。所以判据是：<strong>双读期间只允许两种产出。旧路径对时新路径向它收敛，旧路径错时登记为缺陷</strong>。修旧代码单独排期。</p>
+<h2 id="抽样省算力但不能省掉变更面">抽样：省算力，但不能省掉变更面</h2>
+<p>全量双读的代价：峰值 30k QPS（当时的压测目标），每请求多一次内存计算加一条日志，单机 CPU 约 +18%（4 核，1.2 万条规则）。CPU 扛得住，日志扛不住。</p>
+<p>抽样分两层：</p>
+<ul>
+<li><strong>随机层</strong>：按规则 id 的稳定哈希取 2%，同一规则永远落在同一侧，差异可复现。</li>
+<li><strong>全量层</strong>：最近 10 分钟改过的规则、最近 1 小时新建的规则，100% 比对。</li>
+</ul>
+<p>第二层是关键。差异几乎全部来自变更面。新写的规则、刚改的阈值、刚加的模式。它们在随机抽样里占比不到 3%，2% 抽样率下基本抽不到，却最可能出问题。</p>
+<p>一周累计比对 180 万次（口径：抽样后的请求数），差异样本 7.6k，差异率 0.42%，挖出缺陷 17 个。其中 5 个是「某类模式下取错了桶」，只在特定模式组合下触发，随机抽样发现不了。</p>
+<pre data-lang="go"><code class="language-go">func (r *reader) Read(ctx context.Context, req *Request) (*Result, error) {
+    main, err := r.old.Read(ctx, req)   // 主路径：唯一决定返回值
+    if r.sampled(req.RuleID) {
+        shadowReq := *req                // 拷贝，不与主路径共享可变状态
+        r.pool.Submit(func() {           // 有界池，满则丢弃并计数
+            sctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+            defer cancel()
+            defer func() { if p := recover(); p != nil { r.panic.Add(1) } }()
+            got, serr := r.new.Read(sctx, &amp;shadowReq)
+            r.diff.Compare(req.RuleID, main, got, err, serr)
+        })
+    }
+    return main, err
+}</code></pre>
+<h2 id="停的条件">停的条件</h2>
+<p>退出判据三条：</p>
+<ul>
+<li>连续 48 小时无新增差异类型。按「差异指纹」去重（规则 id + 字段路径 + 值形状），同一个 bug 打十万条日志仍是一个类型。</li>
+<li>抽样率从 2% 临时提到 20% 跑一天，无新类型。这验的是抽样本身有没有漏，比第一条重要：低抽样率下的「零差异」可能只是抽不到。</li>
+<li>反向验证比对器：让新路径返回空实现，差异率必须接近 100%。我们第一次只有 11%，因为归一化把「查不到」和「返回默认值」都折叠成了空结果。</li>
+</ul>
+<h2 id="几个坑">几个坑</h2>
+<ul>
+<li>日志不放整份配置：量大，且带业务参数。只记规则 id、差异路径、截断 200 字符的值。</li>
+<li>比对器自己要单测。我写了三十组「看着一样、实际不同」的用例：<code>nil</code> 与空切片、<code>0</code> 与缺省、精度、<code>&quot;1&quot;</code> 与 <code>1</code>。比对器的假阴性比被比代码的 bug 更危险，它是静默的。</li>
+<li>「不存在」也要比。旧路径找不到规则返回保守默认值、新路径返回 error，这类差异最容易被归一化吃掉。</li>
+</ul>
+<p>关掉双读之后比对率曲线和归因表进了交接文档。再有人问这次重构靠不靠谱，我把那 0.42% 的构成发过去就行。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://martinfowler.com/bliki/StranglerFigApplication.html">Martin Fowler: StranglerFigApplication</a>：新旧路径并存</li>
+<li><a href="https://github.com/github/scientist">GitHub Scientist</a>：影子路径 + 结果比对的库实现</li>
+<li><a href="https://martinfowler.com/articles/feature-toggles.html">Martin Fowler: Feature Toggles</a>：开关分类与腐烂</li>
+<li><a href="https://en.wikipedia.org/wiki/Cohen%27s_kappa">Cohen&#x27;s kappa</a>：两种判定一致性，判断抽样量</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/重构/">重构</a><a class="tag" href="/tags/双读/">双读</a><a class="tag" href="/tags/灰度/">灰度</a><a class="tag" href="/tags/可观测/">可观测</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8F%8C%E8%AF%BB%E6%AF%94%E5%AF%B9%EF%BC%9A%E6%8A%8A%E3%80%8C%E9%87%8D%E6%9E%84%E4%B8%8D%E8%83%BD%E6%94%B9%E8%A1%8C%E4%B8%BA%E3%80%8D%E5%8F%98%E6%88%90%E5%8F%AF%E9%AA%8C%E8%AF%81%E7%9A%84%E5%AE%9E%E9%AA%8C" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/config-eventual-consistency/">← 容灾切换里最脆的一环：配置的最终一致性</a><a class="next" href="/post/json-as-database/">拿 JSON 字段当表用，是怎么把配置平台拖死的 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/solo-refactor-plan/">半年重构复盘：一个人怎么排重构的期</a><time>2020-06</time></li><li><a href="/post/two-step-change/">可回滚的变更：把一次上线拆成三步</a><time>2020-06</time></li><li><a href="/post/fault-injection-payment/">故障演练：怎么证明「单分片故障不影响支付」</a><time>2021-02</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>上下文预算：三种裁剪方案放在同一张账单上 - farfood</title>
+<meta name="description" content="20 轮里裁历史几乎省不下 token，大头是检索片段和工具返回；判据要用事实留存、每任务 token 和可观测。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/token-budget/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "上下文预算：三种裁剪方案放在同一张账单上", "description": "20 轮里裁历史几乎省不下 token，大头是检索片段和工具返回；判据要用事实留存、每任务 token 和可观测。", "datePublished": "2024-07-09T21:05:00+08:00", "dateModified": "2024-07-09T21:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/token-budget/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "上下文管理, 摘要, 裁剪, 成本"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="上下文预算：三种裁剪方案放在同一张账单上 - farfood">
+<meta property="og:description" content="20 轮里裁历史几乎省不下 token，大头是检索片段和工具返回；判据要用事实留存、每任务 token 和可观测。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/token-budget/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="上下文预算：三种裁剪方案放在同一张账单上 - farfood">
+<meta name="twitter:description" content="20 轮里裁历史几乎省不下 token，大头是检索片段和工具返回；判据要用事实留存、每任务 token 和可观测。">
+<meta property="article:published_time" content="2024-07-09T21:05:00+08:00">
+<meta name="keywords" content="上下文管理, 摘要, 裁剪, 成本">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">上下文预算：三种裁剪方案放在同一张账单上</h1>
+    <p class="meta"><time datetime="2024-07-09T21:05:00">2024-07-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2476 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据要能量出来">判据要能量出来</a></li>
+<li class="h2"><a href="#账单先摊开">账单先摊开</a></li>
+<li class="h2"><a href="#三种做法的账单">三种做法的账单</a></li>
+<li class="h2"><a href="#预算是怎么切的">预算是怎么切的</a></li>
+<li class="h2"><a href="#裁历史在-20-轮内省不了钱">裁历史在 20 轮内省不了钱</a></li>
+<li class="h2"><a href="#摘要漂移是怎么发生的">摘要漂移是怎么发生的</a></li>
+<li class="h2"><a href="#什么时候不该裁">什么时候不该裁</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>上下文管理方案很容易变成偏好之争：做滑窗的说摘要丢细节，做摘要的说滑窗丢前因。我手上这个助手（知识库问答加排障）要跨 20 到 40 轮，三种做法都跑过。</p>
+<h2 id="判据要能量出来">判据要能量出来</h2>
+<ul>
+<li>事实留存：40 道回归题，人工标注每题 3 到 6 个必须保留的事实（编号、阈值、约束），看回答命中多少。</li>
+<li>每任务输入 token：按账单算，含重发部分。</li>
+<li>可观测：出问题时能从日志还原「哪条信息在第几轮被丢」。</li>
+</ul>
+<p>第三条最容易被跳过，也最影响敢不敢调参。</p>
+<h2 id="账单先摊开">账单先摊开</h2>
+<p>动手之前按来源拆了一次 token 账单，结果和直觉不同：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>来源</th>
+<th>单次平均 token</th>
+<th>占比</th>
+</tr></thead>
+<tbody>
+<tr><td>检索片段（8 条 × 600）</td><td>5200</td><td>61%</td></tr>
+<tr><td>系统提示 + 工具定义</td><td>1800</td><td>21%</td></tr>
+<tr><td>对话历史</td><td>1200</td><td>14%</td></tr>
+<tr><td>用户输入</td><td>300</td><td>4%</td></tr>
+</tbody>
+</table></div>
+<p>一次检索吃掉六成预算，第一刀落在这里：8 条压到 3 条，只留标题、路径和片段前 200 字，要细节再让模型发起一次读取。单次输入从 8500 掉到 4300，事实留存没动，删掉的多是模型没引用过的段落。</p>
+<h2 id="三种做法的账单">三种做法的账单</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>做法</th>
+<th>20 轮平均输入</th>
+<th>事实留存</th>
+<th>这笔账差在哪</th>
+<th>失效模式</th>
+</tr></thead>
+<tbody>
+<tr><td>A 固定滑窗（最近 6 轮 + 首轮）</td><td>6.2k</td><td>0.71</td><td>比 C 多 1.1k，省的是淘汰逻辑</td><td>用户第 2 轮给的约束被滑掉，模型反复追问</td></tr>
+<tr><td>B 滚动摘要（超 8 轮把最老一半压成 300 字）</td><td>7.4k</td><td>0.83</td><td>最高：每轮摘要要重发历史</td><td>摘要改写数字，四轮之后阈值漂了</td></tr>
+<tr><td>C 分层预算 + 结构化淘汰</td><td>5.1k</td><td>0.88</td><td>最低：检索先截断，历史按槽位装</td><td>槽位算错时「预算还够但关键片段被淘汰」</td></tr>
+</tbody>
+</table></div>
+<p>B 的输入比 A 还高，因为每轮摘要都要重发历史。它适合 50 轮以上，20 轮以内不划算。</p>
+<p>C 是最后留下的：没有「裁剪」概念，只有槽位和淘汰顺序。</p>
+<h2 id="预算是怎么切的">预算是怎么切的</h2>
+<pre data-lang="text"><code class="language-text">budget    = ctx_window - reserve_output - safety
+fixed     = min(2000, 系统提示 + 工具定义)
+task      = 400
+retrieval = 0.35 * (budget - fixed - task)
+history   = budget - fixed - task - retrieval</code></pre>
+<p>工具定义 1800 token 实打实占着，9 只工具的描述加 schema 就到这量级。它不参与淘汰，只影响「加新工具要不要砍旧工具」。</p>
+<p>历史从新到旧装，装不下就停，不跳着装：</p>
+<pre data-lang="python"><code class="language-python">def fit(history, cap):
+    picked, used = [], 0
+    for msg in reversed(history):
+        cost = tokens(msg)
+        if used + cost &gt; cap:
+            if msg.kind == &quot;tool_result&quot;:       # 大块工具返回先压缩
+                msg = squeeze(msg, head=200, tail=200)
+                cost = tokens(msg)
+            if used + cost &gt; cap:
+                break                           # 保持连续，不留空洞
+        picked.append(msg)
+        used += cost
+    return list(reversed(picked))</code></pre>
+<p><code>break</code> 那行是关键。跳着装能多塞几条，但历史里会出现第 5 轮不见了，模型遇到缺口会自己编，比少给几条更糟。连续性比覆盖率重要。</p>
+<p>淘汰顺序固定：最老的完整工具返回（压成首尾各 200 字）→ 中间轮次 → 引用计数为零的片段。被引用一次加一，这一轮里不再淘汰。</p>
+<h2 id="裁历史在-20-轮内省不了钱">裁历史在 20 轮内省不了钱</h2>
+<p>算一遍。基础 3000 token，每轮新增 600，跑 20 轮：</p>
+<ul>
+<li>不裁：20×3000 + 600×(19×20/2) = 174k</li>
+<li>裁到 12000 上限：前 16 轮线性涨到 12000，后 4 轮持平 = 168k</li>
+</ul>
+<p>差 3%，为这 3% 加淘汰逻辑、加一个会丢信息的环节，账面不成立。裁历史买到的是另三样：不撞窗口、prefill 可控、p99 不随轮数漂。按经验值 prefill 约 3k token/s，12k 输入约 4 秒，20k 约 6.7 秒。</p>
+<p>省钱的着力点是检索截断、工具定义瘦身和 prompt 缓存，它省单价不省长度。判据和 HTTP 缓存（<a href="https://www.rfc-editor.org/rfc/rfc9111.html">RFC 9111</a>）不同，要求一样：命中的前缀必须完全一致，改一个空格就退化成全量 prefill。</p>
+<h2 id="摘要漂移是怎么发生的">摘要漂移是怎么发生的</h2>
+<p>B 方案最贵的一次问题在改信息。摘要模型看到「配额上限 20000」，写成「两万左右」，下一轮成了「约 2 万」，第四轮变成「21000」。每一跳损失很小，累积三跳就是错误事实。</p>
+<p>改法是只摘要过程，不摘要事实。事实走槽位：id、数值、结论三列，固定 schema，每轮重新注入，不经过摘要模型。摘要按 <a href="https://www.unicode.org/reports/tr29/">UAX #29</a> 的句子边界切，不按字符数硬截，中文里那样截会把数字和单位分开。</p>
+<h2 id="什么时候不该裁">什么时候不该裁</h2>
+<p>窗口 32k 以上、任务 10 轮以内，别裁。省不下钱，却要为几乎不会触发的边界写代码。该做的是把工具返回压小，那是 20 轮里唯一有可见效果的改动。</p>
+<p>另一个判据是状态能否外置。状态写进外部文件、上下文只留索引时，轮数再长也不该裁历史，该改的是「每轮重读全部状态」的习惯。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://json-schema.org/draft/2020-12/json-schema-validation.html">JSON Schema Validation：槽位用固定 schema 表达</a></li>
+<li><a href="https://www.unicode.org/reports/tr29/">Unicode UAX #29：句子边界判定</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Kubernetes 资源 requests/limits：预算分配的一种成熟写法</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc9111.html">RFC 9111：HTTP 缓存的新鲜度与复用条件</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/上下文管理/">上下文管理</a><a class="tag" href="/tags/摘要/">摘要</a><a class="tag" href="/tags/裁剪/">裁剪</a><a class="tag" href="/tags/成本/">成本</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E4%B8%8A%E4%B8%8B%E6%96%87%E9%A2%84%E7%AE%97%EF%BC%9A%E4%B8%89%E7%A7%8D%E8%A3%81%E5%89%AA%E6%96%B9%E6%A1%88%E6%94%BE%E5%9C%A8%E5%90%8C%E4%B8%80%E5%BC%A0%E8%B4%A6%E5%8D%95%E4%B8%8A" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/sandbox-choice/">← 沙箱选型：三个数算完，只剩混合部署</a><a class="next" href="/post/structured-output/">结构化输出为什么难：一份 oneOf 与四层失败 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a><time>2022-07</time></li><li><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a><time>2025-02</time></li><li><a href="/post/claude-haiku-4.5-small-model-economics/">Claude Haiku 4.5：小模型第一次让人认真考虑「够用」</a><time>2025-10</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

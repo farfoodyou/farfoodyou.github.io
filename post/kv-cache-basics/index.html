@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KV cache：推理为什么吃显存 - farfood</title>
+<meta name="description" content="decode 每步只算一个新 token，却要读一遍全部历史；把 K/V 缓存下来之后，显存账从平方的计算问题变成线性的占用问题。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/kv-cache-basics/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "KV cache：推理为什么吃显存", "description": "decode 每步只算一个新 token，却要读一遍全部历史；把 K/V 缓存下来之后，显存账从平方的计算问题变成线性的占用问题。", "datePublished": "2024-12-31T20:40:00+08:00", "dateModified": "2024-12-31T20:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/kv-cache-basics/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "KV cache, GQA, 显存, 批处理, 推理"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="KV cache：推理为什么吃显存 - farfood">
+<meta property="og:description" content="decode 每步只算一个新 token，却要读一遍全部历史；把 K/V 缓存下来之后，显存账从平方的计算问题变成线性的占用问题。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/kv-cache-basics/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="KV cache：推理为什么吃显存 - farfood">
+<meta name="twitter:description" content="decode 每步只算一个新 token，却要读一遍全部历史；把 K/V 缓存下来之后，显存账从平方的计算问题变成线性的占用问题。">
+<meta property="article:published_time" content="2024-12-31T20:40:00+08:00">
+<meta name="keywords" content="KV cache, GQA, 显存, 批处理, 推理">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">KV cache：推理为什么吃显存</h1>
+    <p class="meta"><time datetime="2024-12-31T20:40:00">2024-12-31</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2420 字 <a class="cat" href="/categories/推理系统/">推理系统</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#不缓存会怎样">不缓存会怎样</a></li>
+<li class="h2"><a href="#一个-token-占多少显存">一个 token 占多少显存</a></li>
+<li class="h2"><a href="#gqa-动的是哪个乘数">GQA 动的是哪个乘数</a></li>
+<li class="h2"><a href="#长度乘并发还要乘上浪费">长度乘并发，还要乘上浪费</a></li>
+<li class="h2"><a href="#decode-的瓶颈其实在带宽">decode 的瓶颈其实在带宽</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>第一次认真看这块，是因为一段 decode 的 profiling 结果不合常理：40 层的模型，输出一个 token 的耗时和 prefill 五十个 token 差不多，而且上下文越长越慢。把 attention 的中间张量打出来才看到，每一步都在重算前面所有位置的 K 和 V，新增的信息只有一个 token。</p>
+<p>缓存掉的是重复计算，付出去的是常驻显存。后者按 token 线性增长，还要乘上同时在跑的序列数。</p>
+<h2 id="不缓存会怎样">不缓存会怎样</h2>
+<p>生成第 t 个 token 时，self-attention 需要每个位置各一份 K 和一份 V。没有缓存，就得把这 t-1 个 token 重新过一遍投影矩阵，总计算量随长度平方增长，而其中有用的只有最后一个位置。</p>
+<p>加上缓存后，每层只为新 token 算 K/V，追加到已有张量尾部；attention 拿当前位置的 query 和整段 K/V 做点积。计算量回到线性，那份张量必须一直留在显存里。</p>
+<pre data-lang="python"><code class="language-python"># 每层一份，形状 [2, kv_heads, max_len, head_dim]
+def decode_step(x, layer, k_cache, v_cache, pos):
+    q, k, v = layer.project_qkv(x)          # 只算当前这个 token
+    k_cache[:, pos] = k
+    v_cache[:, pos] = v
+    ctx = attention(q, k_cache[:, :pos + 1], v_cache[:, :pos + 1])
+    return layer.out(ctx)</code></pre>
+<p>层数就是乘数：缓存不是一个张量，是每层两个。</p>
+<h2 id="一个-token-占多少显存">一个 token 占多少显存</h2>
+<p>算式很直接，两个（K 和 V）乘层数乘 KV 头数乘每头维度乘每元素的 byte 数。</p>
+<pre data-lang="python"><code class="language-python">def kv_bytes_per_token(layers, kv_heads, head_dim, elem=2):
+    return 2 * layers * kv_heads * head_dim * elem
+
+print(kv_bytes_per_token(40, 8, 128))       # 163840，约 160KB
+for ctx in (8192, 32768, 131072):
+    print(ctx, round(kv_bytes_per_token(40, 8, 128) * ctx / 1e9, 2), &#x27;GB&#x27;)
+# 8K -&gt; 1.34GB   32K -&gt; 5.37GB   128K -&gt; 21.5GB</code></pre>
+<p>一个 token 160KB，听起来不大；乘到 12.8 万 token 就是 21.5GB，比 4bit 量化后的权重还大。这就是长上下文服务里最常见的错判来源：权重是固定成本，KV 是随业务量走的变动成本。</p>
+<h2 id="gqa-动的是哪个乘数">GQA 动的是哪个乘数</h2>
+<p>上面那个式子里，层数和每头维度由模型结构定死，能压的只有 KV 头数。</p>
+<p>多头注意力的经典配置里，KV 头数等于 query 头数，40 层 40 头就是 800KB 一个 token。分组查询注意力把 KV 头数降到 8，让 5 个 query 头共享一组 K/V，每 token 直接降到 160KB，除以 5。再极端一点只留 1 组，就是多查询注意力，显存最省，质量掉得也最明显。</p>
+<p>共享是有代价的，代价主要在需要每个头各自关注不同位置的任务上。工程上的经验是 4 到 8 组时质量损失在评测噪声范围内，再往下就要按任务单独验。后来的开源模型基本都停在这个区间：显存收益在这一档最大，质量也还能守住。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>配置</th>
+<th>每 token</th>
+<th>单条 32K</th>
+<th>8 并发各 8K</th>
+</tr></thead>
+<tbody>
+<tr><td>40 层，40 个 KV 头（MHA）</td><td>800KB</td><td>26.8GB</td><td>53.7GB</td></tr>
+<tr><td>40 层，8 个 KV 头（GQA）</td><td>160KB</td><td>5.4GB</td><td>10.7GB</td></tr>
+<tr><td>32 层，32 个 KV 头（MHA）</td><td>512KB</td><td>17.2GB</td><td>34.4GB</td></tr>
+<tr><td>32 层，8 个 KV 头（GQA）</td><td>128KB</td><td>4.3GB</td><td>8.6GB</td></tr>
+</tbody>
+</table></div>
+<p>表里最后一行和一个 13B 模型的量级对得上：权重 7GB，8 路 8K 并发的 KV 8.6GB，KV 已经超过权重。</p>
+<h2 id="长度乘并发还要乘上浪费">长度乘并发，还要乘上浪费</h2>
+<p>线上算峰值不能只算 per_token × 长度，实际占用总是更高，原因有三个。</p>
+<p>一是预留。早期实现按最大长度给每条序列开一块连续空间，请求只用了 2K 也占着 32K 的额度。二是碎片，连续分配加上不断到达和结束的序列，显存很快被切碎。三是采样策略，beam search 等于把并发乘以 beam 数，每份都要独立的 KV。</p>
+<p>按块管理把第一项和第二项一起解决：把 KV 切成固定大小的块，用一张块表把逻辑位置映射到物理块，序列增长时分配新块，结束时整块回收。论文里报的浪费率从六成以上降到个位数百分比，代价是 attention 的读取从连续变成按块索引，实现复杂度上一个台阶。</p>
+<p>还有一条更粗暴的路：把 KV 从 fp16 量化到 int8，占用直接减半。它和权重量化是两件事，得分开测，KV 量化对长上下文的质量影响通常比权重更大。</p>
+<h2 id="decode-的瓶颈其实在带宽">decode 的瓶颈其实在带宽</h2>
+<p>把数算完会发现，decode 一步的耗时下限不是算力，是读显存的量：权重 6.5GB 加 8K 上下文的 KV 1.3GB，一个 token 要读 7.8GB。卡标称带宽按 900GB/s 折算，一步至少 8.7 毫秒，单条上限一百来个 token 每秒，实测还要打折。</p>
+<p>所以吞吐靠批处理：权重那 6.5GB 一次读进来给多条序列共用，batch 越大摊得越薄。但每加一条序列就多一份 KV，显存先到顶。这个矛盾决定了服务的形状，长上下文和高并发几乎不可能同时给满，调度器要在这两者之间排队。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://arxiv.org/abs/2305.13245">分组查询注意力（GQA）原论文</a></li>
+<li><a href="https://arxiv.org/abs/2309.06180">PagedAttention：按块管理 KV cache</a></li>
+<li><a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need：K/V 的来源</a></li>
+<li><a href="https://arxiv.org/abs/2205.14135">FlashAttention：不落地完整注意力矩阵的分块计算</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/kv-cache/">KV cache</a><a class="tag" href="/tags/gqa/">GQA</a><a class="tag" href="/tags/显存/">显存</a><a class="tag" href="/tags/批处理/">批处理</a><a class="tag" href="/tags/推理/">推理</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=KV+cache%EF%BC%9A%E6%8E%A8%E7%90%86%E4%B8%BA%E4%BB%80%E4%B9%88%E5%90%83%E6%98%BE%E5%AD%98" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/deepseek-r1-pure-rl/">← DeepSeek-R1：纯 RL 把推理能力「逼」出来</a><a class="next" href="/post/local-llm-agent/">本地跑模型做 Agent：一次显存打满的复盘 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/kv-cache-ledger-128k/">手算一遍：128K 上下文的 KV 到底占多少显存</a><time>2026-01</time></li><li><a href="/post/local-llm-agent/">本地跑模型做 Agent：一次显存打满的复盘</a><time>2024-12</time></li><li><a href="/post/inference-engines-2025-review/">2025 推理引擎复盘：vLLM 换了内核，SGLang 开始做网关</a><time>2026-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

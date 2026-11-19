@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工具调用编排：一次重复建单之后收紧的三处约束 - farfood</title>
+<meta name="description" content="编排层把工具失败一律当瞬时故障重试，非幂等的写接口被重复调用。改法是把工具描述收紧、错误分层、重试预算放进执行器。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/function-calling-orchestration/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "工具调用编排：一次重复建单之后收紧的三处约束", "description": "编排层把工具失败一律当瞬时故障重试，非幂等的写接口被重复调用。改法是把工具描述收紧、错误分层、重试预算放进执行器。", "datePublished": "2024-06-11T10:40:00+08:00", "dateModified": "2024-06-11T10:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/function-calling-orchestration/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "工具调用, 参数校验, 重试, 幂等"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="工具调用编排：一次重复建单之后收紧的三处约束 - farfood">
+<meta property="og:description" content="编排层把工具失败一律当瞬时故障重试，非幂等的写接口被重复调用。改法是把工具描述收紧、错误分层、重试预算放进执行器。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/function-calling-orchestration/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="工具调用编排：一次重复建单之后收紧的三处约束 - farfood">
+<meta name="twitter:description" content="编排层把工具失败一律当瞬时故障重试，非幂等的写接口被重复调用。改法是把工具描述收紧、错误分层、重试预算放进执行器。">
+<meta property="article:published_time" content="2024-06-11T10:40:00+08:00">
+<meta name="keywords" content="工具调用, 参数校验, 重试, 幂等">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">工具调用编排：一次重复建单之后收紧的三处约束</h1>
+    <p class="meta"><time datetime="2024-06-11T10:40:00">2024-06-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2495 字 <a class="cat" href="/categories/agent/">Agent</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#二十分钟里发生的事">二十分钟里发生的事</a></li>
+<li class="h2"><a href="#三处根因">三处根因</a></li>
+<li class="h2"><a href="#改成了什么样">改成了什么样</a></li>
+<li class="h2"><a href="#改完的数字">改完的数字</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>6 月 4 日晚上 20:12，配置助手的批量任务跑完 60 个问题，24 个以「工具调用失败」结束。同一分钟，变更单列表里刷出 11 张参数完全一样的单子，创建时间挤在 4 秒内。</p>
+<p>这个助手给运营用：一句话描述需求，模型决定调哪只工具、填什么参数，编排层执行完把结果拼回对话。工具一共 9 只，4 只读、5 只写，写的那几只会真的改调度配额。我第一反应是下游超时，翻日志才发现超时只占两成。</p>
+<h2 id="二十分钟里发生的事">二十分钟里发生的事</h2>
+<ul>
+<li>20:12 批量任务报 40% 失败。编排层把工具失败当普通结果返回，任务退出码 0，所以没有告警，是运营在群里问的。</li>
+<li>20:19 变更单列表出现 11 张重复单，参数一致，间隔 4 秒。</li>
+<li>20:26 关掉自动重试重跑同一批题，失败率掉到 12%，重复单不再增加。</li>
+<li>20:50 把 24 条失败按 error 字段归类，得到下面这张表。</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>失败类型</th>
+<th>占比</th>
+<th>当时的处理</th>
+<th>实际后果</th>
+</tr></thead>
+<tbody>
+<tr><td>参数校验失败（缺字段、类型漂移）</td><td>61%</td><td>整体重试，让模型重写参数</td><td>模型每次换一组参数，越试越远</td></tr>
+<tr><td>工具超时（下游 3 秒上限）</td><td>22%</td><td>整体重试</td><td>偶发成功，但写入可能已经生效</td></tr>
+<tr><td>输出不是合法 JSON</td><td>12%</td><td>整体重试</td><td>第二轮多半能过，白烧一轮 token</td></tr>
+<tr><td>对象不存在、无权限</td><td>5%</td><td>整体重试</td><td>重试改变不了任何东西</td></tr>
+</tbody>
+</table></div>
+<p>重试把失败率压得好看了一点，代价是把「参数写错了」也当成网络抖动处理。模型拿到同一段上下文重来一次，温度不为零，填出来的参数和上一次不一样，于是下游收到一串互相矛盾的写入。11 张重复单就是这么来的。</p>
+<h2 id="三处根因">三处根因</h2>
+<p>工具描述是照着接口文档抄的。<code>update_schedule</code> 的入参写成一个 object，里面两个 string 字段塞 JSON，没有 required，没有枚举，也没写「什么时候不该调这只工具」。模型能读到的结构信息只有这些，剩下的全靠猜。</p>
+<p>错误信息原样回抛。下游抛的是带字段路径的内部错误，截到 200 字符塞回给模型，模型看到 <code>invalid request</code> 之后，除了换个参数再试没有别的选择。</p>
+<p>重试没有判据。编排层的重试条件只有一个：这次调用没成功。幂等、调用预算、全局 deadline 都不在考虑范围里。5 只写工具里有 3 只不带幂等键，下游也不去重。</p>
+<h2 id="改成了什么样">改成了什么样</h2>
+<p>工具定义现在卡到字段级，枚举写死，多余的字段直接拒绝：</p>
+<pre data-lang="json"><code class="language-json">{
+  &quot;name&quot;: &quot;update_schedule&quot;,
+  &quot;description&quot;: &quot;调整单个内容池的调度配额。仅在用户明确给出池名与目标配额时调用；查询当前配额用 query_schedule。&quot;,
+  &quot;input_schema&quot;: {
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;additionalProperties&quot;: false,
+    &quot;required&quot;: [&quot;pool&quot;, &quot;quota&quot;, &quot;reason&quot;],
+    &quot;properties&quot;: {
+      &quot;pool&quot;:   {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;feed&quot;, &quot;search&quot;, &quot;rec&quot;]},
+      &quot;quota&quot;:  {&quot;type&quot;: &quot;integer&quot;, &quot;minimum&quot;: 0, &quot;maximum&quot;: 20000},
+      &quot;reason&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;maxLength&quot;: 120}
+    }
+  }
+}</code></pre>
+<p><code>enum</code> 和 <code>maximum</code> 把最常出错的两类参数变成不可能值：池名拼错、配额多写一个零。<code>additionalProperties: false</code> 挡掉模型自创的 <code>force</code> 字段，否则下游会静默忽略它。</p>
+<p>校验放在执行器里，不放在提示词里。工具调用进来先过 schema，再过一遍业务规则（配额上限、池子是否在维护窗口），任何一层不过就直接返回结构化错误，不进下游。</p>
+<p>错误分三层。<code>retryable</code> 只有超时和 5xx，退避 200ms 起、最多 2 次；<code>correctable</code> 是参数层面能改的，回给模型时带上字段路径和期望类型，并附一句「不要重复送相同的值」；<code>fatal</code> 是对象不存在、无权限，立刻停掉这只工具，让模型换路径或直接告诉用户。这套分类手写在工具注册表里，加起来不到 40 行。</p>
+<p>写工具加幂等键：由会话 ID、工具名、参数哈希拼成一个串，调用时随请求下发，下游按键去重。同一轮里模型重复调同一只工具、同一组参数，只有第一次真的落库。</p>
+<p>重试预算改成两层：单只工具最多 2 次，整个任务最多 12 次调用，超了就收敛成「部分完成」并列出没做完的部分。全局 deadline 45 秒，到点无论模型还想调什么，直接返回已有结果。</p>
+<h2 id="改完的数字">改完的数字</h2>
+<p>同一批 60 道题重跑 5 轮，经验值：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>指标</th>
+<th>改之前</th>
+<th>改之后</th>
+</tr></thead>
+<tbody>
+<tr><td>任务失败率</td><td>40%</td><td>6%</td></tr>
+<tr><td>平均工具调用次数</td><td>5.8</td><td>3.4</td></tr>
+<tr><td>重复写入</td><td>11 张/轮</td><td>0</td></tr>
+<tr><td>单任务 token</td><td>约 21k</td><td>约 13k</td></tr>
+</tbody>
+</table></div>
+<p>剩下的 6% 基本都是工具本身的问题：下游在维护窗口里返回 503，模型换只读工具查了状态，最后如实回答「现在改不了」。这个结果我接受。</p>
+<p>有人问我要不要给 Agent 加自动重试，我的判据是三条：工具幂等吗；错误类型能分出「值得再试」和「再试也没用」吗；重试预算和 deadline 归谁管。三条有一条答不上来，先别加重试。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://json-schema.org/draft/2020-12/json-schema-core.html">JSON Schema Core：object 与 additionalProperties 的定义</a></li>
+<li><a href="https://json-schema.org/draft/2020-12/json-schema-validation.html">JSON Schema Validation：enum、minimum、maxLength 的语义</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8259.html">RFC 8259：JSON 语法，重复键的处理方式不唯一</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-idempotent-methods">RFC 9110 §9.2.2：幂等方法与自动重试的前提</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/工具调用/">工具调用</a><a class="tag" href="/tags/参数校验/">参数校验</a><a class="tag" href="/tags/重试/">重试</a><a class="tag" href="/tags/幂等/">幂等</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E7%BC%96%E6%8E%92%EF%BC%9A%E4%B8%80%E6%AC%A1%E9%87%8D%E5%A4%8D%E5%BB%BA%E5%8D%95%E4%B9%8B%E5%90%8E%E6%94%B6%E7%B4%A7%E7%9A%84%E4%B8%89%E5%A4%84%E7%BA%A6%E6%9D%9F" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/structured-output/">← 结构化输出为什么难：一份 oneOf 与四层失败</a><a class="next" href="/post/weekly-report-auto/">周报的账：65 分钟压到 9 分钟，大头还在校对 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/prompt-injection/">Prompt Injection：为什么过滤不管用</a><time>2024-08</time></li><li><a href="/post/agent-tool-loop/">Agent 的工具循环：什么时候该停</a><time>2024-11</time></li><li><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a><time>2020-03</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

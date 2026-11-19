@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态沙箱的日志里到底有什么 - farfood</title>
+<meta name="description" content="沙箱日志按条数均匀采样，会把配对的事件拆散、把证据丢在噪声里；改成定长头 + 字典 + 关注集合之后，容量和漏报一起解决。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/sandbox-logs/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "动态沙箱的日志里到底有什么", "description": "沙箱日志按条数均匀采样，会把配对的事件拆散、把证据丢在噪声里；改成定长头 + 字典 + 关注集合之后，容量和漏报一起解决。", "datePublished": "2022-11-15T10:40:00+08:00", "dateModified": "2022-11-15T10:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/sandbox-logs/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "沙箱, seccomp, 结构化日志, 压缩, 事故复盘"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="动态沙箱的日志里到底有什么 - farfood">
+<meta property="og:description" content="沙箱日志按条数均匀采样，会把配对的事件拆散、把证据丢在噪声里；改成定长头 + 字典 + 关注集合之后，容量和漏报一起解决。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/sandbox-logs/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="动态沙箱的日志里到底有什么 - farfood">
+<meta name="twitter:description" content="沙箱日志按条数均匀采样，会把配对的事件拆散、把证据丢在噪声里；改成定长头 + 字典 + 关注集合之后，容量和漏报一起解决。">
+<meta property="article:published_time" content="2022-11-15T10:40:00+08:00">
+<meta name="keywords" content="沙箱, seccomp, 结构化日志, 压缩, 事故复盘">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">动态沙箱的日志里到底有什么</h1>
+    <p class="meta"><time datetime="2022-11-15T10:40:00">2022-11-15</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2496 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#日志里到底有什么">日志里到底有什么</a></li>
+<li class="h2"><a href="#丢掉的不是记录是配对">丢掉的不是记录，是配对</a></li>
+<li class="h2"><a href="#改法定长头字典关注集合">改法：定长头、字典、关注集合</a></li>
+<li class="h2"><a href="#数字和边界">数字和边界</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>02:47，日志写入延迟的 p99 从 40 ms 爬到 900 ms。03:01 日志卷水位告警。03:06 值班的人判断是「量涨了」，把采样比例从 1 调到 1/8，队列恢复。</p>
+<p>09:20，一个样本的人工复核出结果：沙箱里只有读文件、创建进程、退出，没有写盘、没有外连，判 clean。15:40，同一批样本出现在另一条投放链路上，落地行为是往用户目录写自启动项。回头查沙箱日志，那个时间窗里一条 <code>openat</code> 都没有。</p>
+<p>复盘会上这被当成容量问题和漏报问题，其实是同一个：采样器按记录条数均匀丢弃，而沙箱日志的信息量分布极度不均匀，均匀丢弃在这类分布上等价于优先丢证据。</p>
+<h2 id="日志里到底有什么">日志里到底有什么</h2>
+<p>采集侧只有三个来源，全部挂在系统调用上。用 seccomp 把感兴趣的系统调用返回成 <code>SECCOMP_RET_TRACE</code>，配 <code>PTRACE_O_TRACESECCOMP</code>，tracer 就在每次调用的入口和出口各停一次，拿到编号、六个参数、返回值。</p>
+<p>网络事件从 <code>socket</code> / <code>connect</code> / <code>sendto</code> / <code>bind</code> 推出来，加上 UDP 53 载荷里的 qname。文件事件从 <code>openat</code> / <code>openat2</code> / <code>execve</code> / <code>renameat2</code> 推出。进程事件是 <code>clone</code> / <code>fork</code> / <code>mmap(PROT_EXEC)</code>。另有一类单独标：<code>prctl</code>、<code>io_uring_setup</code>、<code>socket(AF_PACKET)</code>，不常见，但单条出现就值得看一眼。</p>
+<p>体量和信息量的关系（口径：三十秒窗口、单样本中位数）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>事件类</th>
+<th>条数</th>
+<th>信息密度</th>
+<th>处理</th>
+</tr></thead>
+<tbody>
+<tr><td><code>futex</code> / <code>epoll_wait</code> / <code>clock_gettime</code></td><td>30 万，占 85%</td><td>极低</td><td>只留计数</td></tr>
+<tr><td><code>openat</code> / <code>stat</code> 家族</td><td>2 万</td><td>高，路径与标志都在</td><td>成对保留</td></tr>
+<tr><td><code>socket</code> / <code>connect</code></td><td>数百</td><td>高</td><td>全留，含失败返回</td></tr>
+<tr><td><code>execve</code> / <code>clone</code></td><td>几十</td><td>极高</td><td>全留，带进程树</td></tr>
+<tr><td>反分析类</td><td>个位数</td><td>极高</td><td>独立类别</td></tr>
+</tbody>
+</table></div>
+<p>判一个样本是不是恶意，看的是最后三行。而 85% 的日志在描述「进程在等锁」。</p>
+<h2 id="丢掉的不是记录是配对">丢掉的不是记录，是配对</h2>
+<p>把漏报做实的，是「记录」和「系统调用」不是一回事。</p>
+<p>一次 <code>openat</code> 在日志里是两条：入口记参数，出口记返回值和耗时。按记录随机丢 7/8，常见结果是入口留着、出口没了。这时一条 <code>openat</code> 只剩字符串，分不清是「试图打开但 <code>EACCES</code>」还是「打开成功」。大量恶意样本的行为特征恰恰是高频失败重试——扫一堆不存在的路径找可写目录。配对断了，信号就没了。</p>
+<p>路径本身也不是内核看到的对象：入口那串字节是进程传进来的相对路径，要配上 <code>dirfd</code> 和当时的 <code>cwd</code> 才能定位，中途 <code>chdir</code> 或 <code>rename</code> 就指向别的东西。所以路径必须连同解析结果一起记。</p>
+<p>第二个问题更隐蔽：丢完没有任何痕迹，复核看到空白，无法区分「进程什么都没做」和「这段被采样器丢了」，两者结论相反。</p>
+<h2 id="改法定长头字典关注集合">改法：定长头、字典、关注集合</h2>
+<p>落盘分两层：头部全量、定长、无指针；详细字段只对关注集合写。</p>
+<pre data-lang="c"><code class="language-c">struct ev_hdr {                 /* 32 字节，定长 */
+    uint64_t ts_ns;             /* 单调时钟，非墙钟 */
+    uint32_t pid, tid, span_id; /* span_id 绑定入口与出口 */
+    uint16_t nr, obj_id;        /* obj_id 指向对象字典，0=未解析 */
+    uint8_t  phase;             /* 1=入口 2=出口 3=墓碑 */
+    int32_t  ret;
+};</code></pre>
+<p>几个决定值得写下来：</p>
+<ul>
+<li><strong>对象字典</strong>。路径、套接字目标、命令行做 interning，每样本一张表，头部只存 16 位下标。样本里九成字符串重复，去重后字典不到 200 KB。</li>
+<li><strong>丢弃粒度改成一个系统调用</strong>。入口出口按 <code>span_id</code> 绑定，要么都在要么都不在。这条约束比任何压缩算法都省事，因为下游不用处理不完整事件。</li>
+<li><strong>合并窗口</strong>。同一 <code>(pid, 操作, 对象)</code> 一秒内重复出现合并成带 <code>count</code> 的一条，写盘前的 <code>stat</code> 风暴从两万条压到几百条，行为信息没少。</li>
+<li><strong>墓碑</strong>。必须丢数据时写一条 <code>phase=3</code>，带区间与原因，界面上显示成斜纹而不是空白。</li>
+</ul>
+<p>压缩分块做，1 MB 一块，zstd 帧格式，每块独立可解。定长记录对压缩器很友好：时间戳与 <code>nr</code> 两列几乎完全可预测，字典下标这类小整数也容易被熵编码吃掉。</p>
+<h2 id="数字和边界">数字和边界</h2>
+<p>同口径对比（p50 样本）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>项</th>
+<th>改前</th>
+<th>改后</th>
+</tr></thead>
+<tbody>
+<tr><td>落盘字节</td><td>84 MB（240 B/条的行式 JSON）</td><td>3.1 MB</td></tr>
+<tr><td>中间层</td><td>84 MB</td><td>11.2 MB 定长头 + 字典</td></tr>
+<tr><td>配对完整性</td><td>成对率约 1/8</td><td>100%</td></tr>
+<tr><td>区分「没发生」与「没记录」</td><td>不能</td><td>能</td></tr>
+<tr><td>日志卷常驻</td><td>132 GB / 200 GB 开始降载</td><td>26 GB</td></tr>
+</tbody>
+</table></div>
+<p>改完两个月没再出现降载。代价有两处。写入路径从「追加字符串」变成「维护字典和计数窗口」，实现复杂了约三倍，中间出过一次引用计数泄漏，跑三天才把内存上涨的现象对上。另外对象 id 只有 16 位，超过 65535 个不同对象的样本会退化到溢出表，这一档在复核工具里单独标了出来。</p>
+<p>日志变小后，全量留存窗口从 7 天拉到 30 天，「三周前那个样本当时到底干了什么」第一次能被回答，这比省磁盘有用。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://docs.kernel.org/userspace-api/seccomp_filter.html">seccomp filter 与 SECCOMP_RET_TRACE 的行为</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8878">RFC 8878: Zstandard 压缩格式</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259: JSON 数据交换格式</a></li>
+<li><a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html">cgroup v2 文档：给采集侧设 io 与 memory 上限</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/沙箱/">沙箱</a><a class="tag" href="/tags/seccomp/">seccomp</a><a class="tag" href="/tags/结构化日志/">结构化日志</a><a class="tag" href="/tags/压缩/">压缩</a><a class="tag" href="/tags/事故复盘/">事故复盘</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%8A%A8%E6%80%81%E6%B2%99%E7%AE%B1%E7%9A%84%E6%97%A5%E5%BF%97%E9%87%8C%E5%88%B0%E5%BA%95%E6%9C%89%E4%BB%80%E4%B9%88" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/sandbox-escape-ml/">← 沙箱逃逸检测：从日志特征到随机森林</a><a class="next" href="/post/import-list-features/">导入函数列表当特征：四条判据和三种做法 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/cage-the-agent/">把 Agent 关进笼子：禁网、只读、超时、审计</a><time>2024-08</time></li><li><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a><time>2022-07</time></li><li><a href="/post/sandbox-escape-ml/">沙箱逃逸检测：从日志特征到随机森林</a><time>2022-11</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

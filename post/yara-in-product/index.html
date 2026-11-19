@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>把 YARA 接进产品：编译、性能、误报 - farfood</title>
+<meta name="description" content="规则编译成 4 字节 atom 的自动机后，扫描代价取决于规则写法和内存块切分；难点在编译时机、超时护栏和白样本门禁。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/yara-in-product/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "把 YARA 接进产品：编译、性能、误报", "description": "规则编译成 4 字节 atom 的自动机后，扫描代价取决于规则写法和内存块切分；难点在编译时机、超时护栏和白样本门禁。", "datePublished": "2022-08-09T09:35:00+08:00", "dateModified": "2022-08-09T09:35:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/yara-in-product/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "YARA, 规则引擎, 扫描性能, 误报治理, 检测流水线"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="把 YARA 接进产品：编译、性能、误报 - farfood">
+<meta property="og:description" content="规则编译成 4 字节 atom 的自动机后，扫描代价取决于规则写法和内存块切分；难点在编译时机、超时护栏和白样本门禁。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/yara-in-product/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="把 YARA 接进产品：编译、性能、误报 - farfood">
+<meta name="twitter:description" content="规则编译成 4 字节 atom 的自动机后，扫描代价取决于规则写法和内存块切分；难点在编译时机、超时护栏和白样本门禁。">
+<meta property="article:published_time" content="2022-08-09T09:35:00+08:00">
+<meta name="keywords" content="YARA, 规则引擎, 扫描性能, 误报治理, 检测流水线">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">把 YARA 接进产品：编译、性能、误报</h1>
+    <p class="meta"><time datetime="2022-08-09T09:35:00">2022-08-09</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2473 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#编译一次几秒但不该发生在请求路径上">编译：一次几秒，但不该发生在请求路径上</a></li>
+<li class="h2"><a href="#扫描代价由三件事决定">扫描：代价由三件事决定</a></li>
+<li class="h2"><a href="#误报门禁要放在合入之前">误报：门禁要放在合入之前</a></li>
+<li class="h2"><a href="#线上误报怎么修">线上误报怎么修</a></li>
+<li class="h2"><a href="#一句判断">一句判断</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>编译一条规则时，引擎先做一件多数写规则的人不知道的事：把每条字符串拆成若干 4 字节的 atom，塞进一个多模式匹配的自动机。扫描时先跑自动机，只有 atom 落在数据里，才回到原始字符串做完整比对。</p>
+<p>这条设计决定了它在产品里的全部性能特征：提不出独特 atom 的规则退化成对整块数据逐字节过一遍，atom 挑得好，几千条规则扫 2MB 也还是毫秒级。下面顺着数据流走：规则文本进去，判定出来，每步的代价和坑。</p>
+<h2 id="编译一次几秒但不该发生在请求路径上">编译：一次几秒，但不该发生在请求路径上</h2>
+<p>编译是重活。当时规则集 800 条左右，约 40 条带通配 hex，4 核机器上编译一次 1.8 秒、峰值几百 MB。放在启动阶段无所谓，放进上传请求路径就是灾难。</p>
+<p>所以产品里的做法是编译一次、序列化落盘、进程启动时加载：</p>
+<pre data-lang="python"><code class="language-python">import yara
+
+src = {&quot;family_a&quot;: &quot;/srv/rules/family_a.yar&quot;,
+       &quot;generic&quot;: &quot;/srv/rules/generic.yar&quot;}   # 每个命名空间单独一组规则
+
+rules = yara.compile(filepaths=src)
+rules.save(&quot;/srv/rules/compiled.bin&quot;)          # 加载 90ms  vs 编译 1.8s</code></pre>
+<p>分命名空间是为了扫描能选范围：对已知是文档类的文件只跑 generic，跳过可执行结构规则，代价降到三分之一。命名空间同时是误报定位的坐标，<code>family_a.rule_017</code> 出问题能立刻找到出处。</p>
+<p>第二个坑是原子质量。<code>{ 4D 5A ?? ?? 50 45 }</code> 这种通配太多的 hex 提不出 atom，规则会退化成慢规则；写成 <code>{ 4D 5A [2-4] 50 45 }</code> 就有连续字节可用。短于 4 字节的字符串、纯宽字符串、量词很松的正则都往「无 atom」那边靠。我在编译期加了一条检查：atom 情况逐条打出来，提不出 atom 的规则直接拒收。</p>
+<h2 id="扫描代价由三件事决定">扫描：代价由三件事决定</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>变量</th>
+<th>现状（经验值）</th>
+<th>变化后的代价</th>
+</tr></thead>
+<tbody>
+<tr><td>规则条数 800 → 3000</td><td>扫描 2MB 文件 p50 6ms</td><td>p50 涨到 19ms，p99 从 61ms 到 240ms</td></tr>
+<tr><td>加 <code>wide</code> 后缀</td><td>每条字符串多一种编码</td><td>内存占用 ×1.7，p99 明显变差</td></tr>
+<tr><td>单次传入的块从 64KB 到 8MB</td><td>块越大，跨界匹配越少</td><td>p99 降低，但单进程内存峰值上去了</td></tr>
+<tr><td>正则里出现无界重复</td><td>回溯深度不可控</td><td>出现 30s 级别的长尾</td></tr>
+</tbody>
+</table></div>
+<p>最后一行会出事故。回溯能真的跑满 CPU，而扫描在工作进程里是同步的。护栏两条：扫描器上设 5 秒超时，超过记一次 <code>slow</code> 并把规则摘出来审；正则禁用无界量词，<code>[0-9]{4}-[0-9]{2}</code> 这种有界写法是唯一允许的形状。</p>
+<p>块大小那一行还有个细节：字符串可能横跨块边界，跨块匹配有代价。我们固定成 1MB 一块、相邻块重叠 4KB，既不丢跨界匹配，峰值也压得住。这属于调参，不是定论。</p>
+<h2 id="误报门禁要放在合入之前">误报：门禁要放在合入之前</h2>
+<p>误报来源比想象中单调，也就三类：命中人人都在用的运行时库字符串、命中打包器的固定结构、命中中文语料里常见的字节序列。三类都能在合入前挡掉，前提是白样本够大。</p>
+<p>我们的门禁是三条，跑在规则合入的流水线上：</p>
+<p><strong>白样本零命中。</strong> 库里有 6 万个正常文件，覆盖办公格式、安装包、脚本和一批从线上环境回收的可执行文件。新规则在这批文件上命中一条就不许合入，这一条挡掉了约七成的初版规则。</p>
+<p><strong>正样本至少三条。</strong> 附三个能命中的样本摘要，且不能是同批提交的近似副本。没有正样本的规则就是一句猜测。</p>
+<p><strong>meta 齐全。</strong> 必须带 <code>author</code>、<code>reference</code>、<code>severity</code>，<code>reference</code> 指一份能读的分析记录。这条决定了三个月后还有没有人敢动这条规则。</p>
+<pre data-lang="yara"><code class="language-yara">rule fam_a_dropper_stage2 : trojan
+{
+    meta:
+        author      = &quot;detection&quot;
+        reference   = &quot;analysis/2022-06-fam-a.md&quot;
+        severity    = &quot;high&quot;
+    strings:
+        $mz  = { 4D 5A }
+        $s1  = &quot;stage2_payload&quot; ascii wide
+        $s2  = { 68 ?? ?? ?? ?? E8 [4-8] C3 }
+    condition:
+        $mz at 0 and 2 of ($s1, $s2)
+}</code></pre>
+<p><code>condition</code> 里那个 <code>at 0</code> 不是装饰。早期有一批规则只写 <code>$mz</code>，结果把所有以 ZIP 结尾偏移处出现 MZ 的文件都命中了。位置约束是最便宜的一类精确化手段，比再加字符串管用。</p>
+<h2 id="线上误报怎么修">线上误报怎么修</h2>
+<p>白样本库再大也覆盖不到真实环境。线上误报的路径是：投诉或抽检发现 → 拿文件摘要 → 找出命中的规则 id → 判断是规则宽了还是文件本来就可疑 → 前者改规则，后者进白名单。</p>
+<p>改规则的手法固定三种，按代价从低到高：加位置约束（<code>at 0</code>、<code>in (0..1024)</code>）、加结构条件（要求同时有可执行节区）、加否定条件（排除一类编译器特征）。三种都不管用说明特征选错了，直接下线。一条规则加到第五个 <code>and not</code> 时已经没人能理解，留着只是下一次误报的伏笔。</p>
+<p>还有个便宜信号：单条规则日命中量突然涨 10 倍。多数是正常软件更新后带上了那个特征，少数是样本爆发。两种情况处置相反，所以它只能触发人工看。</p>
+<h2 id="一句判断">一句判断</h2>
+<p>接引擎进产品，工程量集中在规则治理而不是引擎。编译、序列化、超时、块切分一次写完就不用管；规则门禁和白样本库是每天都在还的债，误报的代价几乎全由它决定。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://yara.readthedocs.io/en/stable/commandline.html">YARA 文档：命令行与扫描选项</a>：超时、栈大小、单规则字符串上限</li>
+<li><a href="https://yara.readthedocs.io/en/stable/yarapython.html">YARA 文档：Python 接口</a>：compile / save / 命名空间与回调</li>
+<li><a href="https://pcre.org/current/doc/html/pcre2syntax.html">PCRE2 语法参考</a>：量词与回溯行为，正则写法的约束来源</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/yara/">YARA</a><a class="tag" href="/tags/规则引擎/">规则引擎</a><a class="tag" href="/tags/扫描性能/">扫描性能</a><a class="tag" href="/tags/误报治理/">误报治理</a><a class="tag" href="/tags/检测流水线/">检测流水线</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8A%8A+YARA+%E6%8E%A5%E8%BF%9B%E4%BA%A7%E5%93%81%EF%BC%9A%E7%BC%96%E8%AF%91%E3%80%81%E6%80%A7%E8%83%BD%E3%80%81%E8%AF%AF%E6%8A%A5" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/ransomware-fingerprint/">← 勒索软件的加密指纹：非对称文件头识别</a><a class="next" href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/false-positive-ops/">误报治理：把「关规则」换成动阈值之后</a><time>2023-09</time></li><li><a href="/post/static-scan-pipeline/">静态扫描流水线：从收到文件到给出判定</a><time>2022-07</time></li><li><a href="/post/ransomware-fingerprint/">勒索软件的加密指纹：非对称文件头识别</a><time>2022-08</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

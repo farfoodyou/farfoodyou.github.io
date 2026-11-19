@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>营销资损的四层防线 - farfood</title>
+<meta name="description" content="预算、限额、风控、对账拦的是四种不同的错误，把它们当一层做，任何一处降级都会直接变成钱。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/loss-prevention/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "营销资损的四层防线", "description": "预算、限额、风控、对账拦的是四种不同的错误，把它们当一层做，任何一处降级都会直接变成钱。", "datePublished": "2021-12-01T10:40:00+08:00", "dateModified": "2021-12-01T10:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/loss-prevention/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "资损防控, 预算, 限额, 对账, 幂等"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="营销资损的四层防线 - farfood">
+<meta property="og:description" content="预算、限额、风控、对账拦的是四种不同的错误，把它们当一层做，任何一处降级都会直接变成钱。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/loss-prevention/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="营销资损的四层防线 - farfood">
+<meta name="twitter:description" content="预算、限额、风控、对账拦的是四种不同的错误，把它们当一层做，任何一处降级都会直接变成钱。">
+<meta property="article:published_time" content="2021-12-01T10:40:00+08:00">
+<meta name="keywords" content="资损防控, 预算, 限额, 对账, 幂等">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">营销资损的四层防线</h1>
+    <p class="meta"><time datetime="2021-12-01T10:40:00">2021-12-01</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2481 字 <a class="cat" href="/categories/数据/">数据</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#定位判断与扣减不是同一个操作">定位：判断与扣减不是同一个操作</a></li>
+<li class="h2"><a href="#四层防线各自拦什么">四层防线，各自拦什么</a></li>
+<li class="h2"><a href="#对账要能算预算不只是算发放和核销">对账要能算「预算」，不只是算「发放和核销」</a></li>
+<li class="h2"><a href="#剩下的边界">剩下的边界</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>十一月那场补贴活动，开场十四分钟就被按停了。</p>
+<p>按理说不该出这种事：预算评审过，限额配置有审批流，风控规则前一天刚压过一遍。事后把那十四分钟的日志按秒拉出来看，整条链路没有任何一个组件报错，监控全绿。钱是在「一切正常」的状态下流出去的。</p>
+<p>把时间线摊平看是这样：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>时刻</th>
+<th>发生了什么</th>
+</tr></thead>
+<tbody>
+<tr><td>20:00</td><td>活动开场，发放接口 QPS 从 200 涨到 9000</td></tr>
+<tr><td>20:06</td><td>预算消耗曲线的斜率明显高于预估，但曲线本身还在阈值内</td></tr>
+<tr><td>20:09</td><td>券的库存看板归零，发放接口仍然返回成功</td></tr>
+<tr><td>20:14</td><td>人工叫停，去重后超发 4.2 万张</td></tr>
+<tr><td>次日 11:00</td><td>对账跑完，超发面额 31 万，其中 27.8 万已被真实核销</td></tr>
+</tbody>
+</table></div>
+<p>叫停那一刻我以为是库存没扣干净。拉数据才发现库存扣得很干净，每张发出去的券都有扣减记录。问题在预算表：<code>used</code> 比实际发放少了将近一半。</p>
+<h2 id="定位判断与扣减不是同一个操作">定位：判断与扣减不是同一个操作</h2>
+<p>链路上预算校验写在应用层，两行代码：先查预算余量，再调发放服务，发放成功以后异步把消耗写回预算表。</p>
+<p>异步写回的那一步是消息驱动的，消费端做了批量合并，200ms 一个窗口。窗口里如果发放侧有一次超时重试，同一笔消耗会被写两次；反过来，消费者重启时在途批次会丢。所以 <code>used</code> 和真实发放量之间既有正偏差也有负偏差，看着不像 bug，像「统计口径不同」。</p>
+<p>再加上预算查询走的是只读副本，主从延迟在高峰期到过 300ms 量级。9000 QPS 下这 300ms 里挤进来的请求，读到的都是同一个旧余量，于是同时通过校验。</p>
+<p>三个原因叠在一起才超发：</p>
+<ul>
+<li><strong>判断与扣减分离</strong>。查余量和扣减分属两个服务，中间没有原子性，也没有预留。</li>
+<li><strong>限流按接口数量而不是按钱</strong>。网关限的是 QPS，一张面额一千的券被刷一万次，QPS 完全在阈值内。</li>
+<li><strong>风控 fail-open</strong>。风控调用超时（200ms 超时，超时率当天 0.4%）时按放行处理，默认值选错了方向。</li>
+</ul>
+<p>漏洞主要在第一条，后两条只是让它变大。</p>
+<h2 id="四层防线各自拦什么">四层防线，各自拦什么</h2>
+<p>补的时候我没有把它们做成一条链，而是当成四道互相独立的闸，任何一层单独生效都能把损失限在一个可接受的量级。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>层</th>
+<th>拦的错误</th>
+<th>生效时间</th>
+<th>误杀代价</th>
+<th>典型失效</th>
+</tr></thead>
+<tbody>
+<tr><td>预算</td><td>总量超支、短时消耗过快</td><td>秒级</td><td>正常用户领不到</td><td>预算分片不均，单个分片先被打空</td></tr>
+<tr><td>限额</td><td>单用户、单设备、单活动维度刷取</td><td>毫秒级</td><td>多账号的正常用户被拦</td><td>限到「请求次数」而没限到「金额」</td></tr>
+<tr><td>风控</td><td>聚集性、设备复用、行为异常</td><td>百毫秒级</td><td>灰度名单误伤</td><td>超时降级方向选错</td></tr>
+<tr><td>对账</td><td>已经发生的事实差异</td><td>分钟级到 T+1</td><td>无（只报警不拦截）</td><td>口径不一致，差集全是噪音</td></tr>
+</tbody>
+</table></div>
+<p>预算这一层改成单条语句完成判断和扣减：</p>
+<pre data-lang="sql"><code class="language-sql">-- 返回受影响行数 0 表示预算不足，1 表示扣减成功
+UPDATE activity_budget
+   SET used_cents = used_cents + :amt,
+       updated_at = now()
+ WHERE activity_id  = :aid
+   AND used_cents + :amt &lt;= total_cents;</code></pre>
+<p>这一条把「查」和「写」压进同一个行锁里，主从延迟不再是变量。代价立刻显现：所有请求打在同一行上，8 核机器上这种单行 CAS 大概能跑到四千到六千 TPS（当时压测的经验值），和 9000 QPS 的目标差一截。</p>
+<p>解法是分桶。总量拆成 64 个桶，请求按用户 id 取模落桶，桶内独立 CAS，活动总量等于各桶余量之和。桶空允许向相邻桶借，但要有上限，不然热点又回到单行。分桶之后吞吐上去了，副作用是「总量还有、但你可能落在空桶里」，前端会出现「显示可领、点了失败」。我们的处理是桶空了就回源到全局余量做一次兜底 CAS，失败率从千分之几降到万分之一以下。</p>
+<p>限额这一层，指标从「次数」换成「金额 + 次数」同时限，并用滑动窗口。固定窗口在边界能放过两倍的量，活动开场那一秒是致命的。</p>
+<p>风控的超时降级方向改成 fail-close，但只对大额生效：单笔超过阈值的请求风控不可用就拒，小额放行。全 fail-close 会把超时率变成业务失败率，全 fail-open 等于没风控。</p>
+<h2 id="对账要能算预算不只是算发放和核销">对账要能算「预算」，不只是算「发放和核销」</h2>
+<p>原来的对账只对「发放明细 vs 核销明细」，这个口径下超发是看不出来的：发出去的券和核销掉的券完全能对上，只是多发了。</p>
+<p>加了第二条线，分钟级增量跑：预算消耗、发放成功金额、订单优惠金额三个数做差集。差集的绝对值超过活动预算的千分之一就报警，超过千分之五自动停发。千分之一这个阈值是按历史抖动定的，不是拍的：正常波动来自在途请求和消息延迟，量级就在万分之几。</p>
+<p>停发做成自动的。那天从「归零」到「人工叫停」隔了五分钟，这五分钟是纯损失。自动化之后同样异常大概 40 秒内触发停发，误停的代价是手动恢复一次，比继续发钱便宜得多。</p>
+<h2 id="剩下的边界">剩下的边界</h2>
+<p>四层防线之后还有两个洞是堵不住的。一个是券在用户侧转让、代领这类平台外行为，账上完全对得上，但钱去了不该去的人手里，只能靠事后模型捞。另一个是跨活动的叠加优惠，单活动预算都合规，组合起来的边际成本没人算，只能在上线评审阶段用一个组合表硬性限制同时参与的活动数。</p>
+<p>这两件事都不是实时链路能解决的。防线的作用是把一次操作失误的损失限在半天的预算内。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.postgresql.org/docs/13/sql-update.html">PostgreSQL 13: UPDATE 与受影响行数语义</a>：条件更新作为 CAS 的依据</li>
+<li><a href="https://www.postgresql.org/docs/13/transaction-iso.html">PostgreSQL 13: 事务隔离级别</a>：read committed 下并发更新的可见性</li>
+<li><a href="https://martinfowler.com/articles/patterns-of-distributed-systems/idempotent-receiver.html">Martin Fowler: Idempotent Receiver</a>：消费端去重的通用模式</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/资损防控/">资损防控</a><a class="tag" href="/tags/预算/">预算</a><a class="tag" href="/tags/限额/">限额</a><a class="tag" href="/tags/对账/">对账</a><a class="tag" href="/tags/幂等/">幂等</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E8%90%A5%E9%94%80%E8%B5%84%E6%8D%9F%E7%9A%84%E5%9B%9B%E5%B1%82%E9%98%B2%E7%BA%BF" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/oversell-at-scale/">← 3w/s 下名额超卖是怎么发生的</a><a class="next" href="/post/reconciliation/">对账：资金系统的最后一道兜底 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li><li><a href="/post/close-order-reconcile/">一次「关单」引发的对账</a><time>2021-04</time></li><li><a href="/post/quota-kv/">限额为什么要一个专门的 KV</a><time>2021-09</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

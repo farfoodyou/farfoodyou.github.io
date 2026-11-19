@@ -26,11 +26,11 @@
 <meta name="twitter:description" content="记模型、记系统、记踩过的坑。">
 </head>
 <body class="">
-<div id="progress"></div>
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
 <header class="site-header">
   <div class="wrap">
     <a class="site-title" href="/">farfood</a>
-    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
   </div>
 </header>
 <main class="wrap">
@@ -84,6 +84,96 @@
 <li><time>02-03</time><a href="/post/o3-mini-reasoning-effort/">o3-mini 上线那周，我们把 effort 从 high 改成 low 省了 71% 的钱</a></li>
 <li><time>01-23</time><a href="/post/kimi-k1.5-long-context-rl/">Kimi k1.5：长上下文 RL 的另一条路，以及被低估的推理工程</a></li>
 <li><time>01-21</time><a href="/post/deepseek-r1-pure-rl/">DeepSeek-R1：纯 RL 把推理能力「逼」出来</a></li></ul></section>
+<section class="archive-year"><h2 id="2024">2024 <span class="count">20 篇</span></h2><ul><li><time>12-31</time><a href="/post/kv-cache-basics/">KV cache：推理为什么吃显存</a></li>
+<li><time>12-10</time><a href="/post/local-llm-agent/">本地跑模型做 Agent：一次显存打满的复盘</a></li>
+<li><time>11-12</time><a href="/post/agent-tool-loop/">Agent 的工具循环：什么时候该停</a></li>
+<li><time>10-22</time><a href="/post/after-o1/">什么时候「多想一会儿」不值：推理档位的账</a></li>
+<li><time>10-08</time><a href="/post/pwa-offline/">PWA 离线可用：Service Worker 的取舍</a></li>
+<li><time>09-17</time><a href="/post/git-sync-conflict/">多端同步：Git 版本化与冲突合并</a></li>
+<li><time>09-03</time><a href="/post/search-vs-links/">双链笔记的检索困境</a></li>
+<li><time>08-20</time><a href="/post/prompt-injection/">Prompt Injection：为什么过滤不管用</a></li>
+<li><time>08-06</time><a href="/post/cage-the-agent/">把 Agent 关进笼子：禁网、只读、超时、审计</a></li>
+<li><time>07-23</time><a href="/post/sandbox-choice/">沙箱选型：三个数算完，只剩混合部署</a></li>
+<li><time>07-09</time><a href="/post/token-budget/">上下文预算：三种裁剪方案放在同一张账单上</a></li>
+<li><time>06-25</time><a href="/post/structured-output/">结构化输出为什么难：一份 oneOf 与四层失败</a></li>
+<li><time>06-11</time><a href="/post/function-calling-orchestration/">工具调用编排：一次重复建单之后收紧的三处约束</a></li>
+<li><time>05-28</time><a href="/post/weekly-report-auto/">周报的账：65 分钟压到 9 分钟，大头还在校对</a></li>
+<li><time>05-14</time><a href="/post/task-state-machine/">任务清单的三种存法：把一个方括号字符当状态源</a></li>
+<li><time>04-23</time><a href="/post/sqlite-fts5/">FTS5 的中文检索：一个分词器选项撑起来的整套设计</a></li>
+<li><time>04-02</time><a href="/post/local-first-layers/">索引被当成了源：一次知识库重建事故</a></li>
+<li><time>03-12</time><a href="/post/markdown-source-of-truth/">把 Markdown 当唯一真源：索引、版本与重建</a></li>
+<li><time>02-06</time><a href="/post/false-negative-hunting/">漏报从哪来：用回归集找检测盲区</a></li>
+<li><time>01-09</time><a href="/post/pe-dotnet/">PE 资源节与 .NET：托管程序集的检测要点</a></li></ul></section>
+<section class="archive-year"><h2 id="2023">2023 <span class="count">17 篇</span></h2><ul><li><time>12-12</time><a href="/post/detection-latency/">检测延迟：从收到文件到给出结论的每一毫秒</a></li>
+<li><time>11-07</time><a href="/post/sample-triage/">样本分级：118 万份文件该怎么花算力</a></li>
+<li><time>10-17</time><a href="/post/recursive-scan/">压缩包递归扫描：五重预算和三个方案的取舍</a></li>
+<li><time>09-19</time><a href="/post/false-positive-ops/">误报治理：把「关规则」换成动阈值之后</a></li>
+<li><time>09-05</time><a href="/post/rule-model-hybrid/">规则、模型、再一层规则：一晚漏检换来的编排顺序</a></li>
+<li><time>08-15</time><a href="/post/detection-observability/">四个数：检测系统的账怎么算</a></li>
+<li><time>07-25</time><a href="/post/evidence-chain/">给人看的证据链：检测结论怎么才解释得清</a></li>
+<li><time>07-11</time><a href="/post/encrypted-traffic/">握手之后还剩什么：加密流量检测的可见性边界</a></li>
+<li><time>06-13</time><a href="/post/threat-intel-rules/">十万条规则怎么不炸：一次规则包下发的复盘</a></li>
+<li><time>05-23</time><a href="/post/sandbox-log-pipeline/">沙箱日志的结构化与压缩：一份报告 9MB 的账</a></li>
+<li><time>05-09</time><a href="/post/model-offline-online/">离线 AUC 好，线上不一定有用</a></li>
+<li><time>04-11</time><a href="/post/label-leakage/">切分里漏出去的那部分：标签泄漏与家族级切分</a></li>
+<li><time>03-21</time><a href="/post/yara-perf/">规则匹配引擎的性能：原子与字符串的选择</a></li>
+<li><time>03-07</time><a href="/post/anti-sandbox/">反沙箱手法算账：90 秒的预算对上 600 秒的等待</a></li>
+<li><time>02-14</time><a href="/post/streaming-parse-cpp/">大文件怎么进检测引擎：整读、mmap 与增量流式</a></li>
+<li><time>01-24</time><a href="/post/file-type-detect/">文件类型识别：magic 不够用的那几种情况</a></li>
+<li><time>01-10</time><a href="/post/packer-entropy/">加壳的痕迹：节名、熵和一张只剩两行的导入表</a></li></ul></section>
+<section class="archive-year"><h2 id="2022">2022 <span class="count">17 篇</span></h2><ul><li><time>12-27</time><a href="/post/malicious-pdf/">恶意 PDF 的结构与检测：一段增量更新让两条链路同时漏判</a></li>
+<li><time>12-13</time><a href="/post/csharp-pdf-support/">检测率 +3% 背后：C# 与 PDF 支持</a></li>
+<li><time>11-30</time><a href="/post/sandbox-escape-ml/">沙箱逃逸检测：从日志特征到随机森林</a></li>
+<li><time>11-15</time><a href="/post/sandbox-logs/">动态沙箱的日志里到底有什么</a></li>
+<li><time>10-27</time><a href="/post/import-list-features/">导入函数列表当特征：四条判据和三种做法</a></li>
+<li><time>10-11</time><a href="/post/nonresident-code/">非常驻代码：节表里那块只有虚拟大小的内存</a></li>
+<li><time>09-15</time><a href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段</a></li>
+<li><time>08-30</time><a href="/post/ransomware-fingerprint/">勒索软件的加密指纹：非对称文件头识别</a></li>
+<li><time>08-09</time><a href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报</a></li>
+<li><time>07-20</time><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a></li>
+<li><time>07-06</time><a href="/post/static-scan-pipeline/">静态扫描流水线：从收到文件到给出判定</a></li>
+<li><time>06-14</time><a href="/post/distributed-lock/">分布式锁的三种实现与它们的失效场景</a></li>
+<li><time>05-10</time><a href="/post/api-doc-what/">接口文档到底该写什么：一次重复扣款的复盘</a></li>
+<li><time>04-12</time><a href="/post/payment-observability/">支付链路的可观测三件套：日志、指标、追踪</a></li>
+<li><time>03-08</time><a href="/post/when-to-merge/">微服务的反向操作：什么时候该合</a></li>
+<li><time>02-15</time><a href="/post/exposure-slot-config/">把曝光位做成可配置：一次活动投放的事故与改造</a></li>
+<li><time>01-11</time><a href="/post/coupon-writeoff-refund/">券的核销与退款：状态机、幂等、补偿</a></li></ul></section>
+<section class="archive-year"><h2 id="2021">2021 <span class="count">19 篇</span></h2><ul><li><time>12-21</time><a href="/post/oversell-at-scale/">3w/s 下名额超卖是怎么发生的</a></li>
+<li><time>12-01</time><a href="/post/loss-prevention/">营销资损的四层防线</a></li>
+<li><time>11-09</time><a href="/post/reconciliation/">对账：资金系统的最后一道兜底</a></li>
+<li><time>10-19</time><a href="/post/transaction-message/">事务消息：把扣额度和发券放进一个故事</a></li>
+<li><time>09-28</time><a href="/post/quota-kv/">限额为什么要一个专门的 KV</a></li>
+<li><time>09-07</time><a href="/post/ops-platform-three/">运营平台三件套：预发、灰度、回滚</a></li>
+<li><time>08-17</time><a href="/post/stateful-unit-data/">有状态单元：把运营能力做成数据</a></li>
+<li><time>07-28</time><a href="/post/holiday-capacity/">节假日扩容：从求人扩容到自己扛住</a></li>
+<li><time>07-13</time><a href="/post/decouple-by-subscribe/">把「调用业务方」换成「订阅业务方」</a></li>
+<li><time>06-22</time><a href="/post/wallet-page-platform/">钱包页平台化：页面、分组、单元三层抽象</a></li>
+<li><time>06-01</time><a href="/post/what-tests-to-write/">覆盖率 85% 是怎么来的：哪些测试值得写</a></li>
+<li><time>05-11</time><a href="/post/gray-flag-debt/">灰度开关是怎么变成技术债的</a></li>
+<li><time>04-22</time><a href="/post/close-order-reconcile/">一次「关单」引发的对账</a></li>
+<li><time>04-06</time><a href="/post/order-state-machine/">订单状态机：让乱序到达变成不可能</a></li>
+<li><time>03-16</time><a href="/post/payment-idempotency/">支付幂等的三层防线</a></li>
+<li><time>02-24</time><a href="/post/fault-injection-payment/">故障演练：怎么证明「单分片故障不影响支付」</a></li>
+<li><time>02-09</time><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a></li>
+<li><time>01-27</time><a href="/post/shard-health-score/">分片健康度怎么算：成功率、延迟、主动探测</a></li>
+<li><time>01-12</time><a href="/post/shard-failover-payment/">分片挂了还能付款：跳单容灾怎么设计</a></li></ul></section>
+<section class="archive-year"><h2 id="2020">2020 <span class="count">17 篇</span></h2><ul><li><time>12-29</time><a href="/post/module-boundary-in-code/">包结构与模块边界：让「不该调用」变成编译不过</a></li>
+<li><time>12-08</time><a href="/post/domain-event-vs-mq/">领域事件不是消息队列</a></li>
+<li><time>11-17</time><a href="/post/aggregate-invariant/">聚合根与不变式：把规则焊在对象里</a></li>
+<li><time>10-09</time><a href="/post/bounded-context-ownership/">限界上下文：按「谁的规则谁负责」切，而不是按表切</a></li>
+<li><time>09-16</time><a href="/post/anemia-model-debt/">订单服务是怎么变成贫血模型的</a></li>
+<li><time>08-20</time><a href="/post/event-storming-intro/">事件风暴入门：一场会能产出什么</a></li>
+<li><time>07-29</time><a href="/post/timeout-budget/">超时预算：每跳都设一秒，链路最坏就是五秒</a></li>
+<li><time>07-08</time><a href="/post/consistent-hashing/">缓存扩容那天：取模哈希搬走了三分之二的 key</a></li>
+<li><time>06-19</time><a href="/post/solo-refactor-plan/">半年重构复盘：一个人怎么排重构的期</a></li>
+<li><time>06-02</time><a href="/post/two-step-change/">可回滚的变更：把一次上线拆成三步</a></li>
+<li><time>05-08</time><a href="/post/go-hot-reload-config/">Go 里做配置热更新的三种姿势</a></li>
+<li><time>04-10</time><a href="/post/cross-idc-traffic/">跨机房调用为什么慢：条带化与同机房收敛</a></li>
+<li><time>03-24</time><a href="/post/config-form-not-json/">配置单为什么难填：把「写 JSON」换成「点菜单」</a></li>
+<li><time>03-05</time><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a></li>
+<li><time>02-14</time><a href="/post/dual-read-verification/">双读比对：把「重构不能改行为」变成可验证的实验</a></li>
+<li><time>01-22</time><a href="/post/json-as-database/">拿 JSON 字段当表用，是怎么把配置平台拖死的</a></li>
+<li><time>01-06</time><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：一次调度配置下发改造</a></li></ul></section>
 <section class="archive-year"><h2 id="2019">2019 <span class="count">1 篇</span></h2><ul><li><time>03-23</time><a href="/post/2019-03-23/">从现在开始, 记录成长</a></li></ul></section>
 <section class="archive-year"><h2 id="2017">2017 <span class="count">12 篇</span></h2><ul><li><time>10-04</time><a href="/2017/10/04/MB/">SMB</a></li>
 <li><time>09-25</time><a href="/2017/09/25/现在开始走向梦想吧/">从现在开始走向梦想吧</a></li>
@@ -143,6 +233,98 @@
     else if (e.key === 't' && btn) { btn.click(); }
     else if (e.key === 'g') { location.href = '/'; }
   });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
   document.querySelectorAll('pre').forEach(function (pre) {
     var b = document.createElement('button');
     b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';

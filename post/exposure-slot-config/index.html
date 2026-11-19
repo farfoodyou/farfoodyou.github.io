@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>把曝光位做成可配置：一次活动投放的事故与改造 - farfood</title>
+<meta name="description" content="运营自助配曝光位之后，同优先级活动按 map 顺序命中，报表归因全错。改法：优先级由系统分配，每个位固定一条兜底链。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/exposure-slot-config/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "把曝光位做成可配置：一次活动投放的事故与改造", "description": "运营自助配曝光位之后，同优先级活动按 map 顺序命中，报表归因全错。改法：优先级由系统分配，每个位固定一条兜底链。", "datePublished": "2022-02-15T10:05:00+08:00", "dateModified": "2022-02-15T10:05:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/exposure-slot-config/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "投放系统, 规则匹配, 优先级, 兜底链, 配置管理"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="把曝光位做成可配置：一次活动投放的事故与改造 - farfood">
+<meta property="og:description" content="运营自助配曝光位之后，同优先级活动按 map 顺序命中，报表归因全错。改法：优先级由系统分配，每个位固定一条兜底链。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/exposure-slot-config/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="把曝光位做成可配置：一次活动投放的事故与改造 - farfood">
+<meta name="twitter:description" content="运营自助配曝光位之后，同优先级活动按 map 顺序命中，报表归因全错。改法：优先级由系统分配，每个位固定一条兜底链。">
+<meta property="article:published_time" content="2022-02-15T10:05:00+08:00">
+<meta name="keywords" content="投放系统, 规则匹配, 优先级, 兜底链, 配置管理">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">把曝光位做成可配置：一次活动投放的事故与改造</h1>
+    <p class="meta"><time datetime="2022-02-15T10:05:00">2022-02-15</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2401 字 <a class="cat" href="/categories/架构/">架构</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#时间线">时间线</a></li>
+<li class="h2"><a href="#定位过程">定位过程</a></li>
+<li class="h2"><a href="#三条根因">三条根因</a></li>
+<li class="h2"><a href="#改成了什么">改成了什么</a></li>
+<li class="h2"><a href="#让运营自己看命中路径">让运营自己看命中路径</a></li>
+<li class="h2"><a href="#还没解决的边界">还没解决的边界</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>运营在后台把首页第二个曝光位的素材换成新券包，保存成功，页面提示「已生效」。二十分钟后，同一批用户里有人看到新券包，有人看到上一期的旧素材。客服把两张截图拼在一起发过来时，第一反应是缓存没刷。</p>
+<p>缓存命中率 99.6%，配置版本所有实例一致。问题在更下面一层：那个位子上挂着三个在投活动，权重都填了 5。</p>
+<h2 id="时间线">时间线</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>时刻</th>
+<th>动作</th>
+<th>结果</th>
+</tr></thead>
+<tbody>
+<tr><td>11:02</td><td>新建活动 A，weight=5，人群「新客」</td><td>保存成功</td></tr>
+<tr><td>11:04</td><td>把上一期活动 B 的 weight 从 4 改成 5</td><td>保存成功</td></tr>
+<tr><td>11:05</td><td>配置版本 1087 全量下发</td><td>各实例版本一致</td></tr>
+<tr><td>11:20</td><td>数据侧发现 A 的曝光量只有预期的 3%</td><td>报表归因异常</td></tr>
+<tr><td>11:41</td><td>抽 500 个请求回放，同一 user_id 两次命中不同活动</td><td>命中结果不确定</td></tr>
+</tbody>
+</table></div>
+<h2 id="定位过程">定位过程</h2>
+<p>先排除配置下发：版本号一致，抽查三台机器的内存快照完全相同。再排除人群包：用同一个 user_id 回放十次，命中结果在 A 和 B 之间跳动，说明人群过滤本身是确定的，变的是后面的排序。</p>
+<p>那段代码是这么写的：把该位子上所有在投活动装进一个 map，按 weight 降序 <code>sort.Slice</code>，取第一个命中的。两个问题叠在一起：map 的遍历顺序在 Go 里本来就不保证，<code>sort.Slice</code> 又不保证稳定。weight 相同时，排完序的顺序取决于遍历顺序，也就是每次请求都可能不同。同一个用户在同一秒内的两次请求，落在两个实例上，可能看到两个素材。</p>
+<p>报表为什么没早发现：曝光埋点记的是活动 ID，按活动聚合后，A 和 B 的曝光量看起来都「有一点」，运营按总量对账，缺的那 97% 被算进了 B。单笔差异在聚合里消失了。</p>
+<h2 id="三条根因">三条根因</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>失效</th>
+<th>现象</th>
+<th>为什么长期没被看见</th>
+</tr></thead>
+<tbody>
+<tr><td>同优先级没有裁决规则</td><td>命中结果依赖进程内 map 顺序</td><td>聚合报表只看总量，不看单用户一致性</td></tr>
+<tr><td>人群包离线计算，延迟两小时</td><td>活动开始后两小时新客包才更新完</td><td>曝光总量在涨，看起来「在投」</td></tr>
+<tr><td>全部规则不命中时返回空</td><td>前端自己塞了一张默认素材</td><td>那张图不归运营管，谁也没在后台见过</td></tr>
+</tbody>
+</table></div>
+<p>第三条是最贵的。前端兜底等于把「配置没覆盖到」这个事实藏起来了，运营以为配了，研发以为前端有默认值，两边都不觉得需要补规则。</p>
+<h2 id="改成了什么">改成了什么</h2>
+<p>结构拆成三层，每层的校验位置不同：</p>
+<ol>
+<li><strong>位</strong>：id、尺寸、允许的素材类型、兜底链。兜底链是三个元素的有序列表（位默认、类目默认、全站占位），构建期校验长度至少为 1，且每一项都必须能在素材库里查到。</li>
+<li><strong>投放</strong>：人群、时间窗、端、客户端版本区间、素材、优先级。优先级由构建服务在同一位子内单调分配，运营在界面上的操作是「上移一位」，不会看到数字。</li>
+<li><strong>判定</strong>：候选列表在配置构建时排好序，请求路径只做过滤和取首个。</li>
+</ol>
+<pre data-lang="go"><code class="language-go">func (e *Engine) Pick(u User) (Decision, error) {
+    s := e.snap.Load()                      // 不可变快照，按 priority 预排序
+    for _, c := range s.Candidates(slotID) {
+        if c.Match(u, e.now()) {
+            return Decision{ID: c.ID, Rev: s.Rev}, nil
+        }
+    }
+    for _, f := range s.FallbackChain(slotID) { // 构建期已校验非空
+        if f.Match(u, e.now()) {
+            return Decision{ID: f.ID, Fallback: true}, nil
+        }
+    }
+    return Decision{}, ErrNoFill            // 只应出现在配置损坏时
+}</code></pre>
+<p>几个取舍：</p>
+<ul>
+<li>排序挪到构建期，请求路径上没有排序，也不碰 map 迭代顺序。构建失败比请求返回错误便宜得多。</li>
+<li>兜底链不再交给前端。<code>ErrNoFill</code> 直接打点告警，宁可让位子空一次并被人看见，也不要一个没人认领的默认素材。</li>
+<li>快照按位分片，改一个位只失效一个位的缓存。粒度再细下去，构建时间会花在序列化上，当时单次构建 300ms 量级，按位分片够用。</li>
+<li>配置本身用 schema 描述并做构建期校验（<a href="https://json-schema.org/specification">JSON Schema 规范</a>），缺字段的配置进不了快照。</li>
+</ul>
+<h2 id="让运营自己看命中路径">让运营自己看命中路径</h2>
+<p>加了一个回放接口：给 user_id，返回这个位子上最多 20 条候选，以及每条为什么没命中（人群不匹配、时间窗外、端不符、版本区间外）。规则命中与落兜底的比例也一起返回。</p>
+<p>这一步的收益超过优先级本身。上线后「为什么我的活动没出来」这类问题从每周十几次降到每周两次，而且那两次是运营自己发现规则写错了才来问的。</p>
+<h2 id="还没解决的边界">还没解决的边界</h2>
+<p>人群包仍然是离线算的，活动开始那一刻用的是 T-1 的包。我们没解决它，只是把包版本写进投放详情页，让运营自己决定要不要提前一天准备。</p>
+<p>优先级单调递增有个副作用：把 A 拖到 B 上面时，A 拿到一个新的最大 priority，B 不动。相对顺序对，绝对值没有意义。任何按 priority 数值做统计的报表都是错的，这点踩过一次，后来在表结构里把 priority 标成了内部字段。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://rfc-editor.org/rfc/rfc2119.html">RFC 2119: Key words for use in RFCs</a>：规则匹配里 MUST 与 SHOULD 的语义分层</li>
+<li><a href="https://martinfowler.com/bliki/CircuitBreaker.html">Martin Fowler: Circuit Breaker</a>：兜底链与降级路径的边界</li>
+<li><a href="https://martinfowler.com/articles/patterns-of-distributed-systems/">Martin Fowler: Patterns of Distributed Systems</a>：版本化快照与单调版本号</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/投放系统/">投放系统</a><a class="tag" href="/tags/规则匹配/">规则匹配</a><a class="tag" href="/tags/优先级/">优先级</a><a class="tag" href="/tags/兜底链/">兜底链</a><a class="tag" href="/tags/配置管理/">配置管理</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E6%8A%8A%E6%9B%9D%E5%85%89%E4%BD%8D%E5%81%9A%E6%88%90%E5%8F%AF%E9%85%8D%E7%BD%AE%EF%BC%9A%E4%B8%80%E6%AC%A1%E6%B4%BB%E5%8A%A8%E6%8A%95%E6%94%BE%E7%9A%84%E4%BA%8B%E6%95%85%E4%B8%8E%E6%94%B9%E9%80%A0" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/when-to-merge/">← 微服务的反向操作：什么时候该合</a><a class="next" href="/post/coupon-writeoff-refund/">券的核销与退款：状态机、幂等、补偿 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/pull-not-push-config/">从「推配置」到「拉配置」：一次调度配置下发改造</a><time>2020-01</time></li><li><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a><time>2020-03</time></li><li><a href="/post/json-as-database/">拿 JSON 字段当表用，是怎么把配置平台拖死的</a><time>2020-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>标签：幂等 - farfood</title>
+<meta name="description" content="记模型、记系统、记踩过的坑。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/tags/幂等/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="标签：幂等 - farfood">
+<meta property="og:description" content="记模型、记系统、记踩过的坑。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://farfoodyou.github.io/tags/幂等/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="标签：幂等 - farfood">
+<meta name="twitter:description" content="记模型、记系统、记踩过的坑。">
+</head>
+<body class="">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/">归档</a><a href="/calendar/">日历</a><a href="/tags/" class="active">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<h1 class="page-title">标签：幂等 <span class="count">13 篇</span></h1>
+<article class="card">
+  <h2><a href="/post/agent-tool-loop/">Agent 的工具循环：什么时候该停</a></h2>
+  <p class="meta"><time datetime="2024-11-12T23:05:00">2024-11-12</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">跑飞的循环多半跟模型无关，是循环里没有一处负责说停。三个方案并排比过，最后我把停止从语义判断改成了记账。</p>
+  <a class="more" href="/post/agent-tool-loop/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/function-calling-orchestration/">工具调用编排：一次重复建单之后收紧的三处约束</a></h2>
+  <p class="meta"><time datetime="2024-06-11T10:40:00">2024-06-11</time> <a class="cat" href="/categories/agent/">Agent</a></p>
+  <p class="excerpt">编排层把工具失败一律当瞬时故障重试，非幂等的写接口被重复调用。改法是把工具描述收紧、错误分层、重试预算放进执行器。</p>
+  <a class="more" href="/post/function-calling-orchestration/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/weekly-report-auto/">周报的账：65 分钟压到 9 分钟，大头还在校对</a></h2>
+  <p class="meta"><time datetime="2024-05-28T21:50:00">2024-05-28</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">把周报拆成聚合、排版、校对三段算时间账，增量指纹让重跑一次只花 0.8 秒。</p>
+  <a class="more" href="/post/weekly-report-auto/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/api-doc-what/">接口文档到底该写什么：一次重复扣款的复盘</a></h2>
+  <p class="meta"><time datetime="2022-05-10T10:40:00">2022-05-10</time> <a class="cat" href="/categories/工程/">工程</a></p>
+  <p class="excerpt">文档里没写重试语义，也没写幂等键由哪几个字段构成，接入方超时重试时换了参数，同一笔支付扣了两次。事后补的是五类契约，并非字段说明。</p>
+  <a class="more" href="/post/api-doc-what/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/coupon-writeoff-refund/">券的核销与退款：状态机、幂等、补偿</a></h2>
+  <p class="meta"><time datetime="2022-01-11T14:20:00">2022-01-11</time> <a class="cat" href="/categories/数据/">数据</a></p>
+  <p class="excerpt">核销顺序决定一致性缺口出现在哪一端，退款策略决定这个缺口由谁承担。四条判据比一个最佳实践好用。</p>
+  <a class="more" href="/post/coupon-writeoff-refund/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/oversell-at-scale/">3w/s 下名额超卖是怎么发生的</a></h2>
+  <p class="meta"><time datetime="2021-12-21T22:05:00">2021-12-21</time> <a class="cat" href="/categories/数据/">数据</a></p>
+  <p class="excerpt">可售数、预扣记录、真实扣减是三份独立状态，任何两份之间的时间差都是超卖空间。压到 3w/s 时这个空间被放大成了具体数字。</p>
+  <a class="more" href="/post/oversell-at-scale/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/loss-prevention/">营销资损的四层防线</a></h2>
+  <p class="meta"><time datetime="2021-12-01T10:40:00">2021-12-01</time> <a class="cat" href="/categories/数据/">数据</a></p>
+  <p class="excerpt">预算、限额、风控、对账拦的是四种不同的错误，把它们当一层做，任何一处降级都会直接变成钱。</p>
+  <a class="more" href="/post/loss-prevention/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/quota-kv/">限额为什么要一个专门的 KV</a></h2>
+  <p class="meta"><time datetime="2021-09-28T10:40:00">2021-09-28</time> <a class="cat" href="/categories/数据/">数据</a></p>
+  <p class="excerpt">限额扣减塞在订单事务里，一次热点把连接池吃干；拆成独立 KV 后临界区变成一次脚本往返，代价是最终一致和回补。</p>
+  <a class="more" href="/post/quota-kv/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/close-order-reconcile/">一次「关单」引发的对账</a></h2>
+  <p class="meta"><time datetime="2021-04-22T09:50:00">2021-04-22</time> <a class="cat" href="/categories/数据/">数据</a></p>
+  <p class="excerpt">关单是跨两个系统的决议，本地置终态只是开始；靠中间态加补偿任务收敛，再用 T+1 集合差证明它真的收敛了。</p>
+  <a class="more" href="/post/close-order-reconcile/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/order-state-machine/">订单状态机：让乱序到达变成不可能</a></h2>
+  <p class="meta"><time datetime="2021-04-06T10:40:00">2021-04-06</time> <a class="cat" href="/categories/数据/">数据</a></p>
+  <p class="excerpt">把状态迁移收成一张受版本号保护的迁移表之后，迟到的支付回调和重复的关单消息只会写入失败，而不是把终态改回去。</p>
+  <a class="more" href="/post/order-state-machine/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/payment-idempotency/">支付幂等的三层防线</a></h2>
+  <p class="meta"><time datetime="2021-03-16T10:20:00">2021-03-16</time> <a class="cat" href="/categories/后端/">后端</a></p>
+  <p class="excerpt">幂等不是一个注解或一次 SETNX，入口去重、事务内状态机、出口幂等三层挡的失败模式不同，也互不替代。</p>
+  <a class="more" href="/post/payment-idempotency/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a></h2>
+  <p class="meta"><time datetime="2021-02-09T10:10:00">2021-02-09</time> <a class="cat" href="/categories/数据/">数据</a></p>
+  <p class="excerpt">跳单把超时重新定义成可能成功，只有让幂等键的去重域大于故障域，换分片才不等于重扣一次。</p>
+  <a class="more" href="/post/failover-idempotency/">阅读全文 →</a>
+</article>
+<article class="card">
+  <h2><a href="/post/config-eventual-consistency/">容灾切换里最脆的一环：配置的最终一致性</a></h2>
+  <p class="meta"><time datetime="2020-03-05T10:20:00">2020-03-05</time> <a class="cat" href="/categories/架构/">架构</a></p>
+  <p class="excerpt">演练里真正出问题的不是「配置错了」，是「配置还没到」。前者是语义问题，后者是时序问题，而时序问题在切换窗口里被放大。</p>
+  <a class="more" href="/post/config-eventual-consistency/">阅读全文 →</a>
+</article>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

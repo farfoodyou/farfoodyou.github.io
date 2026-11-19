@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分片健康度怎么算：成功率、延迟、主动探测 - farfood</title>
+<meta name="description" content="一条「错误率超 5% 就摘」的规则在低流量分片上两周误摘四次。健康度得按样本量打折，判定得带滞回，主动探测只能当单方向的证据。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/shard-health-score/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "分片健康度怎么算：成功率、延迟、主动探测", "description": "一条「错误率超 5% 就摘」的规则在低流量分片上两周误摘四次。健康度得按样本量打折，判定得带滞回，主动探测只能当单方向的证据。", "datePublished": "2021-01-27T22:10:00+08:00", "dateModified": "2021-01-27T22:10:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/shard-health-score/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "健康检查, 滑动窗口, 熔断, 分片"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="分片健康度怎么算：成功率、延迟、主动探测 - farfood">
+<meta property="og:description" content="一条「错误率超 5% 就摘」的规则在低流量分片上两周误摘四次。健康度得按样本量打折，判定得带滞回，主动探测只能当单方向的证据。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/shard-health-score/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="分片健康度怎么算：成功率、延迟、主动探测 - farfood">
+<meta name="twitter:description" content="一条「错误率超 5% 就摘」的规则在低流量分片上两周误摘四次。健康度得按样本量打折，判定得带滞回，主动探测只能当单方向的证据。">
+<meta property="article:published_time" content="2021-01-27T22:10:00+08:00">
+<meta name="keywords" content="健康检查, 滑动窗口, 熔断, 分片">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">分片健康度怎么算：成功率、延迟、主动探测</h1>
+    <p class="meta"><time datetime="2021-01-27T22:10:00">2021-01-27</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2500 字 <a class="cat" href="/categories/数据/">数据</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#三个信号各自的偏差">三个信号各自的偏差</a></li>
+<li class="h2"><a href="#滑动窗口分桶-指数衰减-置信下界">滑动窗口：分桶 + 指数衰减 + 置信下界</a></li>
+<li class="h2"><a href="#分数合成与滞回">分数合成与滞回</a></li>
+<li class="h2"><a href="#主动探测是单向证据">主动探测是单向证据</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>跳单上线之后，健康度判定从「辅助面板」变成了关键路径上的一环：判错一次，要么白跳（把健康分片摘掉，容量掉八分之一），要么不跳（那批用户付不了款）。压力压在一个布尔值上。</p>
+<p>第一版规则很简单：一分钟错误率超过 5% 就摘掉。两周误摘四次，其中两次的原因一样——那个分片流量低，一分钟只有三个请求，一个超时就顶到 33%。另一次是上游发版导致所有分片同时抖动，八个分片被摘了六个。</p>
+<p>结论是：<strong>健康度不是布尔值，是一个要按样本量打折、带滞回、并且要区分「谁看到的」的分数。</strong></p>
+<h2 id="三个信号各自的偏差">三个信号各自的偏差</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>信号</th>
+<th>反映什么</th>
+<th>采样延迟</th>
+<th>主要偏差</th>
+</tr></thead>
+<tbody>
+<tr><td>客户端成功率</td><td>调用方视角的真实成败</td><td>请求结束即知</td><td>小样本方差极大；慢请求被算成败</td></tr>
+<tr><td>延迟分位数</td><td>分片是否在变慢，通常早于错误出现</td><td>一个统计窗口</td><td>流量结构变化会被误读成变慢</td></tr>
+<tr><td>主动探测</td><td>分片自身是否活着</td><td>一个探测周期</td><td>探针路径和真实调用方不是同一条</td></tr>
+</tbody>
+</table></div>
+<p>客户端成功率最贴近业务，也最容易被小样本毁掉；延迟最早出现，但解释空间最大；主动探测最干净，也最容易骗人。</p>
+<h2 id="滑动窗口分桶-指数衰减-置信下界">滑动窗口：分桶 + 指数衰减 + 置信下界</h2>
+<p>窗口第一版用的是固定一分钟计数，问题在边界：故障发生在整分钟的最后一秒，要等到下一分钟结束才在数字上体现，最长两分钟才反应过来。改成分桶：十秒一个桶，保留三十个，五分钟的环形缓冲。</p>
+<pre data-lang="python"><code class="language-python">BUCKETS, ALPHA, Z = 30, 0.3, 1.96   # 10 秒一桶，有效窗约 1 分钟
+
+def wilson_lower(ok, n):
+    if n == 0:
+        return 0.5                     # 没样本给中性值，不给满分也不给零分
+    p, d = ok / n, 1 + Z * Z / n
+    c = p + Z * Z / (2 * n)
+    m = Z * ((p * (1 - p) / n + Z * Z / (4 * n * n)) ** 0.5)
+    return max(0.0, (c - m) / d)
+
+def success_score(buckets):            # buckets 从旧到新
+    r = 0.0
+    for ok, n in buckets:
+        r = ALPHA * wilson_lower(ok, n) + (1 - ALPHA) * r
+    return r</code></pre>
+<p>置信下界是这套东西里最值钱的十行。取样本比例的威尔逊下界之后，1 次成功只值 0.21 分，5 次全对 0.57，100 次全对 0.96（置信水平 95%）。含义是「样本越少，我越不敢说它健康」——低流量分片不会再因为一次超时被判死，也不会因为一次成功被判满分。零样本给 0.5，比给 1 分保守，比给 0 分诚实。</p>
+<p>指数衰减解决的是另一件事：五分钟窗口里，二十秒前的失败和四分半前的失败不该同权。α 取 0.3 时，有效窗口大约是三四桶，也就是三十到四十秒，足够覆盖一次抖动，又不至于把十分钟前的问题拖着不放。</p>
+<h2 id="分数合成与滞回">分数合成与滞回</h2>
+<p>合成按业务后果加权，不按美感：</p>
+<pre data-lang="text"><code class="language-text">score = 100 × (0.5 × 成功率得分 + 0.3 × 延迟得分 + 0.2 × 探测得分)
+延迟得分 = clamp(1 − (p99 / baseline − 1) / 2, 0, 1)
+baseline = 同一分钟内所有分片 p99 的中位数</code></pre>
+<p>成功率占一半是因为它直接对应付款失败；延迟占三成是因为它领先于错误；探测只占两成，因为它证明力最弱。延迟用「跨分片中位数」做基线而不是各分片自己的历史基线，这样整体流量上涨时所有分片一起变慢，比值不变，不会被误判成单分片故障。代价是：如果只有两个分片，中位数没有意义，得换成同小时的滚动基线。</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>状态</th>
+<th>进入条件</th>
+<th>动作</th>
+</tr></thead>
+<tbody>
+<tr><td>健康</td><td>分数 ≥ 70</td><td>正常路由</td></tr>
+<tr><td>观察</td><td>40 ≤ 分数 &lt; 70，连续 2 桶</td><td>照常路由，只打标记</td></tr>
+<tr><td>降级</td><td>分数 &lt; 40，连续 2 桶且驻留 ≥ 30 秒</td><td>停止分配新单</td></tr>
+<tr><td>摘除</td><td>降级状态 + 探测连续失败 3 次</td><td>不接新单，退避探测</td></tr>
+</tbody>
+</table></div>
+<p>进入和退出用不同阈值（40 进、70 出）不是保守，是防抖。单阈值时分数在阈值附近抖，路由反复切换，每次切换都要重建连接池、让缓存失效，切换本身的成本比「多撑三十秒」高得多。带滞回的成本也很明确：一个坏了一半的分片会在观察区里多待一阵，用户体验是「偶尔慢」而不是「直接失败」。</p>
+<p>恢复是另一套条件：70 分以上、连续 5 次探测成功、驻留超过一个窗口。刚恢复那一秒的分数是旧窗口的残留，直接按分数放量会把刚爬起来的实例再压死一次。</p>
+<h2 id="主动探测是单向证据">主动探测是单向证据</h2>
+<p>这一点当时踩过：探针全绿，业务侧大面积超时。原因是分区只切断了部分调用方到分片的路径，探针恰好在那条没断的路径上。</p>
+<p>所以探针的用法只能是单向的：<strong>探测失败可以单独作为降级依据，探测成功不能单独作为恢复依据。</strong> 反面证据可信，正面证据不可信。</p>
+<p>探针本身也是负载，这条容易被忽略：</p>
+<ul>
+<li>探针必须走独立连接池、独立账号、200 毫秒超时、不重试。共用业务连接池的探针，在分片排队时会挤掉真实请求，测出来的也是排队时长而不是健康状况。</li>
+<li>探针语句要便宜，带条件查询的业务语句在故障时就是压垮分片的最后一根稻草。</li>
+<li>已摘除的分片要退避探测，间隔从 2 秒退到 10 秒，恢复观察期再拉回 2 秒。八个分片每两秒一次，总共 4 QPS，量级可以忽略，但往病号身上持续加负载这件事本身就是错的。</li>
+<li>单次探测失败就判定，误判率高；要求连续三次失败才判定，判定就会晚两个探测周期。这个延迟是用一次误判换的，跟跳单那边的取舍方向相反——因为这里的动作是「停止分配流量」，比「先写再说」更贵。</li>
+</ul>
+<p>让这套分数可用的是两个不起眼的东西：置信下界和滞回带。前者把「样本少」翻译成了分数上的保守，后者把「分数抖动」翻译成了状态上的稳定。信号本身怎么选，反而是最简单的一步。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://sre.google/sre-book/monitoring-distributed-systems/">SRE 手册：监控分布式系统（四个黄金信号）</a></li>
+<li><a href="https://www.evanmiller.org/how-not-to-sort-by-average-rating.html">How Not To Sort By Average Rating：威尔逊区间下界</a></li>
+<li><a href="https://prometheus.io/docs/practices/histograms/">Prometheus 直方图与分位数的最佳实践</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/健康检查/">健康检查</a><a class="tag" href="/tags/滑动窗口/">滑动窗口</a><a class="tag" href="/tags/熔断/">熔断</a><a class="tag" href="/tags/分片/">分片</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%88%86%E7%89%87%E5%81%A5%E5%BA%B7%E5%BA%A6%E6%80%8E%E4%B9%88%E7%AE%97%EF%BC%9A%E6%88%90%E5%8A%9F%E7%8E%87%E3%80%81%E5%BB%B6%E8%BF%9F%E3%80%81%E4%B8%BB%E5%8A%A8%E6%8E%A2%E6%B5%8B" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/failover-idempotency/">← 跳单的代价：换分片之后怎么不重复扣款</a><a class="next" href="/post/shard-failover-payment/">分片挂了还能付款：跳单容灾怎么设计 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/consistent-hashing/">缓存扩容那天：取模哈希搬走了三分之二的 key</a><time>2020-07</time></li><li><a href="/post/shard-failover-payment/">分片挂了还能付款：跳单容灾怎么设计</a><time>2021-01</time></li><li><a href="/post/failover-idempotency/">跳单的代价：换分片之后怎么不重复扣款</a><time>2021-02</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

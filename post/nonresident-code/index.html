@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>非常驻代码：节表里那块只有虚拟大小的内存 - farfood</title>
+<meta name="description" content="PE 允许一节只有虚拟大小、没有文件字节，加载器照样映射。这个规范空白同时被内存加载和进程注入用上，文件侧只能靠节表与入口点的组合条件逼近。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/nonresident-code/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "非常驻代码：节表里那块只有虚拟大小的内存", "description": "PE 允许一节只有虚拟大小、没有文件字节，加载器照样映射。这个规范空白同时被内存加载和进程注入用上，文件侧只能靠节表与入口点的组合条件逼近。", "datePublished": "2022-10-11T21:40:00+08:00", "dateModified": "2022-10-11T21:40:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/nonresident-code/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "PE格式, 无文件攻击, 内存加载, 恶意样本检测"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="非常驻代码：节表里那块只有虚拟大小的内存 - farfood">
+<meta property="og:description" content="PE 允许一节只有虚拟大小、没有文件字节，加载器照样映射。这个规范空白同时被内存加载和进程注入用上，文件侧只能靠节表与入口点的组合条件逼近。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/nonresident-code/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="非常驻代码：节表里那块只有虚拟大小的内存 - farfood">
+<meta name="twitter:description" content="PE 允许一节只有虚拟大小、没有文件字节，加载器照样映射。这个规范空白同时被内存加载和进程注入用上，文件侧只能靠节表与入口点的组合条件逼近。">
+<meta property="article:published_time" content="2022-10-11T21:40:00+08:00">
+<meta name="keywords" content="PE格式, 无文件攻击, 内存加载, 恶意样本检测">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">非常驻代码：节表里那块只有虚拟大小的内存</h1>
+    <p class="meta"><time datetime="2022-10-11T21:40:00">2022-10-11</time><span class="sep">·</span>6 分钟<span class="sep">·</span>2471 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#加载器实际做的五步">加载器实际做的五步</a></li>
+<li class="h2"><a href="#地址落空的那一段">地址落空的那一段</a></li>
+<li class="h2"><a href="#自己当加载器">自己当加载器</a></li>
+<li class="h2"><a href="#文件上还能看到的痕迹">文件上还能看到的痕迹</a></li>
+<li class="h2"><a href="#权限不是证据">权限不是证据</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>节头里 <code>SizeOfRawData</code> 和 <code>VirtualSize</code> 不是一回事：前者是这节在文件里占多少字节，后者是加载后占多少，规范明确允许前者小于后者，差出来的部分由加载器补零。写解析器时我把这条当边角情况，直到看到一个样本的末节 <code>VirtualSize</code> 是 0x2A000，<code>SizeOfRawData</code> 只有 0x400。</p>
+<p>磁盘上 1KB，内存里 168KB，中间那 167KB 没有文件字节。它可以是普通的未初始化数据，问题是这节带 <code>MEM_EXECUTE</code>。</p>
+<h2 id="加载器实际做的五步">加载器实际做的五步</h2>
+<ol>
+<li>读 <code>SizeOfImage</code>，保留这么大一段地址空间。</li>
+<li>逐节映射：文件里有字节的从 <code>PointerToRawData</code> 拷 <code>SizeOfRawData</code> 字节，没有的补零，权限取 <code>Characteristics</code>。</li>
+<li>镜像没落在 <code>ImageBase</code> 上时，按基址差值修正重定位项。</li>
+<li>遍历导入表，把每个 <code>IMAGE_IMPORT_DESCRIPTOR</code> 的 thunk 填成真实地址。</li>
+<li>跳到 <code>AddressOfEntryPoint</code>。</li>
+</ol>
+<p>加载器信任的东西全在头部：<code>SizeOfImage</code>、节表、重定位表、导入表。它不检查节里的字节是不是代码，也不检查入口点那节在文件里有没有内容。</p>
+<h2 id="地址落空的那一段">地址落空的那一段</h2>
+<p>从文件视角看，内存地址落在节里的归宿只有三种（头部另算）：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>RVA 落点</th>
+<th>文件里有字节</th>
+<th>谁来填</th>
+<th>检测含义</th>
+</tr></thead>
+<tbody>
+<tr><td><code>[VA, VA + min(VirtualSize, SizeOfRawData))</code></td><td>有</td><td><code>PointerToRawData</code> + 差值</td><td>正常节内容</td></tr>
+<tr><td><code>[VA + SizeOfRawData, VA + VirtualSize)</code></td><td>没有</td><td>加载器补零</td><td><code>.bss</code> 一类，加执行权限就变味</td></tr>
+<tr><td>不在任何节区间里</td><td>没有</td><td>没人负责</td><td>节表与 <code>SizeOfImage</code> 矛盾</td></tr>
+</tbody>
+</table></div>
+<p>后两行是「规范允许」与「规范没说」的区别，检测里要分开判。</p>
+<pre data-lang="python"><code class="language-python">def rva_owner(rva, secs, size_of_headers):
+    if rva &lt; size_of_headers:
+        return &#x27;headers&#x27;
+    for va, vsize, rawsize in secs:
+        if va &lt;= rva &lt; va + vsize:
+            return &#x27;raw&#x27; if rva - va &lt; rawsize else &#x27;zero-fill&#x27;
+    return &#x27;orphan&#x27;</code></pre>
+<p>入口点归属用这四行算。<code>zero-fill</code> 说明入口落在加载时才存在、文件里没内容的内存上；<code>orphan</code> 说明 <code>SizeOfImage</code> 与节表对不上。</p>
+<h2 id="自己当加载器">自己当加载器</h2>
+<p>内存加载就是把上面五步重写一遍。按公开的那份内存加载实现走：按 <code>SizeOfImage</code> 调一次 <code>VirtualAlloc</code>，权限给可读可写可执行；把每节拷到 <code>ImageBase + VirtualAddress</code>；处理 <code>.reloc</code>，每个 <code>IMAGE_BASE_RELOCATION</code> 块覆盖 4KB 页，条目高 4 位是类型、低 12 位是页内偏移；自己填 IAT，缺的函数用 <code>GetProcAddress</code> 取；最后调用入口点。</p>
+<p>整个过程没一步要求磁盘上存在这个文件。</p>
+<p>副作用在节头上：手写镜像不必满足文件布局，常见的是 <code>PointerToRawData</code> 全为 0，或者 <code>SizeOfRawData</code> 干脆写成 0，这些节在文件里没有字节。<code>VirtualSize</code> 按真实需要给足，两列的比值就这样拉开。</p>
+<p>进程注入是另一条路：在目标进程分配内存、写 shellcode、改权限、起线程，或用 section 对象把镜像映射进去。这类手法没有镜像文件，检测连样本都拿不到。</p>
+<h2 id="文件上还能看到的痕迹">文件上还能看到的痕迹</h2>
+<p>只能看文件时，判据盯的是「地址存在、字节不存在」这个落差：</p>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>痕迹</th>
+<th>依据</th>
+<th>为什么会出现</th>
+<th>合法来源</th>
+</tr></thead>
+<tbody>
+<tr><td>入口点落在 <code>zero-fill</code> 区间</td><td><code>AddressOfEntryPoint</code> 越过 <code>SizeOfRawData</code></td><td>代码在加载后才存在</td><td>老自解压安装器</td></tr>
+<tr><td>引用到的 RVA 落在节区间之外</td><td>节表末端与 <code>SizeOfImage</code></td><td>头部按内存布局拼出</td><td>部分畸形打包产物</td></tr>
+<tr><td>末节 <code>VirtualSize</code> 超过 <code>SizeOfRawData</code> 数倍且可执行</td><td>节头</td><td>运行时才写入的代码区</td><td>自解压安装器、老打包器</td></tr>
+</tbody>
+</table></div>
+<p>按自己那份样本集统计（2000 个正常文件、300 个已知内存加载样本，逐条规则单独命中）：入口落在 <code>zero-fill</code> 或 <code>orphan</code> 的在正常文件里约 4%，多来自老安装器；加上「末节可执行且 <code>VirtualSize</code> 超过 <code>SizeOfRawData</code> 四倍」后，误报降到 0.3% 上下，召回 62%。数字受样本集影响大。</p>
+<p>这条线不碰熵、节名和导入项数，只回答「这段地址在文件里有没有字节」；代价是抓不到把代码塞进已有可执行节的加载器，那种镜像每个 RVA 都有字节。</p>
+<h2 id="权限不是证据">权限不是证据</h2>
+<p>权限由链接器写进 <code>Characteristics</code>，默认不给可写加可执行，但指定节属性就能改，所以文件级 RWX 节可疑而不非法。做规避的样本更愿让那节看起来只读，运行时用 <code>VirtualProtect</code> 改成可写，或把代码写进堆，这一步在文件上不留痕迹。</p>
+<p>文件侧检测的边界也在这里：它擅长发现「镜像结构不合理」，不擅长判断「这块内存后来被拿来做什么」。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#section-table-section-headers">PE Format：节头字段</a></li>
+<li><a href="https://www.joachim-bauch.de/tutorials/loading-a-dll-from-memory/">Loading a DLL from memory：内存加载与重定位处理</a></li>
+<li><a href="https://attack.mitre.org/techniques/T1055/">ATT&amp;CK T1055：Process Injection</a></li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/pe格式/">PE格式</a><a class="tag" href="/tags/无文件攻击/">无文件攻击</a><a class="tag" href="/tags/内存加载/">内存加载</a><a class="tag" href="/tags/恶意样本检测/">恶意样本检测</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E9%9D%9E%E5%B8%B8%E9%A9%BB%E4%BB%A3%E7%A0%81%EF%BC%9A%E8%8A%82%E8%A1%A8%E9%87%8C%E9%82%A3%E5%9D%97%E5%8F%AA%E6%9C%89%E8%99%9A%E6%8B%9F%E5%A4%A7%E5%B0%8F%E7%9A%84%E5%86%85%E5%AD%98" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/import-list-features/">← 导入函数列表当特征：四条判据和三种做法</a><a class="next" href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/pe-format-intro/">PE 解析入门：头、节表、导入表里那三个我读错的字段</a><time>2022-09</time></li><li><a href="/post/import-list-features/">导入函数列表当特征：四条判据和三种做法</a><time>2022-10</time></li><li><a href="/post/packer-entropy/">加壳的痕迹：节名、熵和一张只剩两行的导入表</a><time>2023-01</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>

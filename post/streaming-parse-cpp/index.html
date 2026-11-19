@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大文件怎么进检测引擎：整读、mmap 与增量流式 - farfood</title>
+<meta name="description" content="判据不是吞吐而是内存上界与崩溃隔离：整读和 mmap 都让单样本决定进程上限，只有增量流式能把峰值写死。">
+<meta name="author" content="farfood">
+<link rel="canonical" href="https://farfoodyou.github.io/post/streaming-parse-cpp/">
+<link rel="alternate" type="application/atom+xml" title="farfood" href="/atom.xml">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/style.css">
+<meta name="robots" content="index,follow">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>window.MathJax={tex:{inlineMath:[["\\(","\\)"]],displayMath:[["$$","$$"]]},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "大文件怎么进检测引擎：整读、mmap 与增量流式", "description": "判据不是吞吐而是内存上界与崩溃隔离：整读和 mmap 都让单样本决定进程上限，只有增量流式能把峰值写死。", "datePublished": "2023-02-14T21:15:00+08:00", "dateModified": "2023-02-14T21:15:00+08:00", "inLanguage": "zh-CN", "mainEntityOfPage": "https://farfoodyou.github.io/post/streaming-parse-cpp/", "author": {"@type": "Person", "name": "farfood"}, "publisher": {"@type": "Organization", "name": "farfood"}, "keywords": "流式解析, mmap, 内存上限, 异常安全, C++"}</script>
+
+<meta property="og:site_name" content="farfood">
+<meta property="og:title" content="大文件怎么进检测引擎：整读、mmap 与增量流式 - farfood">
+<meta property="og:description" content="判据不是吞吐而是内存上界与崩溃隔离：整读和 mmap 都让单样本决定进程上限，只有增量流式能把峰值写死。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://farfoodyou.github.io/post/streaming-parse-cpp/">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="大文件怎么进检测引擎：整读、mmap 与增量流式 - farfood">
+<meta name="twitter:description" content="判据不是吞吐而是内存上界与崩溃隔离：整读和 mmap 都让单样本决定进程上限，只有增量流式能把峰值写死。">
+<meta property="article:published_time" content="2023-02-14T21:15:00+08:00">
+<meta name="keywords" content="流式解析, mmap, 内存上限, 异常安全, C++">
+</head>
+<body class="post-page">
+<div id="progress"></div><div id="progress-num" aria-hidden="true">0%</div>
+<header class="site-header">
+  <div class="wrap">
+    <a class="site-title" href="/">farfood</a>
+    <nav class="site-nav"><a href="/">首页</a><a href="/archives/" class="active">归档</a><a href="/calendar/">日历</a><a href="/tags/">标签</a><a href="/categories/">分类</a><a href="/search/">搜索</a><a href="/random/">随机</a><a href="/about/">关于</a><span class="fs-ctrl"><button id="fs-minus" type="button" aria-label="减小字号">A−</button><button id="fs-plus" type="button" aria-label="增大字号">A+</button></span><button id="theme-toggle" type="button" aria-label="switch theme">◐ dark</button></nav>
+  </div>
+</header>
+<main class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">大文件怎么进检测引擎：整读、mmap 与增量流式</h1>
+    <p class="meta"><time datetime="2023-02-14T21:15:00">2023-02-14</time><span class="sep">·</span>5 分钟<span class="sep">·</span>2149 字 <a class="cat" href="/categories/安全/">安全</a></p>
+  </header>
+  <nav class="toc"><p class="toc-title">目录</p><ol><li class="h2"><a href="#判据先定">判据先定</a></li>
+<li class="h2"><a href="#三个方案并排">三个方案并排</a></li>
+<li class="h2"><a href="#流式那一路怎么落地">流式那一路怎么落地</a></li>
+<li class="h2"><a href="#异常安全与背压">异常安全与背压</a></li>
+<li class="h2"><a href="#选择条件">选择条件</a></li>
+<li class="h2"><a href="#参考">参考</a></li></ol></nav>
+  <div class="post-content">
+<p>检测引擎每天处理四百万个样本，平均 400KB，p99 是 90MB，最大的一份见过 2.1GB 的自解压安装包。跑不完不是最坏的结果，把 worker 撑死、让整批队列回滚才是。</p>
+<p>三个候选：整读进内存、整文件 mmap、定长缓冲增量流式。选哪个不看谁快，看谁的峰值内存能提前算出来。</p>
+<h2 id="判据先定">判据先定</h2>
+<ul>
+<li><strong>内存上界可静态计算</strong>。单 worker 在 cgroup 里限 512MB，8 个 worker；上界算不出来，限流参数没法写。</li>
+<li><strong>崩溃隔离到单样本</strong>。畸形文件最多让这份样本失败。进程崩一次，手上的两百个样本要重跑。</li>
+<li><strong>吞吐够用</strong>。400 万 / 86400 秒 ≈ 46 个/秒，按 400KB 算是 18MB/s，峰值留三倍也就 55MB/s；单核顺序读在页缓存命中时是 1GB/s 量级。</li>
+</ul>
+<p>吞吐差两个数量级，选型就从「谁快」变成「谁的内存取值可算」。</p>
+<h2 id="三个方案并排">三个方案并排</h2>
+<div class="table-wrap"><table>
+<thead><tr>
+<th>判据</th>
+<th>整读进内存</th>
+<th>整文件 mmap</th>
+<th>增量流式</th>
+</tr></thead>
+<tbody>
+<tr><td>峰值内存</td><td>等于文件大小</td><td>常驻页 ≈ 工作集，地址空间 = 文件</td><td>固定，缓冲加解析器状态</td></tr>
+<tr><td>上界能否写死</td><td>能，但等于放弃大文件</td><td>不能，取决于访问模式</td><td>能，写在配置里</td></tr>
+<tr><td>崩溃风险</td><td>抛 <code>bad_alloc</code>，可捕获</td><td>访问被截断的页触发 SIGBUS</td><td>只返回错误码</td></tr>
+<tr><td>与解压嵌套</td><td>每层一份全量缓冲</td><td>只能映射磁盘文件</td><td>天然背压，逐层往下流</td></tr>
+</tbody>
+</table></div>
+<p>mmap 那列的 SIGBUS 要说清：文件在映射期间被改小，访问截断的页就会收到 SIGBUS。它不是 C++ 异常，<code>try/catch</code> 接不住，默认终止进程。样本边写边扫、网络存储上有人清目录，都遇到过。要接住只能用信号处理器加 <code>siglongjmp</code>，跳过栈展开恢复对象状态是未定义行为，只适合完全可信的本地文件。</p>
+<h2 id="流式那一路怎么落地">流式那一路怎么落地</h2>
+<p>核心是只做「给我下一块」的读取器，加每块都保持状态的解析器。缓冲区 1MB，256KB 到 4MB 吞吐差在 5% 以内。</p>
+<pre data-lang="cpp"><code class="language-cpp">class ChunkedReader {
+public:
+    explicit ChunkedReader(const char* path, size_t cap = 1u &lt;&lt; 20)
+        : fd_(::open(path, O_RDONLY | O_CLOEXEC)), buf_(cap) {
+        if (fd_ &lt; 0) throw std::system_error(errno, std::generic_category(), &quot;open&quot;);
+    }
+    ~ChunkedReader() { if (fd_ &gt;= 0) ::close(fd_); }
+
+    // view 只在下一次 next() 之前有效
+    bool next(std::string_view&amp; view) {
+        ssize_t n;
+        do { n = ::read(fd_, buf_.data(), buf_.size()); }
+        while (n &lt; 0 &amp;&amp; errno == EINTR);   // 中断要重试
+        if (n &lt; 0) throw std::system_error(errno, std::generic_category(), &quot;read&quot;);
+        if (n == 0) return false;
+        view = std::string_view(buf_.data(), size_t(n));
+        return true;
+    }
+private:
+    int fd_;
+    std::vector&lt;char&gt; buf_;
+};</code></pre>
+<p>构造抛出时 <code>buf_</code> 正常析构，<code>fd_</code> 是 -1，析构里判一下就不会误关。异常路径每天穿过几十万次，漏一次就是泄漏。</p>
+<p>三个约束。短读合法：<code>read</code> 可以只返回几个字节，按缓冲对齐算偏移的代码会错位。<code>string_view</code> 活不过下一次 <code>next()</code>：跨块匹配要把尾部字节拷进自己的状态，踩过一次，签名前半在上一块末尾，解析器留了 view，下一块填进来后匹配到旧数据。尾部结构要预留窗口：ZIP 中央目录在末尾，保留 96KB 环形窗口，越过就从前端丢——EOCD 22 字节加最长 65535 字节注释是 65557 字节，64KB 差 21 字节装不下。</p>
+<h2 id="异常安全与背压">异常安全与背压</h2>
+<p>约定解析器不抛异常、返回 <code>Result</code>：一个格式解析失败不该中断整批扫描。只有 IO 错误和内存耗尽才抛，冒泡到 worker 循环决定放弃样本还是退出。</p>
+<p><code>ChunkedReader</code> 用 RAII 管 fd 和缓冲，解析器持引用不持 view；裸资源只有 fd，生命周期被类边界夹住，异常路径漏 close 在写法上就不成立。</p>
+<p>嵌套解压是另一个坑。一层 DEFLATE 流的输出是下一层解析器的输入，把解压结果整读进内存，压缩比就成了内存的乘数。流式接法里解压器每次只产出一块，下游消费完才要下一块，内存不随压缩比涨。压缩比高的样本耗时间不耗内存，时间维度单独设上限：输出总量 1GB、比率 100:1、单样本 CPU 300 秒，任一触发即判失败。</p>
+<p>RFC 1951 里动态哈夫曼块的符号流能跨任意输入边界，解码器必须能从「半个符号」恢复。「可中断」的成本在这里：每个格式都要显式保存读指针、位偏移、当前块类型，约三倍代码量。</p>
+<h2 id="选择条件">选择条件</h2>
+<p>4MB 以下的样本（占 92%）和要做全量熵计算的（打包器识别看整份字节分布）仍走整读：前者上界天然可算，后者反正要扫两遍。</p>
+<p>分界线写在配置里：<code>max_inline_bytes = 4MB</code>。这个数按「4MB × 8 worker × 2（读缓冲加解析副本）= 64MB，占 512MB 预算的 12%」倒推。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1951">RFC 1951：DEFLATE 压缩数据格式</a>：符号流跨块边界</li>
+<li><a href="https://pubs.opengroup.org/onlinepubs/9699919799/functions/mmap.html">POSIX <code>mmap</code> 规范</a>：越界访问与对象长度变化</li>
+<li><a href="https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines">C++ 核心准则：RAII</a>：构造抛出与析构</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1952">RFC 1952：GZIP 文件格式</a>：尾部 CRC 要流式校验</li>
+</ul>
+  </div>
+  <p class="tag-list"><a class="tag" href="/tags/流式解析/">流式解析</a><a class="tag" href="/tags/mmap/">mmap</a><a class="tag" href="/tags/内存上限/">内存上限</a><a class="tag" href="/tags/异常安全/">异常安全</a><a class="tag" href="/tags/c/">C++</a></p>
+  <p class="share"><button id="copy-link" type="button">复制链接</button><a href="https://x.com/intent/tweet?text=%E5%A4%A7%E6%96%87%E4%BB%B6%E6%80%8E%E4%B9%88%E8%BF%9B%E6%A3%80%E6%B5%8B%E5%BC%95%E6%93%8E%EF%BC%9A%E6%95%B4%E8%AF%BB%E3%80%81mmap+%E4%B8%8E%E5%A2%9E%E9%87%8F%E6%B5%81%E5%BC%8F" target="_blank" rel="noopener">分享到 X</a></p>
+  <nav class="post-nav"><a class="prev" href="/post/anti-sandbox/">← 反沙箱手法算账：90 秒的预算对上 600 秒的等待</a><a class="next" href="/post/file-type-detect/">文件类型识别：magic 不够用的那几种情况 →</a></nav>
+  <aside class="related"><p class="related-title">相关文章</p><ul><li><a href="/post/static-scan-pipeline/">静态扫描流水线：从收到文件到给出判定</a><time>2022-07</time></li><li><a href="/post/why-signature-still/">免杀率 60% 的今天，为什么还在用签名检测</a><time>2022-07</time></li><li><a href="/post/yara-in-product/">把 YARA 接进产品：编译、性能、误报</a><time>2022-08</time></li></ul></aside>
+</article>
+<section class="comments">
+  <h2 class="comments-title">// 评论区</h2>
+  <noscript><p class="comments-hint">评论需要 JavaScript。</p></noscript>
+  <p class="comments-hint">用 GitHub 账号登录即可评论（基于 Discussions）。</p>
+  <div class="giscus"></div>
+  <script>
+  (function () {
+    var want = 'dark';
+    try { if (localStorage.getItem('theme') === 'light') want = 'light'; } catch (e) {}
+    var s = document.querySelector('script[src^="https://giscus.app/client.js"]');
+    if (s) s.setAttribute('data-theme', want);
+  })();
+  </script>
+  <script src="https://giscus.app/client.js"
+    data-repo="farfoodyou/farfoodyou.github.io" data-repo-id="MDEwOlJlcG9zaXRvcnkxMDM5MTUxOTA="
+    data-category="Announcements" data-category-id="DIC_kwDOBjGets4DLdFu"
+    data-mapping="pathname" data-strict="0" data-reactions-enabled="1"
+    data-emit-metadata="0" data-input-position="top"
+    data-theme="dark" data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+  <div id="giscus-fallback" hidden>
+    <p class="comments-hint">评论区暂时没加载出来——通常是仓库还没装 giscus App。
+      也可以直接去 <a href="https://github.com/farfoodyou/farfoodyou.github.io/discussions">GitHub Discussions</a> 讨论。</p>
+  </div>
+  <script>
+  (function () {
+    var waited = 0;
+    var timer = setInterval(function () {
+      var f = document.querySelector('iframe.giscus-frame');
+      if (f) { clearInterval(timer); return; }
+      waited += 1000;
+      if (waited >= 6000) {
+        clearInterval(timer);
+        var fb = document.getElementById('giscus-fallback');
+        if (fb && !document.querySelector('iframe.giscus-frame')) fb.hidden = false;
+      }
+    }, 1000);
+  })();
+  </script>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 farfood · 除特别声明外，本站文章采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> 许可协议。</p>
+    <p class="muted"><a href="/atom.xml">RSS</a> · <a href="/sitemap.xml">sitemap</a> · <a href="mailto:farfoodyou@gmail.com">mail</a> · <a href="https://github.com/farfoodyou/farfoodyou.github.io">source</a></p>
+  </div>
+</footer>
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  function label() { if (btn) btn.textContent = root.dataset.theme === 'light' ? '◑ light' : '◐ dark'; }
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'dark') { delete root.dataset.theme; } else { root.dataset.theme = next; }
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+    var gf = document.querySelector('iframe.giscus-frame');
+    if (gf) gf.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: next === 'light' ? 'light' : 'dark' } } }, 'https://giscus.app');
+  });
+  var bar = document.getElementById('progress');
+  if (bar) {
+    var onScroll = function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+  /* keyboard shortcuts: / search, t theme, j/k prev/next, g h home */
+  var toTop = document.createElement('button');
+  toTop.id = 'to-top'; toTop.type = 'button'; toTop.textContent = '↑';
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  document.body.appendChild(toTop);
+  window.addEventListener('scroll', function () {
+    toTop.classList.toggle('show', window.scrollY > 600);
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === '/') { e.preventDefault(); location.href = '/search/'; }
+    else if (e.key === 't' && btn) { btn.click(); }
+    else if (e.key === 'g') { location.href = '/'; }
+  });
+  /* 阅读进度百分比 */
+  var num = document.getElementById('progress-num');
+  if (num && bar) {
+    window.addEventListener('scroll', function () {
+      var h = document.body.scrollHeight - window.innerHeight;
+      num.textContent = Math.round(h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+      num.classList.toggle('show', window.scrollY > 200);
+    }, { passive: true });
+  }
+
+  /* 目录跟随高亮 */
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  if (tocLinks.length) {
+    var heads = tocLinks.map(function (a) {
+      return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+    }).filter(Boolean);
+    var setActive = function (el) {
+      tocLinks.forEach(function (a) { a.classList.remove('on'); });
+      var i = heads.indexOf(el);
+      if (i >= 0) tocLinks[i].classList.add('on');
+    };
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) seen.push(e.target);
+          else seen = seen.filter(function (x) { return x !== e.target; });
+        });
+        if (seen.length) setActive(seen.sort(function (a, b) { return a.offsetTop - b.offsetTop; })[0]);
+      }, { rootMargin: '-64px 0px -70% 0px' });
+      heads.forEach(function (h) { io.observe(h); });
+    }
+  }
+
+  /* 代码块语言角标 */
+  document.querySelectorAll('pre > code[class*="language-"]').forEach(function (code) {
+    var lang = (code.className.match(/language-([\w+#-]+)/) || [])[1];
+    if (!lang) return;
+    var tag = document.createElement('span');
+    tag.className = 'code-lang';
+    tag.textContent = lang;
+    code.parentNode.appendChild(tag);
+  });
+
+  /* 图片灯箱 */
+  (function () {
+    var imgs = document.querySelectorAll('.post-content img');
+    if (!imgs.length) return;
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = '<img alt=""><p class="lightbox-cap"></p>';
+    document.body.appendChild(box);
+    var big = box.querySelector('img');
+    var cap = box.querySelector('.lightbox-cap');
+    imgs.forEach(function (img) {
+      img.classList.add('zoomable');
+      img.addEventListener('click', function () {
+        big.src = img.src;
+        cap.textContent = img.alt || '';
+        box.classList.add('show');
+      });
+    });
+    box.addEventListener('click', function () { box.classList.remove('show'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') box.classList.remove('show');
+    });
+  })();
+
+  /* 上一/下一篇快捷键 */
+  var prevA = document.querySelector('.post-nav a.prev');
+  var nextA = document.querySelector('.post-nav a.next');
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'k' && prevA) location.href = prevA.getAttribute('href');
+    if (e.key === 'j' && nextA) location.href = nextA.getAttribute('href');
+  });
+
+  /* 字号 */
+  var FS_KEY = 'fs-scale';
+  var applyFs = function (v) {
+    v = Math.min(1.3, Math.max(0.85, Math.round(v * 100) / 100));
+    document.documentElement.style.setProperty('--fs-scale', v);
+    try { localStorage.setItem(FS_KEY, v); } catch (e) {}
+  };
+  var curFs = 1;
+  try { curFs = parseFloat(localStorage.getItem(FS_KEY)) || 1; } catch (e) {}
+  applyFs(curFs);
+  var fsm = document.getElementById('fs-minus');
+  var fsp = document.getElementById('fs-plus');
+  if (fsm) fsm.addEventListener('click', function () { curFs = Math.max(0.85, curFs - 0.05); applyFs(curFs); });
+  if (fsp) fsp.addEventListener('click', function () { curFs = Math.min(1.3, curFs + 0.05); applyFs(curFs); });
+
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var b = document.createElement('button');
+    b.className = 'copy-btn'; b.type = 'button'; b.textContent = 'copy';
+    b.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = code ? code.innerText : pre.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        b.textContent = 'copied!';
+        setTimeout(function () { b.textContent = 'copy'; }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
+document.addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'copy-link') {
+    navigator.clipboard.writeText(location.href).then(function () {
+      e.target.textContent = '已复制 ✓';
+      setTimeout(function () { e.target.textContent = '复制链接'; }, 1500);
+    });
+  }
+});
+</script>
+</body>
+</html>
